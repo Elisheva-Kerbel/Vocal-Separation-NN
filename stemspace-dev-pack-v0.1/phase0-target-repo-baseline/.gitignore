@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Node
+node_modules/
+dist/
+build/
+coverage/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Local data and generated outputs
+local-data/
+backend/ai/checkpoints/*
+!backend/ai/checkpoints/.gitkeep
+backend/outputs/
+backend/tmp/
+benchmark-output/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
