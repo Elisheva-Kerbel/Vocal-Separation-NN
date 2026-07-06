@@ -4,10 +4,10 @@
 # other by service name — postgres, redis, minio, backend, worker, frontend —
 # on Compose's default network, never via localhost.
 #
-# Phase 0 scope: this only stands up the infrastructure services and *skeleton*
-# app containers. There is NO backend /health, NO frontend UI and NO worker /
-# queue processing yet (those arrive in P0-003 / P0-004 / P0-005). The backend,
-# worker and frontend commands below are clearly marked Phase 0 startup stubs.
+# Phase 0 scope: infrastructure services plus a minimal backend that serves
+# GET /health only (P0-003). There is still NO frontend UI and NO worker / queue
+# processing yet (those arrive in P0-005 / P0-004). The worker and frontend
+# commands below are clearly marked Phase 0 startup stubs.
 #
 # Before `docker compose up`, copy .env.example -> .env (see README.md).
 # .env holds local placeholders only — never real secrets. Every value below
@@ -57,8 +57,9 @@ services:
       - minio
     ports:
       - "${BACKEND_PORT:-8000}:8000"
-    # Phase 0 startup stub — the FastAPI app and /health arrive in P0-003.
-    command: ["sh", "-c", "echo '[stemspace][backend] Phase 0 skeleton container — no app yet (P0-003 adds FastAPI /health)'; tail -f /dev/null"]
+    # Runs the FastAPI /health app via the image CMD (uvicorn on 0.0.0.0:8000).
+    # Host port ${BACKEND_PORT} maps to the container's fixed 8000 (see ports).
+    # /health opens no connections; depends_on only orders startup.
 
   worker:
     # Reuses the backend image built above to avoid duplicated dependency

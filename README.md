@@ -17,10 +17,11 @@ This repository is being built in **small, testable phases**. It is **not** buil
 can eventually start via Docker Compose, with documentation and Git baseline files, and **no
 business logic**. See `docs/tasks/phase-0/` for the per-task documents.
 
-So far, **TASK-P0-001** (skeleton, docs and Git baseline) and **TASK-P0-002** (Docker Compose,
-Dockerfiles and `.env.example`) have been performed. The backend, worker and frontend
-containers are still **Phase 0 skeleton stubs** — there is no backend `/health`, no
-worker/queue processing and no frontend UI yet (those arrive in P0-003 / P0-004 / P0-005).
+So far, **TASK-P0-001** (skeleton, docs and Git baseline), **TASK-P0-002** (Docker Compose,
+Dockerfiles and `.env.example`) and **TASK-P0-003** (backend `/health` and config) have been
+performed. The backend now serves a minimal `GET /health` smoke endpoint. The worker and
+frontend containers are still **Phase 0 skeleton stubs** — there is no worker/queue processing
+and no frontend UI yet (those arrive in P0-004 / P0-005).
 
 ## Local development (Compose-first)
 
@@ -32,7 +33,7 @@ wires these services together, reachable by **service name** (not `localhost`):
 | `postgres` | PostgreSQL database                              | runs (named volume)               |
 | `redis`    | Redis broker/result backend for Celery           | runs                              |
 | `minio`    | S3-compatible private object storage (local dev) | runs (named volume)               |
-| `backend`  | FastAPI app                                      | skeleton stub — `/health` in P0-003 |
+| `backend`  | FastAPI app                                      | serves `GET /health` (P0-003)     |
 | `worker`   | Celery worker                                    | startup stub — worker in P0-004   |
 | `frontend` | React + Vite shell                               | skeleton stub — shell in P0-005   |
 
@@ -44,13 +45,16 @@ local values. **`.env` is git-ignored; only `.env.example` (placeholders) is com
 ```bash
 cp .env.example .env          # local placeholders only — never real secrets
 docker compose config         # validate the Compose file
-docker compose build          # build the backend and frontend skeleton images
-docker compose up             # start postgres, redis, minio + skeleton containers
+docker compose build backend  # build the backend image (worker reuses it)
+docker compose run --rm backend python -m pytest   # run backend tests
+docker compose up -d backend  # start the FastAPI backend (with postgres/redis/minio)
+curl http://localhost:8000/health   # -> {"status":"ok","service":"stemspace-backend"}
+docker compose down           # stop everything
 ```
 
 The `worker` service reuses the backend image, so only `backend` and `frontend` are built.
-In Phase 0 the `backend`, `worker` and `frontend` containers only print a startup message and
-idle — they intentionally run no application logic yet.
+The `backend` container now serves `GET /health` via uvicorn; the `worker` and `frontend`
+containers are still Phase 0 stubs that only print a startup message and idle.
 
 ## Repository layout
 
@@ -71,9 +75,12 @@ idle — they intentionally run no application logic yet.
 │   ├── prd/              # PRD references when supplied
 │   ├── architecture/     # architecture/LLD references when supplied
 │   └── spike/            # spike results (e.g. AI benchmark evidence)
-├── backend/              # backend app (Phase 0: Dockerfile skeleton only)
+├── backend/              # FastAPI backend (Phase 0: /health + config only)
 │   ├── Dockerfile
-│   └── .dockerignore
+│   ├── .dockerignore
+│   ├── requirements.txt
+│   ├── app/              # main.py (/health) + config.py
+│   └── tests/            # test_health.py, test_config.py
 ├── frontend/             # frontend app (Phase 0: Dockerfile skeleton only)
 │   ├── Dockerfile
 │   └── .dockerignore

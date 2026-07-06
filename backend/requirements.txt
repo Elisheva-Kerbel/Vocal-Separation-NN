@@ -1,0 +1,11 @@
+# StemSpace backend — Phase 0 minimal dependencies.
+# Only what a FastAPI /health app plus its tests need. No DB / Redis / S3 /
+# Celery / AI clients (those arrive in later, approved phases).
+
+# App
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.30,<1.0
+
+# Tests
+pytest>=8.0,<9.0
+httpx>=0.27,<1.0        # required by fastapi.testclient.TestClient
