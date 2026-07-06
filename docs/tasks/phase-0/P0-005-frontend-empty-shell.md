@@ -1,10 +1,14 @@
 # P0-005 — Frontend Empty Shell
 
-Status: **Draft — pending Nadav readiness review. Not approved for AI code agent execution.**
+Status: **Implemented (P0-005 authorized) — pending Nadav readiness review of the evidence.**
 Phase: 0 (Dockerized Project Skeleton) · Package: PKG-P0 · Source: `stemspace-dev-pack-v0.1/tasks/phase-0/TASK-P0-005-frontend-empty-shell.md`
 
-> This task is **not** authorized yet. It is documented here for Phase 0 completeness. Do not
-> implement it until it is the approved task.
+> This task **is** the currently authorized Phase 0 task and has been implemented as a minimal
+> Vite + React **empty shell** (see `frontend/`): a static Phase 0 placeholder with no backend
+> API calls and no product flow. The shell is verified to build and serve under Docker Compose.
+> If Docker builds run behind a TLS-intercepting proxy, configure Docker/container CA trust
+> outside the repository; do not disable TLS verification. The committed Dockerfile carries no
+> TLS bypass.
 
 ## Goal
 

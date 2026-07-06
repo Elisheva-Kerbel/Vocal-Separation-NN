@@ -1,12 +1,24 @@
-# StemSpace frontend — Phase 0 skeleton image.
+# StemSpace frontend — Phase 0 Vite + React empty-shell image (P0-005).
 #
-# A minimal Node base for the React + Vite shell that arrives in P0-005. Phase 0
-# intentionally ships NO application code and NO npm install — there is no
-# package.json yet, so this image only needs to build. P0-005 extends it to COPY
-# package.json, run `npm install` and start Vite.
+# Minimal Node base that installs only the frontend dependencies and runs the
+# Vite dev server for the Phase 0 empty shell. No product UI, no backend API
+# calls, no secrets baked in. docker-compose maps the host FRONTEND_PORT to the
+# container's Vite port (5173).
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Phase 0 default command (docker-compose overrides it per service). No app yet.
-CMD ["node", "-e", "console.log('stemspace frontend skeleton — no app yet (P0-002; Vite shell arrives in P0-005)')"]
+# Install dependencies first for better layer caching. package*.json matches
+# package.json (and package-lock.json when present) so installs are reproducible.
+COPY package*.json ./
+RUN npm install
+
+# Application code (see .dockerignore for what is excluded, e.g. node_modules).
+COPY . .
+
+# Vite dev server listens on 5173; docker-compose maps the host FRONTEND_PORT.
+EXPOSE 5173
+
+# --host 0.0.0.0 makes the dev server reachable from the host (also set in
+# vite.config.js). docker-compose does not override this command.
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]

@@ -81,13 +81,15 @@ services:
   frontend:
     build:
       context: ./frontend
-    env_file:
-      - path: .env
-        required: false
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
-    # Phase 0 startup stub — the React + Vite shell arrives in P0-005.
-    command: ["sh", "-c", "echo '[stemspace][frontend] Phase 0 skeleton container — no UI yet (P0-005 adds the Vite shell)'; tail -f /dev/null"]
+    # Phase 0 Vite + React empty shell (P0-005). The image CMD runs the Vite dev
+    # server bound to 0.0.0.0:5173; the host FRONTEND_PORT maps to it. No
+    # env_file and no depends_on: the shell needs no config, makes no backend API
+    # calls, and must never receive backend/storage secrets, the DB or Redis
+    # URLs, or internal service URLs. FRONTEND_PORT for the host mapping above is
+    # resolved from the top-level .env by Compose interpolation, not the service
+    # environment.
 
 volumes:
   postgres_data:

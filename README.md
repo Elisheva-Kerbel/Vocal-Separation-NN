@@ -18,12 +18,13 @@ can eventually start via Docker Compose, with documentation and Git baseline fil
 business logic**. See `docs/tasks/phase-0/` for the per-task documents.
 
 So far, **TASK-P0-001** (skeleton, docs and Git baseline), **TASK-P0-002** (Docker Compose,
-Dockerfiles and `.env.example`), **TASK-P0-003** (backend `/health` and config) and
-**TASK-P0-004** (worker startup stub) have been performed. The backend now serves a minimal
-`GET /health` smoke endpoint, and the worker container runs a minimal **startup stub**
-(`python -m app.worker`) that only proves the worker can import project code and stay alive —
-there is still **no queue/job processing** and **no frontend UI** yet (the frontend shell
-arrives in P0-005).
+Dockerfiles and `.env.example`), **TASK-P0-003** (backend `/health` and config), **TASK-P0-004**
+(worker startup stub) and **TASK-P0-005** (frontend empty shell) have been performed. The backend
+serves a minimal `GET /health` smoke endpoint, the worker container runs a minimal **startup
+stub** (`python -m app.worker`), and the frontend container now runs the **Vite + React empty
+shell** (`frontend/src/App.jsx`) — a static Phase 0 placeholder that makes **no** backend API
+calls, stores no files/tokens/secrets and implements **no** product flow. There is still **no
+queue/job processing** and **no product UI**.
 
 ## Local development (Compose-first)
 
@@ -37,7 +38,7 @@ wires these services together, reachable by **service name** (not `localhost`):
 | `minio`    | S3-compatible private object storage (local dev) | runs (named volume)               |
 | `backend`  | FastAPI app                                      | serves `GET /health` (P0-003)     |
 | `worker`   | async job worker (queue wiring in a later phase) | startup stub `python -m app.worker` (P0-004) |
-| `frontend` | React + Vite shell                               | skeleton stub — shell in P0-005   |
+| `frontend` | React + Vite empty shell (no product UI)          | runs Vite dev server on 5173 (P0-005) |
 
 Configuration is provided via environment variables. Copy `.env.example` to `.env` and fill
 local values. **`.env` is git-ignored; only `.env.example` (placeholders) is committed.**
@@ -54,13 +55,25 @@ docker compose up -d backend  # start the FastAPI backend (with postgres/redis/m
 curl http://localhost:8000/health   # -> {"status":"ok","service":"stemspace-backend"}
 docker compose up -d worker   # start the worker startup stub (prints one line, idles)
 docker compose logs --tail=20 worker   # -> "[stemspace-worker] Phase 0 worker startup stub ..."
+docker compose build frontend # build the frontend empty-shell image
+docker compose up -d --no-deps frontend   # start the Vite dev server (0.0.0.0:5173)
+curl http://localhost:5173    # -> HTML shell, <title>StemSpace — Phase 0 frontend shell</title>
 docker compose down           # stop everything
 ```
 
 The `worker` service reuses the backend image, so only `backend` and `frontend` are built.
 The `backend` container serves `GET /health` via uvicorn; the `worker` container runs the
 Phase 0 startup stub (`python -m app.worker`) that prints one safe line and idles; the
-`frontend` container is still a Phase 0 stub that only prints a startup message and idles.
+`frontend` container runs the Vite dev server for the Phase 0 empty shell, bound to
+`0.0.0.0:5173` and mapped to the host `FRONTEND_PORT` (default 5173). The frontend service has
+**no** `env_file` — the shell needs no config and must never receive backend/storage secrets or
+internal service URLs.
+
+> **Behind a TLS-intercepting proxy:** the frontend image's `npm install` fetches from the public
+> npm registry. If Docker builds run behind a TLS-intercepting proxy (a corporate TLS proxy), a
+> fresh container won't trust the proxy's CA and the install fails. Configure Docker/container CA
+> trust **outside the repository**; do **not** disable TLS verification. The committed Dockerfile
+> carries no TLS bypass.
 
 ## Repository layout
 
@@ -87,9 +100,13 @@ Phase 0 startup stub (`python -m app.worker`) that prints one safe line and idle
 │   ├── requirements.txt
 │   ├── app/              # main.py (/health) + config.py + worker.py (P0-004 stub)
 │   └── tests/            # test_health.py, test_config.py, test_worker_startup.py
-├── frontend/             # frontend app (Phase 0: Dockerfile skeleton only)
+├── frontend/             # React + Vite empty shell (Phase 0: no product UI)
 │   ├── Dockerfile
-│   └── .dockerignore
+│   ├── .dockerignore
+│   ├── package.json      # + package-lock.json (react, react-dom, vite)
+│   ├── index.html
+│   ├── vite.config.js    # dev server bound to 0.0.0.0:5173
+│   └── src/              # main.jsx, App.jsx (placeholder), index.css
 └── infra/                # local infra assets (later Phase 0 tasks)
 ```
 
