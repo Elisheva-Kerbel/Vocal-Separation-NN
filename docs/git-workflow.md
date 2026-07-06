@@ -59,6 +59,14 @@ Too large: a single commit that adds compose, backend, worker and frontend at on
 - Subsequent feature/task work should be done on a short-lived branch and merged after review,
   rather than committing feature work directly onto the default branch.
 
+## Author attribution (two-person team)
+
+This is a two-person project. Commit attribution follows **phase ownership** — each phase is
+owned by one teammate, and every commit for that phase is authored and committed under that
+teammate's identity (per area of responsibility, not alternated commit-by-commit). See
+`team-and-ownership.md` for the contributor identities and the full phase → owner mapping, and
+use the matching identity (or the `git ce` / `git cb` aliases) when committing.
+
 ## Before each commit
 
 1. Review the diff (`git status`, `git diff`) — commit only what you intend to.
