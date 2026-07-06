@@ -1,0 +1,18 @@
+* text=auto eol=lf
+*.sh text eol=lf
+*.md text eol=lf
+*.py text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Binary audio/model artifacts
+*.mp3 binary
+*.m4a binary
+*.wav binary
+*.onnx binary
+*.pt binary
+*.pth binary
+*.ckpt binary
