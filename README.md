@@ -17,27 +17,40 @@ This repository is being built in **small, testable phases**. It is **not** buil
 can eventually start via Docker Compose, with documentation and Git baseline files, and **no
 business logic**. See `docs/tasks/phase-0/` for the per-task documents.
 
-At the time of writing, only **TASK-P0-001** (this skeleton, docs and Git baseline) has been
-performed. Docker Compose, Dockerfiles, backend, worker and frontend code are **later Phase 0
-tasks** and are not yet implemented.
+So far, **TASK-P0-001** (skeleton, docs and Git baseline) and **TASK-P0-002** (Docker Compose,
+Dockerfiles and `.env.example`) have been performed. The backend, worker and frontend
+containers are still **Phase 0 skeleton stubs** — there is no backend `/health`, no
+worker/queue processing and no frontend UI yet (those arrive in P0-003 / P0-004 / P0-005).
 
-## Planned local development (Compose-first)
+## Local development (Compose-first)
 
-Local development is **Docker Compose-first** (see `docs/decisions/DEC-0001`). Once the later
-Phase 0 tasks are approved and implemented, `docker compose up` will start these services,
-wired by **service name** (not `localhost`):
+Local development is **Docker Compose-first** (see `docs/decisions/DEC-0001`). `docker compose`
+wires these services together, reachable by **service name** (not `localhost`):
 
-| Service    | Role                                             |
-|------------|--------------------------------------------------|
-| `postgres` | PostgreSQL database                              |
-| `redis`    | Redis broker/result backend for Celery           |
-| `minio`    | S3-compatible private object storage (local dev) |
-| `backend`  | FastAPI app (Phase 0 exposes only `/health`)     |
-| `worker`   | Celery worker (Phase 0: startup stub only)       |
-| `frontend` | React + Vite shell (Phase 0: empty shell)        |
+| Service    | Role                                             | Phase 0 state                     |
+|------------|--------------------------------------------------|-----------------------------------|
+| `postgres` | PostgreSQL database                              | runs (named volume)               |
+| `redis`    | Redis broker/result backend for Celery           | runs                              |
+| `minio`    | S3-compatible private object storage (local dev) | runs (named volume)               |
+| `backend`  | FastAPI app                                      | skeleton stub — `/health` in P0-003 |
+| `worker`   | Celery worker                                    | startup stub — worker in P0-004   |
+| `frontend` | React + Vite shell                               | skeleton stub — shell in P0-005   |
 
 Configuration is provided via environment variables. Copy `.env.example` to `.env` and fill
 local values. **`.env` is git-ignored; only `.env.example` (placeholders) is committed.**
+
+### Running locally
+
+```bash
+cp .env.example .env          # local placeholders only — never real secrets
+docker compose config         # validate the Compose file
+docker compose build          # build the backend and frontend skeleton images
+docker compose up             # start postgres, redis, minio + skeleton containers
+```
+
+The `worker` service reuses the backend image, so only `backend` and `frontend` are built.
+In Phase 0 the `backend`, `worker` and `frontend` containers only print a startup message and
+idle — they intentionally run no application logic yet.
 
 ## Repository layout
 
@@ -48,6 +61,7 @@ local values. **`.env` is git-ignored; only `.env.example` (placeholders) is com
 ├── .gitignore
 ├── .gitattributes
 ├── .editorconfig
+├── docker-compose.yml    # local services: postgres, redis, minio, backend, worker, frontend
 ├── docs/                 # project documentation and task files
 │   ├── README.md
 │   ├── coding-rules.md
@@ -57,8 +71,12 @@ local values. **`.env` is git-ignored; only `.env.example` (placeholders) is com
 │   ├── prd/              # PRD references when supplied
 │   ├── architecture/     # architecture/LLD references when supplied
 │   └── spike/            # spike results (e.g. AI benchmark evidence)
-├── backend/              # backend app (later Phase 0 tasks)
-├── frontend/             # frontend app (later Phase 0 tasks)
+├── backend/              # backend app (Phase 0: Dockerfile skeleton only)
+│   ├── Dockerfile
+│   └── .dockerignore
+├── frontend/             # frontend app (Phase 0: Dockerfile skeleton only)
+│   ├── Dockerfile
+│   └── .dockerignore
 └── infra/                # local infra assets (later Phase 0 tasks)
 ```
 

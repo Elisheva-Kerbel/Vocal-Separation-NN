@@ -1,0 +1,90 @@
+# StemSpace — local development (Docker Compose, Phase 0 skeleton).
+#
+# Compose-first local dev (see docs/decisions/DEC-0001). Services reach each
+# other by service name — postgres, redis, minio, backend, worker, frontend —
+# on Compose's default network, never via localhost.
+#
+# Phase 0 scope: this only stands up the infrastructure services and *skeleton*
+# app containers. There is NO backend /health, NO frontend UI and NO worker /
+# queue processing yet (those arrive in P0-003 / P0-004 / P0-005). The backend,
+# worker and frontend commands below are clearly marked Phase 0 startup stubs.
+#
+# Before `docker compose up`, copy .env.example -> .env (see README.md).
+# .env holds local placeholders only — never real secrets. Every value below
+# also has a safe local default so `docker compose config` works without .env.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-stemspace}
+      POSTGRES_USER: ${POSTGRES_USER:-stemspace}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_local_only}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    # No volume: for the MVP, Redis is a transient Celery broker/result backend;
+    # local dev does not need to persist its state (kept minimal per DEC-0002).
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio_local_user}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-change_me_local_only}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"       # S3 API
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"   # web console
+    volumes:
+      - minio_data:/data
+
+  backend:
+    build:
+      context: ./backend
+    image: stemspace-backend:local
+    env_file:
+      - path: .env
+        required: false
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    # Phase 0 startup stub — the FastAPI app and /health arrive in P0-003.
+    command: ["sh", "-c", "echo '[stemspace][backend] Phase 0 skeleton container — no app yet (P0-003 adds FastAPI /health)'; tail -f /dev/null"]
+
+  worker:
+    # Reuses the backend image built above to avoid duplicated dependency
+    # definitions (TASK-P0-002 / 05-architecture-and-stack). No separate build.
+    image: stemspace-backend:local
+    env_file:
+      - path: .env
+        required: false
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    # Phase 0 startup stub — no queue / job processing yet (P0-004 adds it).
+    command: ["sh", "-c", "echo '[stemspace][worker] Phase 0 startup stub — no queue processing yet (P0-004 adds the worker)'; tail -f /dev/null"]
+
+  frontend:
+    build:
+      context: ./frontend
+    env_file:
+      - path: .env
+        required: false
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    # Phase 0 startup stub — the React + Vite shell arrives in P0-005.
+    command: ["sh", "-c", "echo '[stemspace][frontend] Phase 0 skeleton container — no UI yet (P0-005 adds the Vite shell)'; tail -f /dev/null"]
+
+volumes:
+  postgres_data:
+  minio_data:
