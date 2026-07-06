@@ -4,10 +4,12 @@
 # other by service name — postgres, redis, minio, backend, worker, frontend —
 # on Compose's default network, never via localhost.
 #
-# Phase 0 scope: infrastructure services plus a minimal backend that serves
-# GET /health only (P0-003). There is still NO frontend UI and NO worker / queue
-# processing yet (those arrive in P0-005 / P0-004). The worker and frontend
-# commands below are clearly marked Phase 0 startup stubs.
+# Phase 0 scope: infrastructure services, a minimal backend that serves
+# GET /health only (P0-003), and a worker *startup stub* that only proves the
+# worker image can import project code and stay alive (P0-004) — it runs NO
+# queue / job processing and opens NO connections. There is still NO frontend UI
+# (the Vite shell arrives in P0-005). The worker and frontend commands below are
+# clearly marked Phase 0 startup stubs.
 #
 # Before `docker compose up`, copy .env.example -> .env (see README.md).
 # .env holds local placeholders only — never real secrets. Every value below
@@ -72,8 +74,9 @@ services:
       - postgres
       - redis
       - minio
-    # Phase 0 startup stub — no queue / job processing yet (P0-004 adds it).
-    command: ["sh", "-c", "echo '[stemspace][worker] Phase 0 startup stub — no queue processing yet (P0-004 adds the worker)'; tail -f /dev/null"]
+    # Phase 0 worker startup stub (P0-004): runs the worker module, which prints
+    # one safe line and idles. No queue client, no polling loop, no connections.
+    command: ["python", "-m", "app.worker"]
 
   frontend:
     build:
