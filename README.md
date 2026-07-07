@@ -26,6 +26,19 @@ shell** (`frontend/src/App.jsx`) — a static Phase 0 placeholder that makes **n
 calls, stores no files/tokens/secrets and implements **no** product flow. There is still **no
 queue/job processing** and **no product UI**.
 
+### Status and boundaries
+
+Phase 0 is a **local development skeleton only**. It is:
+
+- **not** approved for production;
+- **not** approved for public users;
+- **not** approved for upload processing (no upload / queue / AI flow exists yet).
+
+PostgreSQL, Redis and MinIO run **only as local infrastructure services** — Compose starts them,
+but they are **not** wired into any product flow in Phase 0. **Phase 1 is the AI Benchmark
+Harness only** and must remain isolated until it is explicitly approved. Repo docs stay **Draft**
+until a readiness review passes; nothing here authorizes production use or a later phase's scope.
+
 ## Local development (Compose-first)
 
 Local development is **Docker Compose-first** (see `docs/decisions/DEC-0001`). `docker compose`
@@ -47,27 +60,34 @@ local values. **`.env` is git-ignored; only `.env.example` (placeholders) is com
 
 ```bash
 cp .env.example .env          # local placeholders only — never real secrets
+
 docker compose config         # validate the Compose file
-docker compose build backend  # build the backend image (worker reuses it)
-docker compose run --rm backend python -m pytest   # run backend tests (incl. worker stub)
-docker compose run --rm --no-deps worker python -m app.worker --check   # worker startup smoke check -> exits 0
-docker compose up -d backend  # start the FastAPI backend (with postgres/redis/minio)
+docker compose build          # build the backend + frontend images (worker reuses backend)
+docker compose up -d          # start all local services (postgres, redis, minio, backend, worker, frontend)
+
+# Backend /health check (reachable from the host):
 curl http://localhost:8000/health   # -> {"status":"ok","service":"stemspace-backend"}
-docker compose up -d worker   # start the worker startup stub (prints one line, idles)
+# Frontend shell check (reachable from the host):
+curl http://localhost:5173          # -> HTML shell, <title>StemSpace — Phase 0 frontend shell</title>
+
+# Backend tests (includes the worker startup stub test):
+docker compose run --rm --no-deps backend python -m pytest -q
+# Worker startup check (exits 0 after printing one safe stub line):
+docker compose run --rm --no-deps worker python -m app.worker --check
+# Frontend build smoke check:
+docker compose run --rm --no-deps frontend npm run build
+
 docker compose logs --tail=20 worker   # -> "[stemspace-worker] Phase 0 worker startup stub ..."
-docker compose build frontend # build the frontend empty-shell image
-docker compose up -d --no-deps frontend   # start the Vite dev server (0.0.0.0:5173)
-curl http://localhost:5173    # -> HTML shell, <title>StemSpace — Phase 0 frontend shell</title>
 docker compose down           # stop everything
 ```
 
-The `worker` service reuses the backend image, so only `backend` and `frontend` are built.
-The `backend` container serves `GET /health` via uvicorn; the `worker` container runs the
-Phase 0 startup stub (`python -m app.worker`) that prints one safe line and idles; the
-`frontend` container runs the Vite dev server for the Phase 0 empty shell, bound to
-`0.0.0.0:5173` and mapped to the host `FRONTEND_PORT` (default 5173). The frontend service has
-**no** `env_file` — the shell needs no config and must never receive backend/storage secrets or
-internal service URLs.
+`docker compose build` builds only the `backend` and `frontend` images (the `worker` reuses the
+backend image; `postgres` / `redis` / `minio` are pulled). The `backend` container serves
+`GET /health` via uvicorn; the `worker` container runs the Phase 0 startup stub
+(`python -m app.worker`) that prints one safe line and idles; the `frontend` container runs the
+Vite dev server for the Phase 0 empty shell, bound to `0.0.0.0:5173` and mapped to the host
+`FRONTEND_PORT` (default 5173). The frontend service has **no** `env_file` — the shell needs no
+config and must never receive backend/storage secrets or internal service URLs.
 
 > **Behind a TLS-intercepting proxy:** the frontend image's `npm install` fetches from the public
 > npm registry. If Docker builds run behind a TLS-intercepting proxy (a corporate TLS proxy), a
@@ -89,7 +109,7 @@ internal service URLs.
 │   ├── README.md
 │   ├── coding-rules.md
 │   ├── git-workflow.md
-│   ├── tasks/phase-0/    # six Phase 0 task documents
+│   ├── tasks/phase-0/    # six Phase 0 task docs + phase-0-final-closure-gate.md
 │   ├── decisions/        # DEC-0001..0003
 │   ├── prd/              # PRD references when supplied
 │   ├── architecture/     # architecture/LLD references when supplied
@@ -154,4 +174,5 @@ Every implementation task returns an evidence report (see
 `stemspace-dev-pack-v0.1/templates/evidence-report-template.md`) containing: changed files;
 checks/commands run; automated test results; manual verification; deviations; blockers; and a
 confirmation that no out-of-scope work was done. Phase 0 closure additionally requires the full
-service-startup evidence listed in `docs/tasks/phase-0/P0-006-readme-and-coding-rules.md`.
+service-startup evidence listed in `docs/tasks/phase-0/phase-0-final-closure-gate.md` (that gate
+is **documented, not executed**, until a separate review authorizes running it).

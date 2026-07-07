@@ -13,6 +13,8 @@ coding rules. They apply to every phase unless a later approved decision changes
 - Do not add future abstractions "in case they are useful later".
 - Do not duplicate logic across components, routes or services.
 - Add a contract/interface only when another component actually consumes it.
+- Do not add generated scaffolding (extra folders, boilerplate, tooling or config) unless the
+  current approved task explicitly requires it.
 - Minimal code does **not** mean incomplete features — implement the current task fully.
 
 Minimal abstractions are allowed **only when directly needed now** (e.g. storage adapter in the
@@ -57,12 +59,21 @@ is backend-enforced, checkpoint registry when checkpoint selection must be serve
 - Configurable policy/concurrency. No separate "Professional" queue unless benchmark evidence
   proves the need.
 
-## 5. Secrets
+## 5. Secrets, credentials and TLS/proxy trust
 
-- Never commit, request or print real passwords, access tokens, client secrets, private keys,
-  certificates or private connection strings.
+- Never commit, request or print **real credentials**: passwords, access tokens, client secrets,
+  private keys, certificates or private connection strings.
 - Use **placeholders only** (e.g. `change_me_local_only`). Real values live in a local,
   git-ignored `.env`.
+- **Private storage only** — never configure or document a public bucket or public/permanent
+  object URLs (see §3).
+- **No TLS bypass.** Never disable TLS verification. Do not add bypass flags such as npm
+  `strict-ssl=false` or Node `rejectUnauthorized=false` to any committed file.
+- **No machine-specific TLS/proxy configuration in the repo.** Do not commit private
+  certificates, CA file contents, CA file paths, provider-specific proxy names, or
+  `NODE_EXTRA_CA_CERTS` paths. If Docker builds run behind a **TLS-intercepting proxy** (a
+  corporate TLS proxy), configure Docker/container CA trust **outside the repository** and keep
+  verification on.
 
 ## 6. Configuration
 
@@ -80,7 +91,16 @@ resumable upload; extra stems beyond Vocals + Background.
 
 Follow `git-workflow.md` for commit cadence, commit size and message style.
 
-## 9. Status discipline
+## 9. Process, scope and status discipline
 
-Repo docs remain **Draft** until Nadav returns a readiness PASS. Do not imply Nadav approval,
-and do not continue past the currently approved task's Stop Gate.
+- **One approved task at a time.** Implement only the currently authorized task's scope; do not
+  start the next task or pull work forward.
+- **No unapproved scope expansion.** Do not add features, files, dependencies or abstractions
+  beyond the approved task, and do not expand a task because it "would be convenient".
+- **No product or architecture decisions by the code agent.** Product scope, architecture and
+  new decision records are made by the human authorities, not the agent. Surface open questions
+  as blockers instead of deciding them.
+- **Tests and evidence before moving on.** A task is not done until its required checks/tests
+  pass and an evidence report is returned. Do not proceed to the next task without them.
+- **Status discipline.** Repo docs remain **Draft** until a readiness review PASSes. Do not imply
+  approval, and do not continue past the currently approved task's Stop Gate.

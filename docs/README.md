@@ -9,7 +9,8 @@ here adapt that pack into repo-local, actionable documentation.
 ## Structure
 
 - `tasks/phase-0/` — the six Phase 0 task documents (Goal, Scope, What to build, What not to
-  build, Acceptance criteria, Required checks/tests, Evidence expected, Stop gate).
+  build, Acceptance criteria, Required checks/tests, Evidence expected, Stop gate), plus
+  `phase-0-final-closure-gate.md`, which documents (but does not execute) the Phase 0 closure gate.
 - `decisions/` — decision records (DEC-####) capturing implementation boundaries.
 - `coding-rules.md` — stack conventions, minimal-code policy, security and Phase 0 boundaries.
 - `git-workflow.md` — commit conventions (cadence, commit size, message style).

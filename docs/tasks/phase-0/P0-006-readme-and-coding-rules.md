@@ -1,10 +1,13 @@
 # P0-006 — README, Coding Rules and Phase 0 Closure
 
-Status: **Draft — pending Nadav readiness review. Not approved for AI code agent execution.**
+Status: **Implemented (P0-006 authorized) — pending readiness review of the evidence.**
 Phase: 0 (Dockerized Project Skeleton) · Package: PKG-P0 · Source: `stemspace-dev-pack-v0.1/tasks/phase-0/TASK-P0-006-readme-and-coding-rules.md`
 
-> This task is **not** authorized yet. It is documented here for Phase 0 completeness. Do not
-> implement it until it is the approved task.
+> This task **is** the currently authorized Phase 0 task. It finalizes the Phase 0 documentation
+> (README, `docs/coding-rules.md`, scope boundaries) and **documents — but does not execute —**
+> the Phase 0 final closure gate (see `phase-0-final-closure-gate.md`). It is documentation only:
+> no application, Docker, frontend, backend or worker behaviour changes. Repo docs stay **Draft**
+> until a readiness review PASSes; nothing here implies approval or authorizes a later phase.
 
 ## Goal
 
@@ -50,8 +53,11 @@ for storage boundary, DEC-0003). No network access.
 
 ## Phase 0 closure evidence — REQUIRED
 
-Phase 0 is closable only after **all** of the following is demonstrated (this is a required
-Stop Gate for Phase 0 closure, strengthened from the pack's phase acceptance criteria):
+The **authoritative, full Phase 0 final closure gate** is documented in
+`phase-0-final-closure-gate.md`. That gate is **documented, not executed** as part of P0-006; it
+is run only when a separate review explicitly authorizes Phase 0 closure. The summary below
+captures the core service-startup evidence (Phase 0 is closable only after **all** of it, plus
+the full gate, is demonstrated):
 
 1. `docker compose config` is valid.
 2. `docker compose up --build` starts all local services.
