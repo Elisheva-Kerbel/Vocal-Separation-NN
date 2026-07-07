@@ -1,0 +1,6 @@
+# Keeps the empty backend/ai/checkpoints/ directory in Git.
+#
+# Real checkpoint files are NEVER committed. Checkpoint selection is server-side
+# only and its contents are git-ignored (see the repo .gitignore:
+# `backend/ai/checkpoints/*` with `!backend/ai/checkpoints/.gitkeep`). No model
+# or checkpoint is downloaded or chosen in Phase 1 task P1-001.
