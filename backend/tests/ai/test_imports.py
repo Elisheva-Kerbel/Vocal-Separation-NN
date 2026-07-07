@@ -121,11 +121,11 @@ def test_checkpoint_boundary_rejects_raw_paths(raw):
         checkpoint_registry.resolve_checkpoint(raw)
 
 
-def test_checkpoint_boundary_exposes_no_path_for_logical_tier():
-    # A plausible logical tier is accepted by the guard but resolves to nothing:
-    # the mapping is deferred to P1-002, so no internal checkpoint path is
-    # returned or exposed.
-    with pytest.raises(NotImplementedError):
+def test_checkpoint_boundary_rejects_unknown_logical_tier():
+    # P1-002 implements the tier mapping: an unknown logical token is now a safe
+    # ValueError (never a resolved path). Only Basic/Professional are accepted;
+    # full registry behaviour is covered in test_checkpoint_registry.py.
+    with pytest.raises(ValueError):
         checkpoint_registry.resolve_checkpoint("logical-tier")
 
 

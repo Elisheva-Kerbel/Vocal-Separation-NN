@@ -1,9 +1,9 @@
-"""AI model vocabulary — Phase 1 (TASK-P1-001) boundaries only.
+"""AI model vocabulary — Phase 1 model tiers and output stems.
 
 Defines the minimal, framework-free types the benchmark harness shares: the two
-output stems and the *logical* model tier. No model is loaded, downloaded or
-executed here, and no ML/audio library is imported — real model handling belongs
-to the later Phase 1 tasks (P1-002 / P1-003).
+output stems and the accepted, logical model tiers. No model is loaded,
+downloaded or executed here, and no ML/audio library is imported — real model
+handling belongs to a later Phase 1 task (P1-003).
 """
 
 from __future__ import annotations
@@ -22,10 +22,15 @@ class Stem(str, Enum):
     BACKGROUND = "background"
 
 
-# Logical, client-safe selector for the inference flow. A ``ModelTier`` is an
-# opaque logical token (e.g. a tier name); it is NEVER a checkpoint path,
-# filename or free checkpoint id. Mapping a tier to an actual checkpoint is a
-# server-side concern handled by ``checkpoint_registry`` in a later task
-# (P1-002). Kept as a plain string alias so P1-001 does not fix the tier
-# vocabulary yet.
-ModelTier = str
+class ModelTier(str, Enum):
+    """The accepted, logical model tiers a client may request (P1-002).
+
+    A ``ModelTier`` is a *logical server-side selector* only — never a checkpoint
+    path, filename, free checkpoint id or storage key. The tier -> checkpoint
+    mapping is resolved server-side by ``checkpoint_registry``. Only these two
+    tiers exist; no Free / Pro / Premium / Enterprise / Admin / Experimental /
+    Custom (or any other) tier may be added.
+    """
+
+    BASIC = "Basic"
+    PROFESSIONAL = "Professional"
