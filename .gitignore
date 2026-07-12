@@ -26,6 +26,17 @@ backend/outputs/
 backend/tmp/
 benchmark-output/
 
+# Model / checkpoint / audio artifacts — NEVER commit (DEC-0004). The real local
+# model lives out-of-band via LOCAL_MODEL_ROOT and is never copied into the repo.
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+*.wav
+*.mp3
+*.flac
+
 # Logs
 *.log
 logs/

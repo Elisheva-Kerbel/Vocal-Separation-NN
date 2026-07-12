@@ -37,7 +37,13 @@ import time
 # of how the script is invoked. No third-party path manipulation, no network.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from ai import audio_io, checkpoint_registry, inference  # noqa: E402
+from ai import (  # noqa: E402
+    audio_io,
+    checkpoint_registry,
+    inference,
+    local_checkpoint,
+    local_inference,
+)
 from ai.metrics import BenchmarkMetrics, write_metrics  # noqa: E402
 from ai.model import ModelTier, Stem  # noqa: E402
 
@@ -48,6 +54,13 @@ from ai.model import ModelTier, Stem  # noqa: E402
 FAILURE_INVALID_MODEL_TIER = "invalid_model_tier"
 FAILURE_INPUT_NOT_FOUND = "input_not_found"
 FAILURE_BENCHMARK_ERROR = "benchmark_error"
+
+# Safe coded reasons for the optional local Basic prototype path (P1-004B). Each
+# is a fixed constant carrying no path, filename, checkpoint ref or secret.
+FAILURE_LOCAL_MODEL_NOT_CONFIGURED = "local_model_not_configured"
+FAILURE_LOCAL_CHECKPOINT_UNAVAILABLE = "local_checkpoint_unavailable"
+FAILURE_LOCAL_DEPENDENCY_MISSING = "local_dependency_missing"
+FAILURE_PROFESSIONAL_NOT_IMPLEMENTED = "professional_not_implemented"
 
 # Ordered AI pipeline steps; a placeholder boundary raises NotImplementedError and
 # yields "<step>_not_implemented" (e.g. "inference_not_implemented").
@@ -81,15 +94,61 @@ def _encode_stems(stems: dict, output_dir: str) -> tuple[int, int]:
     return sizes[Stem.VOCALS], sizes[Stem.BACKGROUND]
 
 
-def run_benchmark(input_path: str, output_dir: str, model_tier: str) -> BenchmarkMetrics:
+def _run_local_prototype(
+    input_path: str, output_dir: str, model_tier_label: str, use_best_model: bool
+) -> tuple[bool, str | None, float | None, int | None, int | None]:
+    """Drive the optional local Basic prototype adapter (P1-004B), safely.
+
+    Returns ``(success, failure_reason, inference_seconds, vocals_bytes,
+    background_bytes)``. Only the **Basic** tier is handled locally; Professional
+    is explicitly **not implemented** and returns a safe coded reason (it is never
+    claimed implemented). Every local error (missing root / missing checkpoint /
+    missing dependency) is mapped to a fixed safe reason code — no path, checkpoint
+    reference or exception message is surfaced. In P1-004B this path is only driven
+    by tests with mocks; the real checkpoint/audio run is P1-004C.
+    """
+    if model_tier_label != ModelTier.BASIC.value:
+        return (False, FAILURE_PROFESSIONAL_NOT_IMPLEMENTED, None, None, None)
+
+    marker = time.monotonic()
+    try:
+        outputs = local_inference.run_local_separation(
+            input_path, output_dir, use_best_model=use_best_model
+        )
+    except local_checkpoint.LocalModelConfigError:
+        return (False, FAILURE_LOCAL_MODEL_NOT_CONFIGURED, None, None, None)
+    except local_checkpoint.LocalCheckpointNotFoundError:
+        return (False, FAILURE_LOCAL_CHECKPOINT_UNAVAILABLE, None, None, None)
+    except local_inference.LocalDependencyError:
+        return (False, FAILURE_LOCAL_DEPENDENCY_MISSING, None, None, None)
+
+    inference_seconds = time.monotonic() - marker
+    vocals_bytes = os.path.getsize(outputs[Stem.VOCALS])
+    background_bytes = os.path.getsize(outputs[Stem.BACKGROUND])
+    return (True, None, inference_seconds, vocals_bytes, background_bytes)
+
+
+def run_benchmark(
+    input_path: str,
+    output_dir: str,
+    model_tier: str,
+    *,
+    use_local_model: bool = False,
+    use_best_model: bool = True,
+) -> BenchmarkMetrics:
     """Run one local benchmark and write outputs + metrics JSON.
 
     Returns the :class:`BenchmarkMetrics` for the run (also written to
-    ``<output_dir>/metrics.json``). On the current real path the AI boundaries
-    are not implemented, so this fails *safely*: it records a safe coded
-    ``failure_reason`` and writes the metrics JSON rather than raising. Output
-    audio files are written only when separation actually returns stems (a
-    test-injected success path) — never fabricated on the real failure path.
+    ``<output_dir>/metrics.json``). By default (``use_local_model=False``) the AI
+    boundaries are still placeholders, so this fails *safely*: it records a safe
+    coded ``failure_reason`` and writes the metrics JSON rather than raising.
+
+    ``use_local_model=True`` opts in to the local Basic prototype adapter
+    (P1-004B) for the ``Basic`` tier only; ``use_best_model`` selects the internal
+    checkpoint slot (local benchmark only — never a checkpoint path). Any failure
+    there is also mapped to a safe coded reason. Output audio files are written
+    only when separation actually returns stems — never fabricated on a failure
+    path. No checkpoint path is ever written to metrics, stdout/stderr or errors.
     """
     success = False
     failure_reason: str | None = None
@@ -114,6 +173,18 @@ def run_benchmark(input_path: str, output_dir: str, model_tier: str) -> Benchmar
 
         if not os.path.isfile(input_path):
             failure_reason = FAILURE_INPUT_NOT_FOUND
+        elif use_local_model:
+            # Opt-in local Basic prototype path (P1-004B). Self-contained safe
+            # error mapping; never leaks a path/checkpoint reference.
+            (
+                success,
+                failure_reason,
+                inference_seconds,
+                vocals_bytes,
+                background_bytes,
+            ) = _run_local_prototype(
+                input_path, output_dir, model_tier_label, use_best_model
+            )
         else:
             step = _STEP_DECODE
             marker = time.monotonic()
@@ -204,6 +275,30 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=[tier.value for tier in ModelTier],
         help="Logical model tier: Basic or Professional (never a checkpoint path).",
     )
+    # Optional, LOCAL-BENCHMARK-ONLY prototype flags (P1-004B). They carry NO
+    # value that could be a checkpoint path/filename/URL/storage key: --use-local-
+    # model is a bare switch, and the selector is a boolean --use-best-model /
+    # --no-use-best-model. The local model folder comes only from the
+    # LOCAL_MODEL_ROOT environment variable, never from the CLI. This does not make
+    # Professional a real tier — only the Basic local prototype is wired.
+    parser.add_argument(
+        "--use-local-model",
+        action="store_true",
+        help=(
+            "Local prototype only: route the Basic tier through the local model "
+            "adapter. Reads LOCAL_MODEL_ROOT from the environment; accepts no path."
+        ),
+    )
+    parser.add_argument(
+        "--use-best-model",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help=(
+            "Local benchmark only: internal checkpoint slot selector "
+            "(--use-best-model / --no-use-best-model). Defaults to "
+            "LOCAL_MODEL_USE_BEST. Never a checkpoint path."
+        ),
+    )
     return parser
 
 
@@ -218,8 +313,22 @@ def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
 
+    # Resolve the local-benchmark-only selector: explicit flag wins, else the
+    # LOCAL_MODEL_USE_BEST env default. Only consulted when --use-local-model is set.
+    use_best_model = (
+        args.use_best_model
+        if args.use_best_model is not None
+        else local_checkpoint.use_best_model_from_env(True)
+    )
+
     try:
-        metrics = run_benchmark(args.input, args.output_dir, args.model_tier)
+        metrics = run_benchmark(
+            args.input,
+            args.output_dir,
+            args.model_tier,
+            use_local_model=args.use_local_model,
+            use_best_model=use_best_model,
+        )
     except Exception:  # noqa: BLE001 - never surface a raw traceback to the user
         print(f"benchmark: failed reason={FAILURE_BENCHMARK_ERROR}", file=sys.stderr)
         return EXIT_FAILURE

@@ -395,3 +395,88 @@ def test_benchmark_outputs_are_git_ignored():
     if gitignore is None:
         pytest.skip("repo .gitignore not present in this build context")
     assert "benchmark-output/" in gitignore.read_text(encoding="utf-8")
+
+
+# --- optional local Basic prototype path (P1-004B) -----------------------------
+# These exercise the opt-in --use-local-model flag WITHOUT a real checkpoint,
+# torch or LOCAL_MODEL_ROOT: the local path fails safely before any model load.
+
+
+def test_local_flag_without_root_fails_safely_and_hides_path(tmp_path, monkeypatch, capsys):
+    # --use-local-model Basic with no LOCAL_MODEL_ROOT -> safe coded failure, no
+    # path leak, non-zero exit; the config check happens before any torch import.
+    monkeypatch.delenv("LOCAL_MODEL_ROOT", raising=False)
+    out = tmp_path / "out"
+    code = cli.main(
+        [
+            "--input",
+            str(_existing_input(tmp_path)),
+            "--output-dir",
+            str(out),
+            "--model-tier",
+            "Basic",
+            "--use-local-model",
+        ]
+    )
+    assert code == cli.EXIT_FAILURE
+    data = json.loads((out / "metrics.json").read_text(encoding="utf-8"))
+    assert data["success"] is False
+    assert data["failure_reason"] == cli.FAILURE_LOCAL_MODEL_NOT_CONFIGURED
+    # No local path / checkpoint leak in metrics or stdout/stderr.
+    combined = (capsys.readouterr().out + capsys.readouterr().err).lower()
+    for value in _string_values(data):
+        lowered = value.lower()
+        for marker in _LEAK_MARKERS:
+            assert marker not in lowered
+    for marker in ("best_model", "local_model_root", "\\", "/models"):
+        assert marker not in combined
+
+
+def test_local_flag_professional_is_not_implemented(tmp_path, monkeypatch):
+    # Professional + --use-local-model must NOT be presented as implemented: it
+    # returns a safe "professional_not_implemented" reason and never success.
+    monkeypatch.delenv("LOCAL_MODEL_ROOT", raising=False)
+    out = tmp_path / "out"
+    metrics = cli.run_benchmark(
+        str(_existing_input(tmp_path)),
+        str(out),
+        "Professional",
+        use_local_model=True,
+    )
+    assert metrics.success is False
+    assert metrics.failure_reason == cli.FAILURE_PROFESSIONAL_NOT_IMPLEMENTED
+
+
+@pytest.mark.parametrize(
+    "extra",
+    [
+        ["--use-best-model", "/models/x.pt"],   # boolean flag takes no value
+        ["--no-use-best-model", "model.pt"],
+        ["--use-local-model", "s3://bucket/key"],
+    ],
+)
+def test_new_local_flags_reject_pathlike_values(extra, tmp_path):
+    # The new flags are switches/booleans: any attached path/URL/storage value is
+    # an unexpected argument -> argparse exit code 2, before any run.
+    with pytest.raises(SystemExit) as exc:
+        cli.main(
+            [
+                "--input",
+                str(tmp_path / "in.wav"),
+                "--output-dir",
+                str(tmp_path / "out"),
+                "--model-tier",
+                "Basic",
+                *extra,
+            ]
+        )
+    assert exc.value.code == 2
+
+
+def test_default_behavior_unchanged_without_local_flag(tmp_path):
+    # Regression: with no --use-local-model, the Basic real path is still the
+    # existing placeholder boundary -> decode_not_implemented (behavior intact).
+    out = tmp_path / "out"
+    metrics = cli.run_benchmark(str(_existing_input(tmp_path)), str(out), "Basic")
+    assert metrics.success is False
+    assert metrics.failure_reason == "decode_not_implemented"
