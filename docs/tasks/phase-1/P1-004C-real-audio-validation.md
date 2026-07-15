@@ -1,33 +1,44 @@
 # P1-004C — Real Audio Validation
 
-Status: **PLANNING STUB ONLY — NOT AUTHORIZED YET.**
-Phase: 1 (AI Benchmark Harness) · Package: PKG-P1 · Depends on: P1-004B (adapter) passing review · Baseline: `stemspace-dev-pack-v0.1/tasks/phase-1/TASK-P1-004-real-audio-validation.md`
+Status: **EXECUTED — validation-only. Basic local prototype validation PASSED.**
+Phase: 1 (AI Benchmark Harness) · Package: PKG-P1 · Depends on: P1-004B (adapter) — accepted · Baseline: `stemspace-dev-pack-v0.1/tasks/phase-1/TASK-P1-004-real-audio-validation.md`
 
-> **Planning stub only. Not authorized yet.**
-> **Do not implement until Nadav review and an explicit prompt.**
-> This file reserves the task and records intended future scope. It authorizes **no** inference and **no**
-> real audio validation run.
+> **Validation only.** This run exercised the minimal local inference adapter to prove the Basic local
+> prototype works end to end. It changed **no** code and grants **no** approval beyond local prototype
+> / technical validation (see `docs/decisions/DEC-0004-basic-local-model-prototype.md`).
 
-## Expected future scope (not yet approved)
+## Outcome
 
-- A **real audio validation run**: exercise the (future, authorized) minimal local inference adapter on **one**
-  real local audio file and collect evidence — vocals output, background output, metrics JSON, accepted
-  `modelTier` — with **no checkpoint path supplied** in any output.
-- Validation only: **no** code fixes, **no** model-choice changes, **no** upload/API integration.
-- Audio fixtures stay **local / out-of-band**; **no** audio files are copied into the repo (per DEC-0004 Git policy).
+- P1-004C was **executed as validation-only**.
+- **Basic local prototype validation passed.**
+- The run produced a **vocals output**, a **background output**, and a **`metrics.json`**.
+- **No code was changed** as part of this task — no fixes, no model-choice changes, no integration work.
 
-## Not in this stub
+## Evidence handling
 
-- No inference run, no model loaded into memory, no benchmark executed.
-- No audio / model / checkpoint files copied into the repo.
-- No API / DB / queue / Redis / MinIO-S3 / frontend / worker integration.
-- No production or commercial claim.
+Validation evidence is retained **out-of-band** and is intentionally **not** stored in this repository,
+per the DEC-0004 Git policy:
 
-## Entry gate
+- No checkpoint / model / audio files were copied into the repo.
+- No local paths are recorded here or in any committed output.
+- The input audio fixture and the produced outputs stay local / out-of-band.
 
-Begins only after: P1-004B implemented and **passing review**, plus **Nadav review PASS** and an **explicit prompt**
-authorizing P1-004C.
+This file records the **outcome** of the run. It is not itself the evidence, and it deliberately
+reproduces no metric values, filenames or paths from the run.
+
+## Scope boundaries — unchanged by this run
+
+- **Basic local prototype only.** Passing this validation does not widen scope.
+- **Professional remains not implemented.** The `professional-placeholder` registry entry stays an
+  opaque placeholder.
+- **Production / commercial use remains not approved** for the current checkpoint.
+- No API / DB / queue / Redis / MinIO-S3 / frontend / worker integration was added or exercised.
+
+## Known gaps
+
+- Decode, encode and checkpoint-load timing fields are **not fully measured** by this run.
+- Licensing / provenance for the current checkpoint remains **unresolved for production** (DEC-0004 §7).
 
 ## Stop gate
 
-Do not start. Wait for the P1-004B adapter to pass review and for explicit authorization.
+Phase 1 is closed for Basic local prototype only. Do not start Phase 2 without explicit authorization.

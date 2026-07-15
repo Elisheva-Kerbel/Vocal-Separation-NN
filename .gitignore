@@ -33,6 +33,7 @@ benchmark-output/
 *.ckpt
 *.safetensors
 *.onnx
+*.bin
 *.wav
 *.mp3
 *.flac
