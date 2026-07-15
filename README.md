@@ -1,7 +1,9 @@
 # StemSpace — Vocal Removing Platform
 
 Status: **Draft — pending Nadav readiness review. Not approved for AI code agent execution.**
-Source of truth: `stemspace-dev-pack-v0.1/` (STEMSPACE-DEV-PACK-001 v0.1).
+Source baseline: `stemspace-dev-pack-v0.1/` (STEMSPACE-DEV-PACK-001 v0.1) — **read-only historical
+source; do not edit it.** For **Phase 2**, the active implementation contract is the repo-local
+`docs/tasks/phase-2/*` and `docs/decisions/DEC-0005` (see `docs/README.md`).
 
 ## Purpose
 
@@ -11,13 +13,24 @@ URLs. Files are private; the backend authorizes every access.
 
 This repository is being built in **small, testable phases**. It is **not** built in one pass.
 
-## Current phase
+## Current status
 
-**Phase 0 — Dockerized Project Skeleton.** Phase 0 creates a minimal monorepo foundation that
-can eventually start via Docker Compose, with documentation and Git baseline files, and **no
-business logic**. See `docs/tasks/phase-0/` for the per-task documents.
+- **Phase 0 — closed.** Dockerized project skeleton (local development only).
+- **Phase 1 — closed for Basic local prototype only** (`docs/decisions/DEC-0004`). This approves
+  **no** production, **no** Professional tier, and **no** upload, queue, DB, storage or public-user
+  scope.
+- **Phase 2 — not implemented yet.** No DB code exists: no models, no migrations, no ORM
+  dependencies, no database connection.
+- **P2-000 readiness fixes — pending Nadav review / closeout** (`docs/tasks/phase-2/P2-000-readiness-fixes.md`).
+- **P2-001 (DB base and Alembic) must not start until explicit Nadav authorization.**
 
-So far, **TASK-P0-001** (skeleton, docs and Git baseline), **TASK-P0-002** (Docker Compose,
+### Phase 0 (closed) — what it built
+
+**Phase 0 — Dockerized Project Skeleton** created a minimal monorepo foundation that starts via
+Docker Compose, with documentation and Git baseline files, and **no business logic**. See
+`docs/tasks/phase-0/` for the per-task documents.
+
+**TASK-P0-001** (skeleton, docs and Git baseline), **TASK-P0-002** (Docker Compose,
 Dockerfiles and `.env.example`), **TASK-P0-003** (backend `/health` and config), **TASK-P0-004**
 (worker startup stub) and **TASK-P0-005** (frontend empty shell) have been performed. The backend
 serves a minimal `GET /health` smoke endpoint, the worker container runs a minimal **startup
@@ -35,9 +48,25 @@ Phase 0 is a **local development skeleton only**. It is:
 - **not** approved for upload processing (no upload / queue / AI flow exists yet).
 
 PostgreSQL, Redis and MinIO run **only as local infrastructure services** — Compose starts them,
-but they are **not** wired into any product flow in Phase 0. **Phase 1 is the AI Benchmark
-Harness only** and must remain isolated until it is explicitly approved. Repo docs stay **Draft**
-until a readiness review passes; nothing here authorizes production use or a later phase's scope.
+but they are **not** wired into any product flow. **Phase 1 was the AI Benchmark Harness only** and
+is **closed for the Basic local prototype only**; it stays isolated from the app flow, and the
+model/checkpoint remains local / out-of-band and out of Git (`docs/decisions/DEC-0004`). Repo docs
+stay **Draft** until a readiness review passes; nothing here authorizes production use or a later
+phase's scope.
+
+### Phase 2 status (readiness only)
+
+**Phase 2 — Backend Domain + DB Skeleton — is in readiness preparation, not implementation.**
+`docs/decisions/DEC-0005` fixes the DB foundation contract (PostgreSQL + sync SQLAlchemy + Alembic +
+psycopg3, `DeclarativeBase` with a deterministic naming convention, and a repr-hidden `database_url`
+sourced only through `backend/app/config.py`), and `docs/tasks/phase-2/` records the readiness fixes.
+
+No DB code exists yet: **no** models, **no** migrations, **no** ORM dependencies and **no** database
+connection. P2-001 (DB base and Alembic) is **prepared but not authorized**; P2-002 onward stay
+blocked on open product decisions. Phase 2 authorizes **no** upload API, queue processing, AI
+processing, storage client, signed URL generation, frontend UI, worker processing, production DB or
+public users. Throughout: **no audio bytes in DB**, **no checkpoint/model/local filesystem paths in
+DB**, **no signed URL string in DB**, and `storage_key` stays internal and out of client/API schemas.
 
 ## Local development (Compose-first)
 
