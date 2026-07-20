@@ -89,10 +89,12 @@ def test_alembic_config_and_script_directory_load():
     assert Path(script.dir).resolve() == ALEMBIC_DIR.resolve()
 
 
-def test_no_migration_revisions_exist_yet():
-    # P2-001 is scaffold only: the first revision arrives with the models.
+def test_core_models_migration_revision_exists():
+    # P2-002 adds exactly one revision — the core domain models (DEC-0006).
     versions = ALEMBIC_DIR / "versions"
-    assert [p.name for p in versions.glob("*.py")] == []
+    assert sorted(p.name for p in versions.glob("*.py")) == [
+        "p2_002_core_domain_models.py"
+    ]
     assert (versions / ".gitkeep").is_file()
 
 

@@ -1,9 +1,9 @@
-"""P2-001 DB base tests.
+"""DB base tests.
 
 Prove that the declarative base exposes the one shared metadata, that the DEC-0005
 naming convention is present verbatim (so migrations are deterministic), that
-importing app.db opens no database connection, and that P2-001 created no domain
-entities.
+importing app.db opens no database connection, and that the P2-002 core domain
+models are registered on the shared metadata.
 """
 
 import os
@@ -40,14 +40,23 @@ def test_metadata_carries_the_naming_convention():
     assert dict(Base.metadata.naming_convention) == EXPECTED_NAMING_CONVENTION
 
 
-def test_no_domain_models_defined():
-    # P2-001 is scaffold only: entities arrive in P2-002, which stays blocked.
-    assert Base.metadata.tables == {}
-    assert not list(Base.registry.mappers)
+def test_core_domain_models_registered():
+    # P2-002 registers the 8 core domain tables on the shared metadata (DEC-0006).
+    assert set(Base.metadata.tables) == {
+        "users",
+        "songs",
+        "audio_files",
+        "separation_jobs",
+        "tags",
+        "song_tags",
+        "usage_events",
+        "daily_usage",
+    }
+    assert list(Base.registry.mappers)
 
 
-def test_no_models_package_exists():
-    # A models package would mean P2-002 scope was pulled forward.
+def test_no_app_models_package_exists():
+    # Models live in app/db/models.py; an app/models package would be out of scope.
     assert not (APP_DIR / "models").exists()
 
 
