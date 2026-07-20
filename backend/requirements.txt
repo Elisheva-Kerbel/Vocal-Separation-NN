@@ -6,6 +6,16 @@
 fastapi>=0.115,<1.0
 uvicorn[standard]>=0.30,<1.0
 
+# --- Database (P2-001 / DEC-0005) — local development only. ---
+# Sync SQLAlchemy + Alembic over the psycopg3 sync driver. Scaffold only: no
+# domain models and no migrations exist yet, and nothing connects at import time.
+# psycopg[binary] ships wheels, so the image needs no build toolchain. No
+# redis / celery / boto3 / minio / storage / queue deps and no async DB driver:
+# those belong to their own later, approved phases.
+sqlalchemy>=2.0,<3.0
+alembic>=1.13,<2.0
+psycopg[binary]>=3.1,<4.0
+
 # Tests
 pytest>=8.0,<9.0
 httpx>=0.27,<1.0        # required by fastapi.testclient.TestClient
