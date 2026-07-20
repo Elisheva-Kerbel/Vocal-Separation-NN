@@ -1,37 +1,42 @@
 # P2-002 — Domain Models
 
-Status: **BLOCKED — guardrails only. Not authorized. Open product decisions must close first.**
+Status: **Decisions closed by DEC-0006 — pending Nadav implementation authorization. Do not implement yet.**
 Phase: 2 (Backend Domain + DB Skeleton) · Package: PKG-P2
-Depends on: P2-001 complete (authorized + accepted) · `docs/decisions/DEC-0005` · **open decisions below**
+Depends on: P2-001 complete (accepted) · `docs/decisions/DEC-0005` · **`docs/decisions/DEC-0006` (domain data contract)**
 Baseline: `stemspace-dev-pack-v0.1/tasks/phase-2/TASK-P2-002-domain-models.md`
 
-> **Guardrails only. Do not implement.** This document exists so that the security and design
-> boundaries are unambiguous **before** anyone writes an entity. It authorizes no models, no
-> migrations and no code. P2-002 is the highest-stakes task in Phase 2: the data model it creates
-> gates P3 and P4, and PKG-P2 warns that "contract changes after this point can stale later
-> evidence."
+> **Contract closed, not yet authorized.** The four blocking open decisions below are now **resolved
+> by `docs/decisions/DEC-0006`**. This document plus DEC-0006 are the active implementation contract.
+> Implementation still requires an **explicit Nadav authorization** — do not write models, migrations
+> or code until it is issued. P2-002 is the highest-stakes task in Phase 2: the data model it creates
+> gates P3 and P4, and PKG-P2 warns that "contract changes after this point can stale later evidence."
 
-## Blocking open decisions
+## Closed decisions (see DEC-0006)
 
-P2-002 **must not start** until these are decided by the human authorities. They are **not** resolved
-by DEC-0005, which covers the DB *foundation* only.
+The four decisions that previously blocked P2-002 are now decided in `docs/decisions/DEC-0006`; the
+code agent must **not** re-decide them:
 
-1. **Song and SeparationJob state values.** PKG-P2 says state names "should be reviewed before
-   closure"; they are defined **nowhere** in the pack. Only `PHASE-03` names User
-   `active/blocked/deleted`.
-2. **Field-level definitions for the 14 entities.** The pack names `User`, `Song`, `AudioFile`,
-   `SeparationJob`, `Tag`, `SongTag`, `Rating`, `Coupon`, `CouponRedemption`, `DailyUsage`,
-   `UsageEvent`, `SignedUrlGrant`, `ContentReport`, `AdminAuditEvent` — and specifies **zero fields**.
-   Created/updated timestamps are never mentioned anywhere in the pack.
-3. **UsageEvent uniqueness key.** "Unique success finalization by song" is an intent, not a key —
-   `(song_id)` vs `(user_id, song_id)` vs `(user_id, song_id, date)` is undecided, and the success
-   state it keys on does not exist until (1) closes.
-4. **`storage_key` format and owning entity.** That it stays internal is clear; its shape is not.
+1. **Song and SeparationJob state values** — fixed in DEC-0006 §3-enums
+   (`Song`: `uploaded/processing/ready/failed`; `SeparationJob`:
+   `queued/running/succeeded/failed/canceled`; `User`: `active/blocked/deleted`;
+   `AudioFile.purpose`: `original/vocals/background`).
+2. **Field-level definitions + timestamps** — fixed per-entity in DEC-0006 §4, with the global
+   `id`/`created_at`/`updated_at`/UTC/nullable conventions in §3.
+3. **UsageEvent uniqueness key** — fixed as **`UNIQUE(song_id, event_type)`** with
+   `separation_succeeded` finalising once per song only after `succeeded`+`ready` (DEC-0006 §8;
+   `R-005`/`R-006`).
+4. **`storage_key` format and owning entity** — fixed on `AudioFile` as an opaque internal key,
+   internal-only, never in API schemas (DEC-0006 §5).
 
-**Rule:** if these are still open when P2-002 is prompted, **stop and report a blocker**. Do not
-invent entity fields, state values or uniqueness keys. The source task's instruction to "add fields
-needed for MVP and future phases" is **not** authorization to design the data contract —
-`docs/coding-rules.md` §9: "No product or architecture decisions by the code agent."
+**Scope (DEC-0006 §2, §12):** P2-002 implements **8 tables** — `User`, `Song`, `AudioFile`,
+`SeparationJob`, `Tag`, `SongTag`, `UsageEvent`, `DailyUsage`. The other 6 entities (`Rating`,
+`Coupon`, `CouponRedemption`, `SignedUrlGrant`, `ContentReport`, `AdminAuditEvent`) have their
+contract defined in DEC-0006 but their **table creation is deferred** to their approved phases — do
+not create them now.
+
+**Rule:** implement exactly the DEC-0006 contract. Do not invent fields, states, keys, indexes or
+entities, and do not pull deferred tables forward — `docs/coding-rules.md` §9: "No product or
+architecture decisions by the code agent."
 
 ## Security guardrails (binding when P2-002 is later authorized)
 
@@ -56,19 +61,36 @@ needed for MVP and future phases" is **not** authorization to design the data co
 
 ## Required tests when implemented
 
-Beyond the source task's "model creation" and "migration" tests, these are **required** — the
-readiness gate found the audio-byte rule was an acceptance criterion with **manual inspection only**
-behind it, which leaves a High-severity risk (`R-004` neighbourhood) unguarded:
+The full, closed test contract is **DEC-0006 §13**; it supersedes the source task's undefined
+"model creation / migration" tests. All of the following must pass:
 
-1. **Automated no-audio-bytes-in-DB test.** Assert that **no** `LargeBinary` / `BYTEA` column exists
-   anywhere in `Base.metadata`. This converts a manual check into a permanent regression guard and is
-   cheap to write.
-2. **Automated no-path-columns test.** Assert no entity carries a checkpoint/model/local filesystem
-   path field.
-3. **Model creation test** and **migration test** (per the source task).
-4. **Deterministic migration check** — constraint/index names follow the DEC-0005 naming convention;
-   no backend-generated names.
-5. **State values match the approved decision** once it exists — not free-form strings.
+1. **Expected tables** — `Base.metadata` contains exactly the 8 implemented tables (no deferred or
+   extra table).
+2. **Expected columns** — each entity has exactly the DEC-0006 §4 fields (name + nullability).
+3. **Enum values** — each enum column allows exactly the DEC-0006 §3-enums set (asserted against the
+   `CHECK`), never free-form strings.
+4. **Relationships** — the DEC-0006 §9 foreign keys exist and point at the right tables.
+5. **Uniqueness constraints** — `users.email`; `audio_files (song_id, purpose)` and `storage_key`;
+   `tags.slug`; `song_tags` composite PK; **`usage_events (song_id, event_type)`**;
+   **`daily_usage (user_id, usage_date)`**.
+6. **Indexes** — the DEC-0006 §10 indexes exist with DEC-0005-convention names (no
+   backend-generated names).
+7. **No audio-bytes columns** — assert **no `LargeBinary` / `BYTEA`** column anywhere in
+   `Base.metadata` (converts the previously manual-only check into a permanent guard; `R-004`).
+8. **No checkpoint/model/local-path columns** — no `checkpoint_path`, `model_path`,
+   `local_model_root`, `local_path` or filesystem-path field on any entity.
+9. **No signed-URL-string columns** — no `signed_url` / URL-token column on any entity.
+10. **No public-URL columns** — no public/permanent object-URL column.
+11. **`storage_key` internal only** — present on `AudioFile`; the P2-003 schema test proves it is not
+    serialised into any API/client schema.
+12. **`modelTier` logical only** — `SeparationJob.model_tier` is the string enum `basic`, never a path.
+13. **UsageEvent idempotency uniqueness** — the `(song_id, event_type)` unique constraint exists.
+14. **DailyUsage uniqueness** — the `(user_id, usage_date)` unique constraint exists.
+15. **Alembic compatibility** — the initial migration builds the 8 tables; a second autogenerate is
+    stable (deterministic DEC-0005 names, no drift).
+16. **Existing P2-001 tests still pass** — DB base/session/config/Alembic-scaffold suite unaffected.
+17. **Phase 0/1 regressions still pass** — `/health`, config, worker startup and the AI-boundary
+    lazy-import test are unaffected.
 
 ## Out of scope
 
@@ -78,6 +100,8 @@ library/resumable upload/extra stems.
 
 ## Stop gate
 
-Do not start. P2-002 begins only after P2-001 is accepted **and** the blocking open decisions above
-are recorded by their authorities **and** an explicit prompt authorizes it. If prompted while
-decisions are open: **report a blocker, implement nothing.**
+P2-001 is accepted and the blocking decisions are now recorded in `docs/decisions/DEC-0006`. P2-002
+begins only after an **explicit Nadav implementation authorization** for P2-002. Until that prompt is
+issued, **implement nothing** — no models, no migration, no code. When authorized, implement exactly
+the DEC-0006 contract (the 8 implemented tables), run the §"Required tests when implemented" contract,
+and stop; do not continue to P2-003.
