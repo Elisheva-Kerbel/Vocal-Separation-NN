@@ -39,7 +39,10 @@ pack into repo-local, actionable documentation.
   values, relationships, uniqueness/idempotency keys, indexes and the `storage_key` shape) so
   P2-002 can be implemented mechanically; `DEC-0007` fixes the P2-003 external Pydantic schema
   contract (the read-only client schema class list, exact field sets, Pydantic v2 style and the
-  forbidden-field boundary) so P2-003 can be implemented mechanically.
+  forbidden-field boundary) so P2-003 can be implemented mechanically; `DEC-0008` fixes the P2-004
+  seed taxonomy (a labelled four-tag placeholder) and the automated DB-test execution policy (SQLite
+  in-memory via `metadata.create_all()`; Compose Postgres/Alembic optional manual verification only)
+  so P2-004 can be implemented mechanically.
 - `coding-rules.md` — stack conventions, minimal-code policy, security and Phase 0 boundaries.
 - `git-workflow.md` — commit conventions (cadence, commit size, message style).
 - `prd/` — PRD references, added when the PRD artifact is supplied.

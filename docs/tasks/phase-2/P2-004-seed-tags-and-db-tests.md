@@ -1,52 +1,79 @@
 # P2-004 — Seed Tags and DB Tests
 
-Status: **BLOCKED — guardrails only. Not authorized. Depends on P2-002, which is itself blocked.**
+Status: **Contract closed by DEC-0008 — pending Nadav implementation authorization. Do not implement yet.**
 Phase: 2 (Backend Domain + DB Skeleton) · Package: PKG-P2
-Depends on: P2-002 complete (authorized + accepted) · `docs/decisions/DEC-0005` · **open decisions below**
+Depends on: P2-002 complete (accepted) · P2-003 complete (accepted) · `docs/decisions/DEC-0005`,
+`DEC-0006` · **`docs/decisions/DEC-0008-p2-seed-tags-and-db-test-policy.md` (seed taxonomy + DB-test
+execution policy)**
 Baseline: `stemspace-dev-pack-v0.1/tasks/phase-2/TASK-P2-004-seed-tags-and-db-tests.md`
 
-> **Guardrails only. Do not implement.** This document aligns the required DB tests and closes the
-> "invent a key" escape hatch before anyone writes a constraint. It authorizes no script, no tests
-> and no code.
+> **Contract closed, not yet authorized.** The two decisions that previously blocked P2-004 — the seed
+> tag taxonomy and the automated DB-test execution policy — are now **resolved by
+> `docs/decisions/DEC-0008-p2-seed-tags-and-db-test-policy.md`**. This document plus DEC-0008 are the
+> active implementation contract. **P2-004 remains pending an explicit Nadav implementation
+> authorization** — do not write the seed script or tests until it is issued. When authorized,
+> implement **exactly** the DEC-0008 contract; the code agent must **not** re-decide any of it
+> (`docs/coding-rules.md` §9).
 
-## Blocking open decisions
+## Closed decisions (see DEC-0008)
 
-1. **UsageEvent uniqueness / idempotency key.** `PHASE-02` requires "UsageEvent supports unique
-   success finalization by song"; `R-006` requires "idempotency and unique success constraints";
-   PKG-P2 requires the strategy be "compatible with Phase 7". None of these state the **key**:
-   `(song_id)` vs `(user_id, song_id)` vs `(user_id, song_id, date)`.
-2. **The success/Ready state value** the constraint keys on — undefined until the Song /
-   SeparationJob state decision closes (see `P2-002-domain-models.md`). `R-005` requires that failed
-   processing never counts toward quota, so the constraint must key on a *specific* success state
-   that does not yet exist.
-3. **Default tag taxonomy.** Not supplied.
+The decisions that previously left this task BLOCKED are now fixed; the code agent must **not**
+re-decide them:
 
-**Rule — this closes an escape hatch.** The source task permits "UsageEvent uniqueness support is
-test-covered **or blocker documented**" and "add unapproved tag taxonomy if not supplied: use
-placeholder/minimal seed **or mark blocker**". When state/idempotency decisions are missing, the
-task **must stop and report a blocker rather than inventing keys**. A guessed uniqueness key is worse
-than no key: it silently encodes a quota rule that Product never approved, into a constraint that
-Phase 7 then inherits. Do not choose the lenient branch of that "or" to keep moving.
+1. **UsageEvent uniqueness / idempotency key** — **resolved** as **`UNIQUE(song_id, event_type)`**
+   (`DEC-0006` §8), already implemented and structurally tested in P2-002.
+2. **The success/Ready state value** — **resolved**: a billable `separation_succeeded` row exists only
+   when `SeparationJob.status = succeeded` **and** `Song.status = ready` (`DEC-0006` §3-enums, §8),
+   already implemented.
+3. **Default tag taxonomy** — **resolved** as a **labelled placeholder** set of exactly four tags
+   (DEC-0008 §2). Not final product taxonomy; implies no public-library behavior.
+4. **Automated DB-test execution policy** — **resolved**: SQLite in-memory built via
+   `metadata.create_all()`; the suite stays runnable without live PostgreSQL (DEC-0008 §5, §6).
 
-For tags specifically: a **minimal placeholder seed is acceptable** if and only if it is clearly
-labelled as placeholder and carries no product-taxonomy claim. Uniqueness keys have **no** equivalent
-placeholder — report the blocker.
+**Rule:** implement exactly the DEC-0008 contract. Do not invent tags, uniqueness keys, finalizer
+logic or a test-DB policy, and do not add any dependency.
+
+## Implementation notes (when later authorized)
+
+- **Use exactly the four placeholder tags** from DEC-0008 §2 — `vocals`→Vocals, `background`→Background,
+  `instrumental`→Instrumental, `demo`→Demo. **No other tag** may be seeded.
+- **Create the seed script (`backend/scripts/seed_tags.py`) only if explicitly authorized** in the
+  P2-004 implementation prompt. It must be idempotent by `slug`, run only on deliberate operator
+  invocation (never on app or Docker Compose startup), not be an Alembic data migration, target local
+  Compose Postgres only, and insert **only** the four tags (DEC-0008 §3, §4).
+- **Automated tests use SQLite in-memory** (`metadata.create_all()`) for seed-idempotency and
+  constraint checks (DEC-0008 §5, §7). The automated suite must remain runnable with **no** live
+  database.
+- **Live Compose Postgres / `alembic upgrade` is optional manual verification only** — never required
+  for automated P2-004 acceptance, never a production DB (DEC-0008 §6).
+- **No finalizer / business-logic tests.** Failed-processing is asserted **structurally only** in
+  P2-004; **behavioral failed-processing tests are deferred to P5/P7** when finalization logic exists
+  (DEC-0008 §8).
+- **No API / upload / queue / Redis / storage / MinIO/S3 / AI / frontend / worker work**, no new or
+  deferred entities, no schema changes, no production DB (DEC-0008 §9, §11).
 
 ## Required DB tests when implemented
 
-1. **Seed idempotency test** — running the seed twice produces the same rows, no duplicates, no
-   error. Safe duplicate-seed behavior.
-2. **UsageEvent uniqueness / idempotency test** — once the key is approved, prove the DB **rejects a
-   duplicate success finalization** for the same key (a real constraint violation, not
-   application-level checking). This is the evidence Phase 7 quota finalization depends on, and it
-   guards `R-006` (duplicate worker/finalizer double-counts usage).
-3. **Failed-processing test** — prove a non-success job does **not** create a finalized usage record
-   (`R-005`).
-4. **Deterministic constraint naming** — the unique constraint's name follows the DEC-0005 naming
-   convention (`uq_%(table_name)s_%(column_0_name)s`), not a backend-generated name.
-5. **Automated no-audio-bytes-in-DB test** — see `P2-002-domain-models.md`; **no audio bytes in DB**,
-   no `LargeBinary` / `BYTEA` audio columns.
-6. **Phase 0/1 regression tests still pass.**
+The full, closed test contract is **DEC-0008 §10**; the code agent must satisfy it exactly. Live-engine
+tests use **SQLite in-memory** built via `metadata.create_all()` (DEC-0008 §5) — the automated suite
+stays runnable with **no** live PostgreSQL. In summary:
+
+1. **Seed idempotency test** — running the seed twice against a fresh SQLite in-memory DB produces the
+   same four tag rows, no duplicates, no error (DEC-0008 §4).
+2. **UsageEvent uniqueness / idempotency test** — the key is approved (`UNIQUE(song_id, event_type)`,
+   `DEC-0006` §8): prove the DB **rejects a duplicate success finalization** (a real constraint
+   violation, not application-level checking). Evidence Phase 7 quota finalization depends on; guards
+   `R-006`. Companion uniqueness checks for `Tag.slug`, `SongTag`, `DailyUsage` and
+   `AudioFile (song_id, purpose)` per DEC-0008 §7.
+3. **Failed-processing (structural only)** — assert `UsageEvent.event_type` allows only
+   `separation_succeeded` and that no P2 code path creates usage for a `failed`/`canceled` job. **Do
+   not** invent or exercise a finalizer; **behavioral failed-processing tests are deferred to P5/P7**
+   (DEC-0008 §8).
+4. **Deterministic constraint naming** — unique-constraint names follow the DEC-0005 convention
+   (e.g. `uq_tags_slug`, `uq_usage_events_song_id`), not backend-generated names.
+5. **Automated no-audio-bytes-in-DB / no-path / no-URL / storage_key-internal** guards — including the
+   seed path; **no audio bytes in DB**, no `LargeBinary` / `BYTEA` audio columns (DEC-0008 §9).
+6. **Existing P2-001/P2-002/P2-003 tests still pass; Phase 0/1 regression tests still pass.**
 
 ## Security guardrails (binding)
 
@@ -69,6 +96,10 @@ generation; AI integration; frontend; worker processing; production DB; producti
 
 ## Stop gate
 
-Do not start. P2-004 begins only after P2-002 is accepted, the blocking decisions above are recorded,
-and an explicit prompt authorizes it. If prompted while the uniqueness key is undecided: **report a
-blocker, invent nothing.**
+Do not start. The blocking decisions are now closed by
+`docs/decisions/DEC-0008-p2-seed-tags-and-db-test-policy.md`, but P2-004 implementation begins only
+after P2-002/P2-003 are accepted (they are) **and** an explicit Nadav authorization for P2-004 is
+issued. When authorized, implement exactly the DEC-0008 contract (seed only the four placeholder tags;
+SQLite in-memory automated tests; Compose Postgres/Alembic optional manual verification only;
+structural failed-processing only), run the test contract above, return the evidence report, and stop;
+do not continue to Phase 3.
