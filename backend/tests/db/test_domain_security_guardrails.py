@@ -97,9 +97,15 @@ def test_model_tier_is_logical_string_enum_not_a_path():
 
 
 def test_no_api_schema_or_service_surface_created():
-    # P2-002 adds no API routes, no client schemas, no service/repository layer.
-    for name in ("api", "routers", "schemas", "services", "models"):
+    # P2-003 adds the read-only Pydantic schema layer, so app/schemas is now
+    # allowed (DEC-0007 §10). Everything else stays forbidden: no API routes, no
+    # router surface, no service/repository layer, and no app/models package
+    # (domain models live in app/db/models.py).
+    for name in ("api", "routers", "services", "models"):
         assert not (APP_DIR / name).exists(), f"unexpected app/{name}"
+    # The permitted P2-003 surface: schemas are allowed, but only as a package of
+    # read-only schema classes — never a route/queue/storage/AI integration point.
+    assert (APP_DIR / "schemas").is_dir()
 
 
 def test_models_module_imports_no_forbidden_clients():
