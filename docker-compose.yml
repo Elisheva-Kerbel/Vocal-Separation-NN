@@ -59,6 +59,19 @@ services:
       - minio
     ports:
       - "${BACKEND_PORT:-8000}:8000"
+    environment:
+      # Container-side path of the read-only model mount below. Set here (not only
+      # in .env) so the container always sees the mount point and never a host
+      # path: Compose `environment` wins over `env_file`. Not a secret.
+      LOCAL_MODEL_ROOT: /models
+    volumes:
+      # Local Basic model prototype (DEC-0004), READ-ONLY. The model folder lives
+      # OUTSIDE the repository and is never copied into it: LOCAL_MODEL_HOST_ROOT
+      # is a local, git-ignored .env value (never committed). The default keeps
+      # `docker compose config` working without .env; local-data/ is git-ignored.
+      # No checkpoint is loaded by the app — /models is read by the local
+      # benchmark CLI only, on demand.
+      - ${LOCAL_MODEL_HOST_ROOT:-./local-data/models}:/models:ro
     # Runs the FastAPI /health app via the image CMD (uvicorn on 0.0.0.0:8000).
     # Host port ${BACKEND_PORT} maps to the container's fixed 8000 (see ports).
     # /health opens no connections; depends_on only orders startup.
