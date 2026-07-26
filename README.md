@@ -19,10 +19,12 @@ This repository is being built in **small, testable phases**. It is **not** buil
 - **Phase 1 — closed for Basic local prototype only** (`docs/decisions/DEC-0004`). This approves
   **no** production, **no** Professional tier, and **no** upload, queue, DB, storage or public-user
   scope.
-- **Phase 2 — not implemented yet.** No DB code exists: no models, no migrations, no ORM
-  dependencies, no database connection.
-- **P2-000 readiness fixes — pending Nadav review / closeout** (`docs/tasks/phase-2/P2-000-readiness-fixes.md`).
-- **P2-001 (DB base and Alembic) must not start until explicit Nadav authorization.**
+- **Phase 2 — closed for the DB / domain skeleton** (`docs/decisions/DEC-0005`–`DEC-0008`): domain
+  models, the Alembic migration, read-only schemas and seed tags exist. No upload, queue, storage,
+  auth or public-user scope.
+- **Fast Demo track — planning only, authorized up to `docs/decisions/DEC-0009`. FAST-DEMO-003 has not
+  started.**
+- **Not approved: production, commercial use, and the Professional tier.**
 
 ### Phase 0 (closed) — what it built
 
@@ -54,16 +56,16 @@ model/checkpoint remains local / out-of-band and out of Git (`docs/decisions/DEC
 stay **Draft** until a readiness review passes; nothing here authorizes production use or a later
 phase's scope.
 
-### Phase 2 status (readiness only)
+### Phase 2 status (closed — DB / domain skeleton)
 
-**Phase 2 — Backend Domain + DB Skeleton — is in readiness preparation, not implementation.**
-`docs/decisions/DEC-0005` fixes the DB foundation contract (PostgreSQL + sync SQLAlchemy + Alembic +
-psycopg3, `DeclarativeBase` with a deterministic naming convention, and a repr-hidden `database_url`
-sourced only through `backend/app/config.py`), and `docs/tasks/phase-2/` records the readiness fixes.
+**Phase 2 — Backend Domain + DB Skeleton — is closed.** `docs/decisions/DEC-0005` fixes the DB
+foundation contract (PostgreSQL + sync SQLAlchemy + Alembic + psycopg3, `DeclarativeBase` with a
+deterministic naming convention, and a repr-hidden `database_url` sourced only through
+`backend/app/config.py`); `DEC-0006` fixes the domain data contract, `DEC-0007` the read-only schema
+contract and `DEC-0008` the seed taxonomy / DB-test policy. `docs/tasks/phase-2/` records the tasks.
 
-No DB code exists yet: **no** models, **no** migrations, **no** ORM dependencies and **no** database
-connection. P2-001 (DB base and Alembic) is **prepared but not authorized**; P2-002 onward stay
-blocked on open product decisions. Phase 2 authorizes **no** upload API, queue processing, AI
+P2-001 (DB base + Alembic), P2-002 (domain models), P2-003 (read schemas) and P2-004 (seed tags and DB
+tests) are implemented and accepted. Phase 2 authorizes **no** upload API, queue processing, AI
 processing, storage client, signed URL generation, frontend UI, worker processing, production DB or
 public users. Throughout: **no audio bytes in DB**, **no checkpoint/model/local filesystem paths in
 DB**, **no signed URL string in DB**, and `storage_key` stays internal and out of client/API schemas.
