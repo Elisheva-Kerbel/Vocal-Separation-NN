@@ -35,9 +35,29 @@ def test_health_exposes_no_secrets():
 
 
 def test_no_out_of_scope_routes():
-    # Phase 0 boundary: /health is the only application route (FastAPI's own
-    # /docs, /openapi.json etc. are framework defaults, not added routers).
-    paths = {getattr(route, "path", None) for route in app.routes}
-    assert "/health" in paths
-    for forbidden in ("/upload", "/auth", "/login", "/songs", "/jobs", "/stems"):
+    # Route boundary guard, deliberately re-scoped by FAST-DEMO-003 (not removed):
+    # DEC-0009 §5 allows exactly two local-demo routes under /demo, on top of
+    # /health. Everything else stays out of scope. (FastAPI's own /docs,
+    # /openapi.json etc. are framework defaults, not added routers.)
+    # The OpenAPI schema is the reliable list of *application* routes: app.routes
+    # keeps an included router as one opaque entry, and also carries FastAPI's own
+    # /docs and /openapi.json. Exact equality proves no extra route slipped in.
+    paths = set(app.openapi()["paths"])
+    assert paths == {
+        "/health",
+        "/demo/separate",
+        "/demo/jobs/{job_id}/stems/{stem}",
+    }
+
+    # No product route outside the /demo prefix — including these by exact path.
+    for forbidden in (
+        "/upload",
+        "/auth",
+        "/login",
+        "/songs",
+        "/library",
+        "/admin",
+        "/jobs",
+        "/stems",
+    ):
         assert forbidden not in paths

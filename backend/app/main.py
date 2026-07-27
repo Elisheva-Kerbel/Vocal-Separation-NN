@@ -1,15 +1,18 @@
-"""StemSpace backend — Phase 0 FastAPI skeleton.
+"""StemSpace backend — FastAPI application.
 
-Exposes a single ``GET /health`` smoke-test endpoint. Phase 0 boundary: no other
-application routes, no auth, no DB / Redis / MinIO / queue / AI access. /health
-opens no connections and returns no configuration or secret values.
+Exposes ``GET /health`` (Phase 0) plus the two local-demo routes under ``/demo``
+(FAST-DEMO-003, authorized by ``docs/decisions/DEC-0009-local-demo-vertical-slice.md``).
+No auth, no DB / Redis / MinIO / queue access. /health opens no connections and
+returns no configuration or secret values.
 """
 
 from fastapi import FastAPI
 
 from app.config import SERVICE_NAME
+from app.demo import router as demo_router
 
 app = FastAPI(title="StemSpace Backend", version="0.1.0")
+app.include_router(demo_router)
 
 
 @app.get("/health")
