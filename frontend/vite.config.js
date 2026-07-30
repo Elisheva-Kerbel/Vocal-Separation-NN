@@ -1,16 +1,24 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// Minimal Vite config for the Phase 0 frontend empty shell (P0-005).
+// Minimal Vite config for the local demo page (P0-005, extended by FAST-DEMO-004).
 //
 // server.host binds the dev server to 0.0.0.0 inside the container so it is
 // reachable from the host; server.port fixes the port that docker-compose maps
-// via FRONTEND_PORT. No proxy, no backend API wiring, no env exposure — the
-// shell makes no backend calls in Phase 0.
+// via FRONTEND_PORT.
+//
+// server.proxy forwards the demo routes to the backend over Compose's internal
+// network, so the browser only ever sees same-origin `/demo/...` URLs. A dev proxy
+// is used instead of CORS config so the backend stays untouched and no backend
+// origin, port or env value is exposed to the browser bundle. `backend:8000` is the
+// Compose service name and its fixed container port — not a host path or a secret.
 export default defineConfig({
   plugins: [react()],
   server: {
     host: true,
     port: 5173,
+    proxy: {
+      '/demo': 'http://backend:8000',
+    },
   },
 })
