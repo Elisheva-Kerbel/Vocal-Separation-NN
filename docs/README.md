@@ -36,6 +36,10 @@ pack into repo-local, actionable documentation.
 - `tasks/fast-demo/` — local demo vertical slice task documents (`FAST-DEMO-003`/`004`/`005`). They are
   **planning stubs only**: each is **not authorized** and requires an explicit Nadav prompt before any
   implementation. Their contract is `decisions/DEC-0009-local-demo-vertical-slice.md`.
+- `tasks/phase-3/` — Phase 3 (auth) task documents `P3-001`…`P3-004`. Also **planning stubs only**, and
+  additionally **gated on `decisions/DEC-0010-phase-3-auth-contract.md` being accepted** — that record is
+  itself *Proposed*, so nothing in this folder is authorized. The Dev Pack has no `PKG-P3` and no
+  `tasks/phase-3/`, so these repo-local stubs supply the task split themselves (DEC-0010 §9 B1, §10).
 - `decisions/` — decision records (DEC-####) capturing implementation boundaries. `DEC-0005` fixes
   the DB base, sync SQLAlchemy session, config/DB-URL handling and Alembic migration determinism
   for Phase 2; `DEC-0006` fixes the Phase 2 domain data contract (per-entity fields, state/enum
@@ -48,7 +52,11 @@ pack into repo-local, actionable documentation.
   so P2-004 can be implemented mechanically; `DEC-0009` authorizes the **local demo vertical slice**
   and its tightly scoped, enumerated deviations (AI inference inside one local request, `/demo` routes,
   a demo upload/result page, local ephemeral disk storage — with no queue, worker, DB write, MinIO/S3,
-  auth or Professional), granted to the demo track only and non-precedential.
+  auth or Professional), granted to the demo track only and non-precedential; `DEC-0010` **proposes** the
+  Phase 3 auth contract (opaque server-side sessions over JWT, stdlib `hashlib.scrypt` over a hashing
+  dependency, cookie flags, lifetime, signup and account-enumeration policy, the `users`/`sessions` schema
+  additions and the four-task split) together with the rejected alternatives and the authority blockers it
+  does **not** close. It is **Proposed — pending Nadav decision** and authorizes no code.
 - `coding-rules.md` — stack conventions, minimal-code policy, security and Phase 0 boundaries.
 - `git-workflow.md` — commit conventions (cadence, commit size, message style).
 - `prd/` — PRD references, added when the PRD artifact is supplied.
