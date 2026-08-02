@@ -70,7 +70,7 @@ export default function App() {
         <section className="card processing">
           <span className="spinner" aria-hidden="true" />
           <p aria-live="polite">
-            Separating vocals and background. This can take around 30–60 seconds.
+            Separating vocals and background. This can take a couple of minutes.
           </p>
         </section>
       ) : (
