@@ -1,15 +1,22 @@
-/* Local demo page styling (FAST-DEMO-004) — plain CSS, no UI framework, no inline
-   styles (DEC-0009 §6 / D8). One deliberate dark theme, one column, four states. */
+/* StemSpace local demo styling (FAST-DEMO-004) — plain CSS, no framework, no inline
+   styles (DEC-0009 D8). One dark theme, one column of sections. */
 :root {
   color-scheme: dark;
-  --bg: #0e1116;
-  --card: #171b22;
-  --line: #262c36;
-  --text: #e7ebf0;
-  --muted: #9aa4b2;
-  --accent: #5b8cff;
+  --bg: #0b0e13;
+  --panel: #141821;
+  --raised: #1b202b;
+  --line: #262c38;
+  --text: #e8ecf2;
+  --muted: #98a2b3;
+  --accent: #6d8cff;
+  --accent-soft: rgba(109, 140, 255, 0.14);
+  --ok: #4ade80;
   font-family: system-ui, -apple-system, sans-serif;
-  line-height: 1.5;
+  line-height: 1.55;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
@@ -18,97 +25,218 @@ body {
   color: var(--text);
 }
 
-.page {
-  max-width: 34rem;
-  margin: 0 auto;
-  padding: 4rem 1.5rem;
-}
-
-.head {
-  margin-bottom: 2rem;
-}
-
-.head h1 {
-  margin: 0;
-  font-size: 2rem;
+h1,
+h2,
+h3 {
   letter-spacing: -0.02em;
 }
 
-.tag {
-  margin: 0.25rem 0 0;
-  color: var(--muted);
+.wrap {
+  width: 100%;
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* --- top bar --- */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  border-bottom: 1px solid var(--line);
+  background: rgba(11, 14, 19, 0.85);
+  backdrop-filter: blur(8px);
+}
+
+.topbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 3.5rem;
+}
+
+.brand {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
   font-size: 0.875rem;
 }
 
-.card {
-  margin-bottom: 1rem;
-  padding: 1.5rem;
-  border: 1px solid var(--line);
-  border-radius: 0.75rem;
-  background: var(--card);
-}
-
-.card h2 {
-  margin: 0 0 0.75rem;
-  font-size: 1rem;
-}
-
-input[type='file'] {
-  max-width: 100%;
+.nav a {
   color: var(--muted);
-  font-size: 0.875rem;
+  text-decoration: none;
 }
 
-input[type='file']::file-selector-button {
-  margin-right: 0.75rem;
-  padding: 0.5rem 0.9rem;
+.nav a:hover {
+  color: var(--text);
+}
+
+.ghost {
+  padding: 0.35rem 0.8rem;
   border: 1px solid var(--line);
   border-radius: 0.5rem;
-  background: #202632;
-  color: var(--text);
+  background: none;
+  color: var(--muted);
   font: inherit;
-  cursor: pointer;
+  font-size: 0.875rem;
 }
 
-.hint {
-  margin: 0.75rem 0 1.25rem;
+.ghost:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* --- hero --- */
+.hero {
+  padding: 4.5rem 0 3.5rem;
+  background:
+    radial-gradient(60rem 26rem at 50% -8rem, var(--accent-soft), transparent 70%),
+    var(--bg);
+  text-align: center;
+}
+
+.pill {
+  display: inline-block;
+  margin: 0 0 1.25rem;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--raised);
   color: var(--muted);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: clamp(1.9rem, 5vw, 3rem);
+  line-height: 1.15;
+}
+
+.hero h1 em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+.lede {
+  max-width: 34rem;
+  margin: 1rem auto 2.5rem;
+  color: var(--muted);
+}
+
+/* --- the working panel --- */
+.panel {
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--panel);
+  text-align: left;
+}
+
+.drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 2.5rem 1.5rem;
+  border: 1px dashed var(--line);
+  border-radius: 0.75rem;
+  background: var(--raised);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.drop:hover,
+.drop.over {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.drop input {
+  display: none;
+}
+
+.picked {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1rem 0 0;
+  font-size: 0.9375rem;
+}
+
+.dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--ok);
 }
 
 .btn {
+  display: block;
   width: 100%;
-  padding: 0.7rem 1rem;
+  margin-top: 1.25rem;
+  padding: 0.75rem 1rem;
   border: 0;
-  border-radius: 0.5rem;
+  border-radius: 0.6rem;
   background: var(--accent);
   color: #fff;
   font: inherit;
   font-weight: 600;
+  text-align: center;
+  text-decoration: none;
   cursor: pointer;
 }
 
+.btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
 .btn:disabled {
-  background: #2a3140;
+  background: var(--raised);
   color: var(--muted);
   cursor: not-allowed;
 }
 
-.processing {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
+.btn.secondary {
+  margin: 0;
+  border: 1px solid var(--line);
+  background: var(--raised);
+  color: var(--text);
+  font-weight: 500;
 }
 
-.processing p {
+.row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.row > * {
+  flex: 1;
+}
+
+/* --- processing --- */
+.working {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 0;
+}
+
+.working-title {
   margin: 0;
-  color: var(--muted);
+  font-weight: 600;
 }
 
 .spinner {
   flex: none;
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1.5rem;
+  height: 1.5rem;
   border: 2px solid var(--line);
   border-top-color: var(--accent);
   border-radius: 50%;
@@ -127,20 +255,47 @@ input[type='file']::file-selector-button {
   }
 }
 
-audio {
+/* --- result --- */
+.segmented {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  background: var(--raised);
+}
+
+.seg {
+  flex: 1;
+  padding: 0.5rem;
+  border: 0;
+  border-radius: 0.45rem;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+
+.seg.on {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.player {
   width: 100%;
+  margin-top: 1rem;
 }
 
-.download {
-  display: inline-block;
-  margin-top: 0.75rem;
-  color: var(--accent);
+.player.hidden {
+  display: none;
+}
+
+.hint {
+  margin: 0.6rem 0 0;
+  color: var(--muted);
   font-size: 0.875rem;
-  text-decoration: none;
-}
-
-.download:hover {
-  text-decoration: underline;
 }
 
 .error {
@@ -151,4 +306,106 @@ audio {
   background: #2a1618;
   color: #ffb4ac;
   font-size: 0.9375rem;
+}
+
+/* --- content bands --- */
+.band {
+  padding: 3.5rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.band h2 {
+  margin: 0 0 1.5rem;
+  font-size: 1.35rem;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+
+.grid.two {
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+}
+
+.step,
+.tier {
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: var(--panel);
+}
+
+.step h3,
+.tier h3 {
+  margin: 0.5rem 0 0.4rem;
+  font-size: 1rem;
+}
+
+.step p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.step.muted {
+  background: none;
+  border-style: dashed;
+}
+
+.num {
+  color: var(--accent);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.tier.live {
+  border-color: var(--accent);
+}
+
+.tier-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.tier-head h3 {
+  margin: 0;
+}
+
+.tier ul {
+  margin: 0.9rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.badge {
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--raised);
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.badge.on {
+  border-color: transparent;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+footer {
+  padding: 2rem 0 3rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+footer .badge {
+  margin: 0 0.35rem;
 }

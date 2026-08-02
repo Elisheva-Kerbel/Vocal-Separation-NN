@@ -20,6 +20,33 @@ const MESSAGES = {
 
 const FALLBACK = 'Something went wrong. Try again.'
 
+// Mirrors the backend's own limits (DEC-0009 §8) so an obviously invalid pick is
+// rejected instantly instead of after uploading megabytes. The backend still
+// enforces both — this is a courtesy check, never the security boundary.
+export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024
+const ACCEPTED_EXTENSIONS = ['.mp3', '.wav']
+
+/**
+ * Check a picked file against the backend's limits.
+ *
+ * @param {File} file
+ * @returns {string} an empty string when the file is acceptable, otherwise a
+ *   message identical to the one the backend would return for the same problem.
+ */
+export function validateFile(file) {
+  const named = file.name.toLowerCase()
+  if (!ACCEPTED_EXTENSIONS.some((extension) => named.endsWith(extension))) {
+    return MESSAGES.unsupported_media_type
+  }
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return MESSAGES.payload_too_large
+  }
+  if (file.size === 0) {
+    return MESSAGES.empty_body
+  }
+  return ''
+}
+
 /**
  * Separate one file into its stems.
  *
