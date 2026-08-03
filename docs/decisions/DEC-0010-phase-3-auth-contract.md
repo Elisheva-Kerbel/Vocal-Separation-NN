@@ -1,7 +1,9 @@
 # DEC-0010 — Phase 3 auth mechanism and task split
 
-Status: **Proposed — pending Nadav decision. Authorizes no code.**
-Not an implementation authorization. Not production-approved. No public users. No commercial approval.
+Status: **Approved for Phase 3 Local MVP implementation** (Nadav, 2026-08-03).
+Not production-approved. Not public-launch-approved. No public users. No commercial approval.
+The approval covers local MVP auth only — it approves no billing, admin/RBAC, upload/private storage,
+queue/worker, public library or Professional work.
 
 Phase: 3 (Auth + User Account Foundation) · Package: **none — no `PKG-P3` exists** (§9 B1)
 Recorded by: the Phase 3 readiness gate run after the FAST-DEMO track closed
@@ -149,9 +151,10 @@ Executed **one at a time**, in order, each with an evidence report and a stop ga
 
 ## 11. Authorization boundary
 
-- **DEC-0010 authorizes no code.** No column, migration, route, guard, module or commit follows from
-  this record alone. Each P3 task begins only after Nadav reviews this record and issues an explicit
-  implementation authorization for that task.
+- ~~**DEC-0010 authorizes no code.**~~ **Superseded by the Status line above.** Nadav accepted D1–D9 for
+  **Local MVP implementation** on 2026-08-03 and authorized P3-001→P3-004 as one batch, so the per-task
+  stop gates in §10 are satisfied for that batch. The authorization is scoped to local MVP auth; it grants
+  nothing in §6 (out of scope) and no production, public-launch, billing, admin or commercial approval.
 - Where this record and the read-only Dev Pack differ **for Phase 3**, this record wins once approved;
   the Dev Pack remains authoritative for everything it does not supersede.
 - The decisions here are **Phase 3 scoped**. They do not amend `coding-rules.md`, `DEC-0003`,
