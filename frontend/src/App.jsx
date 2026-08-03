@@ -1,16 +1,21 @@
-// StemSpace local demo page (FAST-DEMO-004) — LOCAL DEMO ONLY.
+// StemSpace local demo page (FAST-DEMO-004) + local MVP accounts (P3-004).
 //
 // One page. The upload -> separate -> compare flow is REAL and runs against the
-// local Basic model. Everything else on the page is presentation, and anything not
-// built yet is labelled `Planned` rather than mocked up as if it worked: no invented
-// price, no fake library rows, no sign-in that pretends to authenticate. That keeps
-// the richer product framing honest about what exists (DEC-0009 §4 — no production
+// local Basic model, and sign-up / sign-in are now REAL too (DEC-0010, approved for
+// Local MVP) — the `Sign in` control is no longer inert. Everything else on the page
+// is presentation, and anything not built yet is labelled `Planned` rather than
+// mocked up as if it worked: no invented price, no fake library rows. That keeps the
+// richer product framing honest about what exists (DEC-0009 §4 — no production
 // claim, and Professional must never be shown as implemented).
 //
+// Accounts do not gate anything yet: the demo stays fully usable signed out, and
+// there is no library, billing, admin or tier behaviour behind signing in.
+//
 // Plain React + CSS, no UI library, no new dependency (DEC-0009 D8). Every backend
-// call goes through ./api/demo.js (docs/coding-rules.md §2).
+// call goes through ./api/demo.js and ./api/auth.js (docs/coding-rules.md §2).
 import { useEffect, useRef, useState } from 'react'
 
+import { MIN_PASSWORD_LENGTH, currentUser, signIn, signOut, signUp } from './api/auth.js'
 import { MAX_UPLOAD_BYTES, separate, validateFile } from './api/demo.js'
 
 const STEM_LABELS = { vocals: 'Vocals', background: 'Background' }
@@ -37,9 +42,9 @@ const TIERS = [
 ]
 
 const ROADMAP = [
-  { title: 'Accounts', body: 'Sign-up, sign-in and per-user permissions.' },
   { title: 'Cloud library', body: 'Your tracks and stems, kept privately across sessions.' },
   { title: 'Background processing', body: 'Queue long jobs instead of waiting on the request.' },
+  { title: 'Per-account limits', body: 'Quotas, history and anything an account unlocks.' },
 ]
 
 function formatBytes(bytes) {
@@ -53,6 +58,11 @@ function formatClock(seconds) {
 }
 
 export default function App() {
+  const [user, setUser] = useState(null)
+  const [authOpen, setAuthOpen] = useState(false)
+  const [newAccount, setNewAccount] = useState(false)
+  const [authError, setAuthError] = useState('')
+  const [authBusy, setAuthBusy] = useState(false)
   const [file, setFile] = useState(null)
   const [sourceUrl, setSourceUrl] = useState('')
   const [stems, setStems] = useState(null)
@@ -62,6 +72,28 @@ export default function App() {
   const [dragging, setDragging] = useState(false)
   const [error, setError] = useState('')
   const players = useRef({})
+
+  // One bootstrap call to establish session state. A 401 is not an error — the
+  // client returns null for it, which simply means signed out.
+  useEffect(() => {
+    let live = true
+    currentUser().then((account) => {
+      if (live) setUser(account)
+    })
+    return () => {
+      live = false
+    }
+  }, [])
+
+  // Escape closes the account dialog, like any other modal.
+  useEffect(() => {
+    if (!authOpen) return undefined
+    const onKey = (event) => {
+      if (event.key === 'Escape') setAuthOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [authOpen])
 
   // Let the browser play the picked file straight from memory, so the result view
   // can A/B a stem against the original without a second round trip.
@@ -83,6 +115,35 @@ export default function App() {
     const tick = setInterval(() => setElapsed((seconds) => seconds + 1), 1000)
     return () => clearInterval(tick)
   }, [busy])
+
+  function openAuth(creating) {
+    setNewAccount(creating)
+    setAuthError('')
+    setAuthOpen(true)
+  }
+
+  async function onAuthSubmit(event) {
+    event.preventDefault()
+    const form = new FormData(event.currentTarget)
+    setAuthBusy(true)
+    setAuthError('')
+    try {
+      const submit = newAccount ? signUp : signIn
+      setUser(await submit(form.get('email'), form.get('password')))
+      setAuthOpen(false)
+    } catch (failure) {
+      setAuthError(failure.message)
+    } finally {
+      setAuthBusy(false)
+    }
+  }
+
+  async function onSignOut() {
+    // The cookie is the session, so the backend clears it. Local state is cleared
+    // either way — there is nothing stored here to fall out of sync.
+    await signOut().catch(() => {})
+    setUser(null)
+  }
 
   function pick(candidate) {
     if (!candidate) return
@@ -150,9 +211,18 @@ export default function App() {
           <nav className="nav">
             <a href="#how">How it works</a>
             <a href="#tiers">Tiers</a>
-            <button className="ghost" type="button" disabled title="Planned — accounts are not built yet">
-              Sign in
-            </button>
+            {user ? (
+              <>
+                <span className="who">{user.email}</span>
+                <button className="ghost" type="button" onClick={onSignOut}>
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <button className="ghost" type="button" onClick={() => openAuth(false)}>
+                Sign in
+              </button>
+            )}
           </nav>
         </div>
       </header>
@@ -329,6 +399,64 @@ export default function App() {
           <span className="badge">Planned</span> are not implemented.
         </div>
       </footer>
+
+      {authOpen && (
+        <div className="modal" onClick={() => setAuthOpen(false)}>
+          <form
+            className="panel auth"
+            role="dialog"
+            aria-modal="true"
+            aria-label={newAccount ? 'Create an account' : 'Sign in'}
+            onClick={(event) => event.stopPropagation()}
+            onSubmit={onAuthSubmit}
+          >
+            <h2>{newAccount ? 'Create an account' : 'Sign in'}</h2>
+
+            {authError && (
+              <p className="error" role="alert">
+                {authError}
+              </p>
+            )}
+
+            <label className="field">
+              <span>Email</span>
+              <input name="email" type="email" autoComplete="username" required />
+            </label>
+            <label className="field">
+              <span>Password</span>
+              <input
+                name="password"
+                type="password"
+                autoComplete={newAccount ? 'new-password' : 'current-password'}
+                minLength={MIN_PASSWORD_LENGTH}
+                required
+              />
+            </label>
+
+            <button className="btn" type="submit" disabled={authBusy}>
+              {authBusy ? 'Working…' : newAccount ? 'Create account' : 'Sign in'}
+            </button>
+
+            <p className="hint">
+              {newAccount ? 'Already have an account? ' : 'New here? '}
+              <button
+                className="link"
+                type="button"
+                onClick={() => {
+                  setNewAccount(!newAccount)
+                  setAuthError('')
+                }}
+              >
+                {newAccount ? 'Sign in' : 'Create one'}
+              </button>
+            </p>
+            <p className="hint">
+              Accounts are local to this machine and unlock nothing yet — separating a
+              track works signed out.
+            </p>
+          </form>
+        </div>
+      )}
     </>
   )
 }
