@@ -40,8 +40,9 @@ def test_metadata_carries_the_naming_convention():
     assert dict(Base.metadata.naming_convention) == EXPECTED_NAMING_CONVENTION
 
 
-def test_core_domain_models_registered():
-    # P2-002 registers the 8 core domain tables on the shared metadata (DEC-0006).
+def test_domain_models_registered():
+    # P2-002 registers the 8 core domain tables on the shared metadata (DEC-0006);
+    # P3-001 adds `sessions` and nothing else (DEC-0010 §3).
     assert set(Base.metadata.tables) == {
         "users",
         "songs",
@@ -51,6 +52,7 @@ def test_core_domain_models_registered():
         "song_tags",
         "usage_events",
         "daily_usage",
+        "sessions",
     }
     assert list(Base.registry.mappers)
 

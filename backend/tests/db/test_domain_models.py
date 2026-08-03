@@ -26,6 +26,12 @@ CORE_TABLES = {
     "daily_usage",
 }
 
+# Deliberately widened by P3-001 (DEC-0010 §3, approved for Local MVP): Phase 3
+# adds exactly one table. The set stays closed — a ninth core table or a deferred
+# table still fails.
+PHASE_3_TABLES = {"sessions"}
+ALL_TABLES = CORE_TABLES | PHASE_3_TABLES
+
 DEFERRED_TABLES = {
     "ratings",
     "coupons",
@@ -36,7 +42,20 @@ DEFERRED_TABLES = {
 }
 
 EXPECTED_COLUMNS = {
-    "users": {"id", "email", "status", "created_at", "updated_at"},
+    # The four P3-001 account columns are added here (DEC-0010 §3) — and no
+    # others: no plaintext password column, no token column, no session column.
+    "users": {
+        "id",
+        "email",
+        "status",
+        "password_hash",
+        "profile_visibility",
+        "preferred_language",
+        "email_opt_in",
+        "created_at",
+        "updated_at",
+    },
+    "sessions": {"id", "user_id", "token_hash", "expires_at", "created_at"},
     "songs": {"id", "user_id", "title", "status", "created_at", "updated_at"},
     "audio_files": {
         "id",
@@ -87,6 +106,7 @@ EXPECTED_COLUMNS = {
 # SQLAlchemy materialises the convention constraint name.
 EXPECTED_ENUMS = {
     ("users", "status"): {"active", "blocked", "deleted"},
+    ("users", "profile_visibility"): {"hidden", "public"},
     ("songs", "status"): {"uploaded", "processing", "ready", "failed"},
     ("audio_files", "purpose"): {"original", "vocals", "background"},
     ("separation_jobs", "status"): {
@@ -111,6 +131,7 @@ EXPECTED_FKS = {
     ("usage_events", "song_id"): "songs",
     ("usage_events", "separation_job_id"): "separation_jobs",
     ("daily_usage", "user_id"): "users",
+    ("sessions", "user_id"): "users",
 }
 
 MUTABLE_TABLES = {
@@ -121,7 +142,9 @@ MUTABLE_TABLES = {
     "tags",
     "daily_usage",
 }
-APPEND_ONLY_TABLES = {"song_tags", "usage_events"}
+# A session row is created and deleted, never edited (DEC-0010 D5) — so it has no
+# updated_at, like the other append-only tables.
+APPEND_ONLY_TABLES = {"song_tags", "usage_events", "sessions"}
 
 
 def _check_value_sets(table_name: str) -> list[set[str]]:
@@ -133,8 +156,8 @@ def _check_value_sets(table_name: str) -> list[set[str]]:
     ]
 
 
-def test_exactly_the_core_tables_are_registered():
-    assert set(Base.metadata.tables) == CORE_TABLES
+def test_exactly_the_core_and_phase_3_tables_are_registered():
+    assert set(Base.metadata.tables) == ALL_TABLES
 
 
 def test_no_deferred_tables_exist():
@@ -168,7 +191,7 @@ def test_orm_relationships_configure_cleanly():
 
 
 def test_created_at_on_every_table():
-    for table_name in CORE_TABLES:
+    for table_name in ALL_TABLES:
         assert "created_at" in Base.metadata.tables[table_name].columns
 
 
@@ -180,6 +203,8 @@ def test_updated_at_only_on_mutable_tables():
 
 
 def test_timestamps_are_timezone_aware():
-    for table_name in CORE_TABLES:
+    for table_name in ALL_TABLES:
         col = Base.metadata.tables[table_name].columns["created_at"]
         assert getattr(col.type, "timezone", False) is True
+    # The one non-mixin timestamp Phase 3 adds must be tz-aware too.
+    assert Base.metadata.tables["sessions"].c["expires_at"].type.timezone is True

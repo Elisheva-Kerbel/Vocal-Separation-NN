@@ -89,11 +89,13 @@ def test_alembic_config_and_script_directory_load():
     assert Path(script.dir).resolve() == ALEMBIC_DIR.resolve()
 
 
-def test_core_models_migration_revision_exists():
-    # P2-002 adds exactly one revision — the core domain models (DEC-0006).
+def test_migration_revisions_are_exactly_the_approved_ones():
+    # One revision per approved DB task: P2-002 the core domain models (DEC-0006),
+    # P3-001 the auth columns and sessions table (DEC-0010 §3). Nothing else.
     versions = ALEMBIC_DIR / "versions"
     assert sorted(p.name for p in versions.glob("*.py")) == [
-        "p2_002_core_domain_models.py"
+        "p2_002_core_domain_models.py",
+        "p3_001_auth_columns_and_sessions.py",
     ]
     assert (versions / ".gitkeep").is_file()
 

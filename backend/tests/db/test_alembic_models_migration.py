@@ -61,12 +61,15 @@ def test_migration_creates_no_deferred_tables():
     assert _created_tables(_migration_text()).isdisjoint(DEFERRED_TABLES)
 
 
-def test_migration_is_a_base_revision_alembic_can_load():
+def test_migration_is_the_base_revision_alembic_can_load():
+    # Re-scoped by P3-001 (DEC-0010 §3): P2-002 is no longer the head, but it is
+    # still the single base revision of one linear chain. The head assertion moved
+    # to tests/db/test_auth_models.py, which owns the Phase 3 revision.
     script = ScriptDirectory.from_config(Config(str(ALEMBIC_INI)))
-    revisions = list(script.walk_revisions())
-    assert [r.revision for r in revisions] == ["p2_002_core_domain_models"]
-    assert revisions[0].down_revision is None
-    assert "p2_002_core_domain_models" in script.get_heads()
+    revisions = {r.revision: r for r in script.walk_revisions()}
+    assert "p2_002_core_domain_models" in revisions
+    assert revisions["p2_002_core_domain_models"].down_revision is None
+    assert len(script.get_heads()) == 1
 
 
 def test_migration_uses_deterministic_convention_names():
