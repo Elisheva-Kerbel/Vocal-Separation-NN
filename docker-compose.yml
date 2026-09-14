@@ -69,7 +69,7 @@ services:
       # `docker compose config` working without .env; local-data/ is git-ignored.
       # No checkpoint is loaded by the app — /models is read by the local
       # benchmark CLI only, on demand.
-      - ${LOCAL_MODEL_HOST_ROOT:-./local-data/models}:/models:ro
+      - ${LOCAL_MODEL_HOST_ROOT:-./models}:/models:ro
     # Runs the FastAPI /health app via the image CMD (uvicorn on 0.0.0.0:8000).
     # Host port ${BACKEND_PORT} maps to the container's fixed 8000 (see ports).
     # /health opens no connections; depends_on only orders startup.
@@ -89,7 +89,7 @@ services:
       TORCH_HOME: /cache/torch
       HF_HOME: /cache/hf
     volumes:
-      - ${LOCAL_MODEL_HOST_ROOT:-./local-data/models}:/models:ro
+      - ${LOCAL_MODEL_HOST_ROOT:-./models}:/models:ro
       - model_cache:/cache
     command: ["celery", "-A", "app.celery_app", "worker", "--loglevel=info", "-Q", "separation,celery", "--concurrency=2"]
 

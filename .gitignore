@@ -28,8 +28,11 @@ benchmark-output/
 
 # Model / checkpoint / audio artifacts — NEVER commit (DEC-0004). The real local
 # model lives out-of-band via LOCAL_MODEL_ROOT and is never copied into the repo.
-*.pt
 *.pth
+# Allow the bundled basic model
+!models/
+!models/checkpoints/
+!models/checkpoints/best_model.pt
 *.ckpt
 *.safetensors
 *.onnx
