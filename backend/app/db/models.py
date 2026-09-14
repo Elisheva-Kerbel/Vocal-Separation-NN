@@ -64,29 +64,24 @@ class UpdatedAtMixin:
 
 
 class User(CreatedAtMixin, UpdatedAtMixin, Base):
-    """A registered account (DEC-0006 §4.1). Owner of songs and usage.
-
-    The four account columns added by P3-001 (DEC-0010 §3) hold the **encoded**
-    scrypt password hash — never a plaintext password — plus the profile/locale
-    preferences Phase 3 owns. ``password_hash`` is never returned by any route or
-    schema (DEC-0010 §5); ``profile_visibility`` defaults to ``hidden`` and
-    ``email_opt_in`` to false, so both are private/opt-in by default.
-    """
-
     __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String(320), nullable=False, unique=True)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="active")
-    # Encoded ``scrypt$n$r$p$<salt-b64>$<hash-b64>`` string (DEC-0010 D3) — self
-    # describing, so the cost parameters can be raised later without a migration.
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    profile_visibility: Mapped[str] = mapped_column(
-        String(16), nullable=False, default="hidden", server_default="hidden"
-    )
     preferred_language: Mapped[str | None] = mapped_column(String(8), nullable=True)
     email_opt_in: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default=false()
+    )
+    role: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="free", server_default="free"
+    )
+    tier: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="free", server_default="free"
+    )
+    subscription_expires_at: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
 
     songs: Mapped[list["Song"]] = relationship(back_populates="owner")
@@ -97,8 +92,12 @@ class User(CreatedAtMixin, UpdatedAtMixin, Base):
             "status IN ('active', 'blocked', 'deleted')", name="status_allowed"
         ),
         CheckConstraint(
-            "profile_visibility IN ('hidden', 'public')",
-            name="profile_visibility_allowed",
+            "role IN ('free', 'pro', 'content_moderator', 'user_admin', 'coupon_admin', 'super_admin')",
+            name="role_allowed",
+        ),
+        CheckConstraint(
+            "tier IN ('free', 'pro')",
+            name="tier_allowed",
         ),
     )
 
@@ -126,10 +125,6 @@ class UserSession(CreatedAtMixin, Base):
 
 
 class Song(CreatedAtMixin, UpdatedAtMixin, Base):
-    """A logical uploaded track (DEC-0006 §4.2). One owner; the container for its
-    audio files and separation jobs. No storage reference and no public/visibility
-    column — everything is private in Phase 2."""
-
     __tablename__ = "songs"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
@@ -140,6 +135,15 @@ class Song(CreatedAtMixin, UpdatedAtMixin, Base):
     status: Mapped[str] = mapped_column(
         String(32), nullable=False, default="uploaded", index=True
     )
+    visibility: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="private", server_default="private"
+    )
+    deleted_at: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    rights_confirmed: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
 
     owner: Mapped["User"] = relationship(back_populates="songs")
     audio_files: Mapped[list["AudioFile"]] = relationship(back_populates="song")
@@ -147,11 +151,16 @@ class Song(CreatedAtMixin, UpdatedAtMixin, Base):
         back_populates="song"
     )
     song_tags: Mapped[list["SongTag"]] = relationship(back_populates="song")
+    ratings: Mapped[list["Rating"]] = relationship(back_populates="song")
 
     __table_args__ = (
         CheckConstraint(
             "status IN ('uploaded', 'processing', 'ready', 'failed')",
             name="status_allowed",
+        ),
+        CheckConstraint(
+            "visibility IN ('private', 'public')",
+            name="visibility_allowed",
         ),
         Index("ix_songs_user_id", "user_id", "created_at"),
     )
@@ -220,7 +229,7 @@ class SeparationJob(CreatedAtMixin, UpdatedAtMixin, Base):
             "status IN ('queued', 'running', 'succeeded', 'failed', 'canceled')",
             name="status_allowed",
         ),
-        CheckConstraint("model_tier IN ('basic')", name="model_tier_allowed"),
+        CheckConstraint("model_tier IN ('basic', 'professional')", name="model_tier_allowed"),
         Index("ix_separation_jobs_song_id", "song_id", "created_at"),
     )
 
@@ -288,9 +297,6 @@ class UsageEvent(CreatedAtMixin, Base):
 
 
 class DailyUsage(CreatedAtMixin, UpdatedAtMixin, Base):
-    """Per-user-per-day usage aggregate (DEC-0006 §4.8, §8). One row per user per
-    UTC day; ``successful_count`` is a rollup derived from the UsageEvent ledger."""
-
     __tablename__ = "daily_usage"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
@@ -303,7 +309,133 @@ class DailyUsage(CreatedAtMixin, UpdatedAtMixin, Base):
     successful_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default="0"
     )
+    basic_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    professional_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
 
     user: Mapped["User"] = relationship(back_populates="daily_usage")
 
     __table_args__ = (UniqueConstraint("user_id", "usage_date"),)
+
+
+class Coupon(CreatedAtMixin, UpdatedAtMixin, Base):
+    __tablename__ = "coupons"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    code: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    tier_grant: Mapped[str] = mapped_column(String(16), nullable=False, default="pro")
+    days_valid: Mapped[int] = mapped_column(Integer, nullable=False, default=30)
+    max_redemptions: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    redemption_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    expires_at: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default="true"
+    )
+
+    redemptions: Mapped[list["CouponRedemption"]] = relationship(back_populates="coupon")
+
+
+class CouponRedemption(CreatedAtMixin, Base):
+    __tablename__ = "coupon_redemptions"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    coupon_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("coupons.id"), nullable=False
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id"), nullable=False
+    )
+
+    coupon: Mapped["Coupon"] = relationship(back_populates="redemptions")
+    user: Mapped["User"] = relationship()
+
+    __table_args__ = (UniqueConstraint("coupon_id", "user_id"),)
+
+
+class Rating(CreatedAtMixin, UpdatedAtMixin, Base):
+    __tablename__ = "ratings"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    song_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("songs.id"), nullable=False
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id"), nullable=False
+    )
+    score: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    song: Mapped["Song"] = relationship(back_populates="ratings")
+    user: Mapped["User"] = relationship()
+
+    __table_args__ = (
+        UniqueConstraint("song_id", "user_id"),
+        CheckConstraint("score >= 1 AND score <= 5", name="score_range"),
+    )
+
+
+class ContentReport(CreatedAtMixin, Base):
+    __tablename__ = "content_reports"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    song_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("songs.id"), nullable=False
+    )
+    reporter_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id"), nullable=False
+    )
+    reason: Mapped[str] = mapped_column(String(256), nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="pending"
+    )
+    resolved_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending', 'reviewed', 'actioned', 'dismissed')",
+            name="report_status_allowed",
+        ),
+    )
+
+
+class SignedUrlGrant(CreatedAtMixin, Base):
+    __tablename__ = "signed_url_grants"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    audio_file_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("audio_files.id"), nullable=False
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id"), nullable=False
+    )
+    grant_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    expires_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "grant_type IN ('listen', 'download')", name="grant_type_allowed"
+        ),
+    )
+
+
+class AdminAuditEvent(CreatedAtMixin, Base):
+    __tablename__ = "admin_audit_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    admin_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id"), nullable=False
+    )
+    action: Mapped[str] = mapped_column(String(64), nullable=False)
+    target_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    target_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    detail: Mapped[str | None] = mapped_column(String(1024), nullable=True)

@@ -233,21 +233,15 @@ class LoginRequest(BaseModel):
 
 
 class AuthUserRead(BaseModel):
-    """The only user shape any auth route returns.
-
-    Deliberately carries **no** ``password_hash``, session token, ``token_hash``
-    or internal id beyond the user's own uuid (DEC-0010 §5). ``extra="forbid"``
-    means a credential field cannot be added by accident.
-    """
-
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     id: uuid.UUID
     email: str
     status: str
-    profile_visibility: str = Field(alias="profileVisibility")
     preferred_language: str | None = Field(alias="preferredLanguage")
     email_opt_in: bool = Field(alias="emailOptIn")
+    role: str = "free"
+    tier: str = "free"
 
 
 class AuthMessage(BaseModel):
@@ -326,9 +320,10 @@ def _safe_user(user: User) -> AuthUserRead:
         id=user.id,
         email=user.email,
         status=user.status,
-        profile_visibility=user.profile_visibility,
         preferred_language=user.preferred_language,
         email_opt_in=user.email_opt_in,
+        role=user.role,
+        tier=user.tier,
     )
 
 
@@ -392,6 +387,13 @@ def current_user(
         raise _not_authenticated()
     if user.status != ACTIVE_STATUS:
         raise _error(403, "account_not_active", "This account is not active.")
+
+    if user.tier == "pro" and user.subscription_expires_at:
+        if _as_utc(user.subscription_expires_at) <= _now():
+            user.tier = "free"
+            user.subscription_expires_at = None
+            db.commit()
+
     return user
 
 
@@ -424,7 +426,6 @@ def signup(
         email=email,
         status=ACTIVE_STATUS,
         password_hash=hash_password(payload.password),
-        profile_visibility="hidden",
         preferred_language=payload.preferred_language,
         email_opt_in=payload.email_opt_in,
     )
@@ -476,6 +477,73 @@ def logout(
             db.commit()
     clear_auth_cookie(response)
     return AuthMessage(message="Signed out.")
+
+
+class GoogleLoginRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    credential: str = ""
+
+
+@router.post("/google", response_model=AuthUserRead)
+def google_login(
+    payload: GoogleLoginRequest, response: Response, db: DbSession = Depends(get_db)
+) -> AuthUserRead:
+    """Sign in or sign up with a Google ID token (from Google Identity Services).
+
+    Verifies the token via Google's tokeninfo endpoint, checks the audience
+    matches our client ID, then either signs in the existing user or creates
+    a new account. No password is set for Google-created accounts.
+    """
+    import httpx
+
+    settings = load_settings()
+    if not settings.google_client_id:
+        raise _error(501, "google_not_configured", "Google login is not configured.")
+
+    if not payload.credential:
+        raise _error(400, "missing_credential", "Google credential is required.")
+
+    try:
+        r = httpx.get(
+            "https://oauth2.googleapis.com/tokeninfo",
+            params={"id_token": payload.credential},
+            timeout=10,
+            verify=False,
+        )
+    except httpx.HTTPError:
+        raise _error(502, "google_verification_failed", "Could not verify Google token.")
+
+    if r.status_code != 200:
+        raise _error(401, "invalid_google_token", "Invalid Google token.")
+
+    token_data = r.json()
+
+    if token_data.get("aud") != settings.google_client_id:
+        raise _error(401, "invalid_google_token", "Google token audience mismatch.")
+
+    google_email = _normalise_email(token_data.get("email", ""))
+    if not google_email or not token_data.get("email_verified", False):
+        raise _error(400, "unverified_email", "Google account email is not verified.")
+
+    user = _find_user(db, google_email)
+
+    if user is not None:
+        if user.status != ACTIVE_STATUS:
+            raise _error(403, "account_not_active", "This account is not active.")
+        _start_session(db, user, response)
+        return _safe_user(user)
+
+    user = User(
+        email=google_email,
+        status=ACTIVE_STATUS,
+        password_hash="google_oauth",
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    _start_session(db, user, response)
+    return _safe_user(user)
 
 
 @router.get("/me", response_model=AuthUserRead)

@@ -81,6 +81,11 @@ export function signIn(email, password) {
   return post('/auth/login', { email, password })
 }
 
+/** Sign in or sign up with a Google ID token. */
+export function googleLogin(credential) {
+  return post('/auth/google', { credential })
+}
+
 /** Sign out. Safe to call when already signed out. */
 export function signOut() {
   return post('/auth/logout')

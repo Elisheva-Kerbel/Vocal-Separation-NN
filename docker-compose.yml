@@ -60,10 +60,8 @@ services:
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     environment:
-      # Container-side path of the read-only model mount below. Set here (not only
-      # in .env) so the container always sees the mount point and never a host
-      # path: Compose `environment` wins over `env_file`. Not a secret.
       LOCAL_MODEL_ROOT: /models
+      PYTHONPATH: /app
     volumes:
       # Local Basic model prototype (DEC-0004), READ-ONLY. The model folder lives
       # OUTSIDE the repository and is never copied into it: LOCAL_MODEL_HOST_ROOT
@@ -77,8 +75,6 @@ services:
     # /health opens no connections; depends_on only orders startup.
 
   worker:
-    # Reuses the backend image built above to avoid duplicated dependency
-    # definitions (TASK-P0-002 / 05-architecture-and-stack). No separate build.
     image: stemspace-backend:local
     env_file:
       - path: .env
@@ -87,23 +83,32 @@ services:
       - postgres
       - redis
       - minio
-    # Phase 0 worker startup stub (P0-004): runs the worker module, which prints
-    # one safe line and idles. No queue client, no polling loop, no connections.
-    command: ["python", "-m", "app.worker"]
+    environment:
+      LOCAL_MODEL_ROOT: /models
+      PYTHONPATH: /app
+      TORCH_HOME: /cache/torch
+      HF_HOME: /cache/hf
+    volumes:
+      - ${LOCAL_MODEL_HOST_ROOT:-./local-data/models}:/models:ro
+      - model_cache:/cache
+    command: ["celery", "-A", "app.celery_app", "worker", "--loglevel=info", "-Q", "separation,celery", "--concurrency=2"]
+
+  adminer:
+    image: adminer:latest
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
 
   frontend:
     build:
       context: ./frontend
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
-    # Phase 0 Vite + React empty shell (P0-005). The image CMD runs the Vite dev
-    # server bound to 0.0.0.0:5173; the host FRONTEND_PORT maps to it. No
-    # env_file and no depends_on: the shell needs no config, makes no backend API
-    # calls, and must never receive backend/storage secrets, the DB or Redis
-    # URLs, or internal service URLs. FRONTEND_PORT for the host mapping above is
-    # resolved from the top-level .env by Compose interpolation, not the service
-    # environment.
+    environment:
+      VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
 
 volumes:
   postgres_data:
   minio_data:
+  model_cache:

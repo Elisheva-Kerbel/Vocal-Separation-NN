@@ -40,33 +40,57 @@ class Settings:
     app_env: str
     backend_host: str
     backend_port: int
-    # Non-secret storage config (safe to display).
     s3_endpoint_url: str
+    s3_public_endpoint_url: str
     s3_bucket: str
-    # Credentials — kept out of repr/logs so they cannot leak.
+    s3_region: str
     s3_access_key_id: str = field(repr=False)
     s3_secret_access_key: str = field(repr=False)
-    # DB connection string — embeds a password, so it is a secret too.
     database_url: str = field(repr=False)
+    celery_broker_url: str = field(repr=False)
+    celery_result_backend: str = field(repr=False)
+    max_upload_bytes: int = 100 * 1024 * 1024
+    max_duration_seconds: float = 330.0
+    free_daily_limit: int = 3
+    pro_daily_limit: int = 10
+    signed_url_listen_ttl: int = 600
+    signed_url_download_ttl: int = 300
+    google_client_id: str = ""
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = field(repr=False, default="")
+    smtp_from_email: str = ""
+    smtp_from_name: str = "VocalSplit"
 
 
 def load_settings() -> Settings:
-    """Read configuration from the environment.
-
-    No connections are opened and no values are logged. Host/port defaults match
-    .env.example; the ``S3_*`` credentials and ``DATABASE_URL`` default to empty
-    (no secret and no database target baked in). A missing ``DATABASE_URL`` is not
-    an error here — /health and every non-DB path must keep working without one.
-    """
     return Settings(
         app_env=os.getenv("APP_ENV", "local"),
         backend_host=os.getenv("BACKEND_HOST", "0.0.0.0"),
         backend_port=int(os.getenv("BACKEND_PORT", "8000")),
         s3_endpoint_url=os.getenv("S3_ENDPOINT_URL", ""),
+        s3_public_endpoint_url=os.getenv("S3_PUBLIC_ENDPOINT_URL", os.getenv("S3_ENDPOINT_URL", "")),
         s3_bucket=os.getenv("S3_BUCKET", ""),
+        s3_region=os.getenv("S3_REGION", "us-east-1"),
         s3_access_key_id=os.getenv("S3_ACCESS_KEY_ID", ""),
         s3_secret_access_key=os.getenv("S3_SECRET_ACCESS_KEY", ""),
         database_url=os.getenv("DATABASE_URL", ""),
+        celery_broker_url=os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0"),
+        celery_result_backend=os.getenv("CELERY_RESULT_BACKEND", "redis://redis:6379/1"),
+        max_upload_bytes=int(os.getenv("MAX_UPLOAD_BYTES", str(100 * 1024 * 1024))),
+        max_duration_seconds=float(os.getenv("MAX_DURATION_SECONDS", "330")),
+        free_daily_limit=int(os.getenv("FREE_DAILY_LIMIT", "3")),
+        pro_daily_limit=int(os.getenv("PRO_DAILY_LIMIT", "10")),
+        signed_url_listen_ttl=int(os.getenv("SIGNED_URL_LISTEN_TTL", "600")),
+        signed_url_download_ttl=int(os.getenv("SIGNED_URL_DOWNLOAD_TTL", "300")),
+        google_client_id=os.getenv("GOOGLE_CLIENT_ID", ""),
+        smtp_host=os.getenv("SMTP_HOST", ""),
+        smtp_port=int(os.getenv("SMTP_PORT", "587")),
+        smtp_user=os.getenv("SMTP_USER", ""),
+        smtp_password=os.getenv("SMTP_PASSWORD", ""),
+        smtp_from_email=os.getenv("SMTP_FROM_EMAIL", ""),
+        smtp_from_name=os.getenv("SMTP_FROM_NAME", "VocalSplit"),
     )
 
 

@@ -23,6 +23,16 @@ export default defineConfig({
     proxy: {
       '/demo': 'http://backend:8000',
       '/auth': 'http://backend:8000',
+      '/upload': 'http://backend:8000',
+      '/songs': 'http://backend:8000',
+      '/library': 'http://backend:8000',
+      '/public': 'http://backend:8000',
+      '/coupons': 'http://backend:8000',
+      '/admin': 'http://backend:8000',
+      '/settings': 'http://backend:8000',
+      '/health': 'http://backend:8000',
+      '/quota': 'http://backend:8000',
+      '/subscriptions': 'http://backend:8000',
     },
   },
 })

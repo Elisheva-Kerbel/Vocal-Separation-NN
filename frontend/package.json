@@ -1,9 +1,9 @@
 {
-  "name": "stemspace-frontend",
+  "name": "vocalsplit-frontend",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "StemSpace frontend — Phase 0 empty Vite + React shell (no product UI).",
+  "description": "VocalSplit frontend.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
