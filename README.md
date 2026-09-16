@@ -1,209 +1,436 @@
-# StemSpace — Vocal Removing Platform
+# VocalSplit - הפרדת שירים לווקאלים ורקע
 
-Status: **Draft — pending Nadav readiness review. Not approved for AI code agent execution.**
-Source baseline: `stemspace-dev-pack-v0.1/` (STEMSPACE-DEV-PACK-001 v0.1) — **read-only historical
-source; do not edit it.** For **Phase 2**, the active implementation contract is the repo-local
-`docs/tasks/phase-2/*` and `docs/decisions/DEC-0005` (see `docs/README.md`).
+פלטפורמה להפרדת שירים לשני ערוצים: **ווקאלים** (קול) ו**רקע** (מוזיקה).
+המשתמש מעלה שיר, המערכת מפרידה אותו באמצעות רשת נוירונים, והתוצאה זמינה להאזנה ולהורדה.
 
-## Purpose
+## מה יש כאן
 
-StemSpace is a platform where a user can log in, upload audio, process it asynchronously into
-**Vocals + Background**, and securely listen to / download the outputs via short-lived signed
-URLs. Files are private; the backend authorizes every access.
+- העלאת קבצי אודיו (MP3 / WAV / M4A)
+- הפרדה אוטומטית לווקאלים + רקע
+- שתי רמות הפרדה: **Basic** (מודל מקומי) ו-**Professional** (Demucs של Meta)
+- ספריה אישית לניהול השירים
+- ספריה ציבורית עם דירוגים ודיווחים
+- מנוי Free / Pro עם מכסות יומיות
+- פאנל ניהול (admin)
+- אימות: הרשמה + התחברות עם אימייל/סיסמה, או Google OAuth
+- i18n: עברית ואנגלית
 
-This repository is being built in **small, testable phases**. It is **not** built in one pass.
+---
 
-## Current status
+## ארכיטקטורה כללית
 
-- **Phase 0 — closed.** Dockerized project skeleton (local development only).
-- **Phase 1 — closed for Basic local prototype only** (`docs/decisions/DEC-0004`). This approves
-  **no** production, **no** Professional tier, and **no** upload, queue, DB, storage or public-user
-  scope.
-- **Phase 2 — closed for the DB / domain skeleton** (`docs/decisions/DEC-0005`–`DEC-0008`): domain
-  models, the Alembic migration, read-only schemas and seed tags exist. No upload, queue, storage,
-  auth or public-user scope.
-- **Fast Demo track — planning only, authorized up to `docs/decisions/DEC-0009`. FAST-DEMO-003 has not
-  started.**
-- **Not approved: production, commercial use, and the Professional tier.**
+```
+┌─────────────┐     HTTP      ┌─────────────┐     S3 API    ┌─────────┐
+│  Frontend   │ ────────────> │   Backend   │ ────────────> │  MinIO  │
+│  React+Vite │ <──────────── │   FastAPI   │ <──────────── │ Storage │
+│  :5173      │               │   :8000     │               │  :9000  │
+└─────────────┘               └──────┬──────┘               └─────────┘
+                                     │
+                              Redis (Broker)
+                                     │
+                              ┌──────┴──────┐
+                              │   Worker    │
+                              │   Celery    │     ┌────────────┐
+                              │  separation │────>│ AI Models  │
+                              │   queue     │     │ (PyTorch)  │
+                              └─────────────┘     └────────────┘
+                                     │
+                              ┌──────┴──────┐
+                              │ PostgreSQL  │
+                              │   :5432     │
+                              └─────────────┘
+```
 
-### Phase 0 (closed) — what it built
+**7 קונטיינרים ב-Docker Compose:**
 
-**Phase 0 — Dockerized Project Skeleton** created a minimal monorepo foundation that starts via
-Docker Compose, with documentation and Git baseline files, and **no business logic**. See
-`docs/tasks/phase-0/` for the per-task documents.
+| שירות | תפקיד | פורט |
+|---|---|---|
+| `frontend` | React + Vite - ממשק משתמש | 5173 |
+| `backend` | FastAPI - API ראשי | 8000 |
+| `worker` | Celery - עיבוד הפרדות ברקע | - |
+| `postgres` | PostgreSQL - מסד נתונים | 5432 |
+| `redis` | Redis - broker ל-Celery | 6379 |
+| `minio` | MinIO - אחסון קבצים (S3-compatible) | 9000 |
+| `adminer` | ממשק ניהול DB | 8080 |
 
-**TASK-P0-001** (skeleton, docs and Git baseline), **TASK-P0-002** (Docker Compose,
-Dockerfiles and `.env.example`), **TASK-P0-003** (backend `/health` and config), **TASK-P0-004**
-(worker startup stub) and **TASK-P0-005** (frontend empty shell) have been performed. The backend
-serves a minimal `GET /health` smoke endpoint, the worker container runs a minimal **startup
-stub** (`python -m app.worker`), and the frontend container now runs the **Vite + React empty
-shell** (`frontend/src/App.jsx`) — a static Phase 0 placeholder that makes **no** backend API
-calls, stores no files/tokens/secrets and implements **no** product flow. There is still **no
-queue/job processing** and **no product UI**.
+---
 
-### Status and boundaries
+## Flow מלא: מה קורה כשמשתמש מעלה שיר
 
-Phase 0 is a **local development skeleton only**. It is:
+### שלב 1: המשתמש לוחץ "העלה והפרד" בממשק
 
-- **not** approved for production;
-- **not** approved for public users;
-- **not** approved for upload processing (no upload / queue / AI flow exists yet).
+**Frontend: `UploadPage.jsx`**
 
-PostgreSQL, Redis and MinIO run **only as local infrastructure services** — Compose starts them,
-but they are **not** wired into any product flow. **Phase 1 was the AI Benchmark Harness only** and
-is **closed for the Basic local prototype only**; it stays isolated from the app flow, and the
-model/checkpoint remains local / out-of-band and out of Git (`docs/decisions/DEC-0004`). Repo docs
-stay **Draft** until a readiness review passes; nothing here authorizes production use or a later
-phase's scope.
+```
+לחיצה על כפתור "העלה והפרד"
+  └─> onUpload()
+        └─> uploadSong(file, onProgress, { modelChoice, visibility })   [api/songs.js]
+              └─> XMLHttpRequest POST /upload (עם FormData)
+```
 
-### Phase 2 status (closed — DB / domain skeleton)
+הפונקציה `uploadSong` שולחת את הקובץ כ-`FormData` עם `XMLHttpRequest` (לא `fetch`) כדי לתמוך ב-progress bar.
 
-**Phase 2 — Backend Domain + DB Skeleton — is closed.** `docs/decisions/DEC-0005` fixes the DB
-foundation contract (PostgreSQL + sync SQLAlchemy + Alembic + psycopg3, `DeclarativeBase` with a
-deterministic naming convention, and a repr-hidden `database_url` sourced only through
-`backend/app/config.py`); `DEC-0006` fixes the domain data contract, `DEC-0007` the read-only schema
-contract and `DEC-0008` the seed taxonomy / DB-test policy. `docs/tasks/phase-2/` records the tasks.
+### שלב 2: הבקאנד מקבל את הקובץ
 
-P2-001 (DB base + Alembic), P2-002 (domain models), P2-003 (read schemas) and P2-004 (seed tags and DB
-tests) are implemented and accepted. Phase 2 authorizes **no** upload API, queue processing, AI
-processing, storage client, signed URL generation, frontend UI, worker processing, production DB or
-public users. Throughout: **no audio bytes in DB**, **no checkpoint/model/local filesystem paths in
-DB**, **no signed URL string in DB**, and `storage_key` stays internal and out of client/API schemas.
+**Backend: `upload.py` → `upload_song()`**
 
-## Local development (Compose-first)
+```
+POST /upload
+  │
+  ├─ 1. וולידציה:
+  │     - סוג קובץ (MP3/WAV/M4A בלבד)
+  │     - גודל קובץ (מקסימום לפי הגדרות)
+  │     - model_choice ו-visibility תקינים
+  │
+  ├─ 2. בדיקת מכסה:
+  │     └─> quotas.py → check_quota(db, user, model_tier)
+  │           - בודק כמה הפרדות המשתמש עשה היום
+  │           - אם עבר את המכסה → HTTP 429
+  │
+  ├─ 3. העלאה ל-MinIO:
+  │     └─> storage.py → upload_bytes(data, storage_key, content_type)
+  │           - storage_key = "{user_id}/{song_id}/original.mp3"
+  │           - הקובץ נשמר ב-MinIO (S3-compatible storage)
+  │
+  ├─ 4. שמירה ב-DB:
+  │     - Song (status="uploaded" → "processing")
+  │     - AudioFile (purpose="original", storage_key=...)
+  │     - SeparationJob (status="queued", model_tier=...)
+  │
+  └─ 5. שליחה לתור:
+        └─> tasks.py → run_separation.delay(job_id, song_id, user_id, storage_key, model_tier)
+              - Celery שולח את המשימה לתור "separation" ב-Redis
+              - הבקאנד מחזיר תשובה מיד (HTTP 201) - לא מחכה לעיבוד
+```
 
-Local development is **Docker Compose-first** (see `docs/decisions/DEC-0001`). `docker compose`
-wires these services together, reachable by **service name** (not `localhost`):
+### שלב 3: ה-Worker מעבד את ההפרדה
 
-| Service    | Role                                             | Phase 0 state                     |
-|------------|--------------------------------------------------|-----------------------------------|
-| `postgres` | PostgreSQL database                              | runs (named volume)               |
-| `redis`    | Redis broker/result backend for Celery           | runs                              |
-| `minio`    | S3-compatible private object storage (local dev) | runs (named volume)               |
-| `backend`  | FastAPI app                                      | serves `GET /health` (P0-003)     |
-| `worker`   | async job worker (queue wiring in a later phase) | startup stub `python -m app.worker` (P0-004) |
-| `frontend` | React + Vite empty shell (no product UI)          | runs Vite dev server on 5173 (P0-005) |
+**Worker: `tasks.py` → `run_separation()`**
 
-Configuration is provided via environment variables. Copy `.env.example` to `.env` and fill
-local values. **`.env` is git-ignored; only `.env.example` (placeholders) is committed.**
+ה-Worker הוא קונטיינר נפרד שמריץ Celery ומאזין לתור `separation` ב-Redis.
 
-### Running locally
+```
+run_separation() [רץ ב-Worker, לא ב-Backend]
+  │
+  ├─ 1. מעדכן סטטוס: job.status = "running"
+  │
+  ├─ 2. מוריד את הקובץ מ-MinIO לתיקייה זמנית:
+  │     └─> storage.download_to_file(storage_key, input_path)
+  │
+  ├─ 3. מריץ הפרדה - לפי רמת המודל:
+  │     │
+  │     ├─ model_tier == "professional":
+  │     │     └─> demucs_inference.py → run_demucs_separation()
+  │     │           - טוען את htdemucs_ft של Meta (מ-HuggingFace)
+  │     │           - מריץ את המודל → 4 stems (vocals, drums, bass, other)
+  │     │           - מערבב drums+bass+other → background
+  │     │           - שומר vocals.wav + background.wav
+  │     │
+  │     └─ model_tier == "basic":
+  │           └─> local_inference.py → run_local_separation()
+  │                 - local_checkpoint.py → מוצא את checkpoint file
+  │                 - local_model.py → בונה את הרשת (UNet)
+  │                 - טוען weights מהקובץ
+  │                 - audio_io.py → STFT על הקובץ
+  │                 - מריץ mask prediction
+  │                 - vocals = mask × spectrogram
+  │                 - background = (1-mask) × spectrogram
+  │                 - ISTFT בחזרה ל-waveform
+  │                 - שומר vocals.wav + background.wav
+  │
+  ├─ 4. מעלה תוצאות ל-MinIO:
+  │     - storage.upload_from_file("vocals.wav", "{user}/{song}/vocals.wav")
+  │     - storage.upload_from_file("background.wav", "{user}/{song}/background.wav")
+  │     - יוצר AudioFile record לכל stem ב-DB
+  │
+  ├─ 5. מעדכן סטטוס:
+  │     - job.status = "succeeded"
+  │     - song.status = "ready"
+  │
+  └─ 6. עדכון צריכה:
+        └─> _finalize_usage() → יוצר UsageEvent + מעדכן DailyUsage
+```
+
+### שלב 4: הממשק מציג את התוצאה
+
+**Frontend: `SongPage.jsx`**
+
+```
+SongPage נטען (hash = #/song/{songId})
+  │
+  ├─ 1. loadSong():
+  │     └─> getSong(songId) → GET /songs/{songId}
+  │           - מחזיר: title, status, visibility, stems[], job{}
+  │
+  ├─ 2. אם status == "processing":
+  │     - מציג ספינר + טיימר
+  │     - כל 3 שניות: polling עם getSong() שוב
+  │     - כשהסטטוס משתנה ל-"ready" → עובר לשלב 3
+  │
+  ├─ 3. אם status == "ready":
+  │     - מבקש signed URL לכל stem:
+  │     │   └─> getListenUrl(songId, "original") → GET /songs/{songId}/listen-url/original
+  │     │   └─> getListenUrl(songId, "vocals")   → GET /songs/{songId}/listen-url/vocals
+  │     │   └─> getListenUrl(songId, "background")→ GET /songs/{songId}/listen-url/background
+  │     │
+  │     │   הבקאנד (songs.py → get_listen_url):
+  │     │     └─> storage.generate_signed_url(storage_key, ttl)
+  │     │           - MinIO מייצר URL זמני (חתום) שתקף למספר דקות
+  │     │           - ה-URL הזה מאפשר גישה ישירה לקובץ מהדפדפן
+  │     │
+  │     - מציג 3 כפתורי ערוץ: מקור / ווקאלים / רקע
+  │     - לחיצה על ערוץ → <audio> element טוען את ה-signed URL
+  │     - מעבר בין ערוצים שומר על אותו timestamp
+  │
+  └─ 4. הורדה:
+        └─> onDownload(purpose):
+              └─> getDownloadUrl(songId, purpose) → GET /songs/{songId}/download-url/{purpose}
+                    - מחזיר signed URL עם Content-Disposition: attachment
+                    - הדפדפן מוריד את הקובץ
+```
+
+---
+
+## מבנה ה-Backend (קבצים עיקריים)
+
+```
+backend/
+├── app/
+│   ├── main.py              # FastAPI app - רישום כל ה-routers
+│   ├── config.py            # הגדרות מ-.env (DB, Redis, MinIO, SMTP...)
+│   ├── constants.py         # כל הערכים הקבועים (Enums) - מקור אמת יחיד
+│   ├── helpers.py           # פונקציות עזר משותפות (api_error, get_audio_file_or_404...)
+│   ├── storage.py           # מתאם MinIO/S3 - upload, download, signed URLs
+│   ├── celery_app.py        # הגדרת Celery (broker=Redis)
+│   ├── tasks.py             # Celery tasks - run_separation, send_new_song_emails
+│   │
+│   ├── upload.py            # POST /upload - העלאת קובץ + שליחה לתור
+│   ├── songs.py             # GET /songs/{id} - פרטי שיר, listen/download URLs
+│   ├── library.py           # GET /library - ספריה אישית
+│   ├── public.py            # GET /public/songs - ספריה ציבורית, דירוגים, דיווחים
+│   ├── quotas.py            # בדיקת מכסות יומיות
+│   ├── admin.py             # פאנל ניהול - משתמשים, שירים, סטטיסטיקות
+│   ├── settings_routes.py   # הגדרות משתמש, מחיקת חשבון, שינוי סיסמה
+│   ├── subscriptions.py     # מנויים Free/Pro
+│   ├── coupons.py           # קופונים
+│   │
+│   ├── auth/                # אימות
+│   │   ├── routes.py        # /auth/signup, /auth/login, /auth/google, /auth/logout
+│   │   ├── session.py       # ניהול session (httpOnly cookie)
+│   │   ├── password.py      # hash + verify סיסמאות (bcrypt)
+│   │   └── schemas.py       # Pydantic models לבקשות/תגובות auth
+│   │
+│   ├── db/
+│   │   ├── models.py        # SQLAlchemy models: User, Song, AudioFile, SeparationJob...
+│   │   └── session.py       # DB session factory
+│   │
+│   └── email_service.py     # שליחת מיילים (SMTP)
+│
+└── ai/                      # מודולי AI - הפרדת אודיו
+    ├── model.py             # Stem enum (vocals/background), ModelTier enum
+    ├── local_model.py       # ארכיטקטורת הרשת (UNet) - Basic tier
+    ├── local_inference.py   # הרצת המודל המקומי: load → STFT → predict → ISTFT
+    ├── local_checkpoint.py  # מציאת קובץ ה-checkpoint
+    ├── demucs_inference.py  # הרצת Demucs (htdemucs_ft) - Professional tier
+    └── audio_io.py          # עזרי אודיו: load, STFT, ISTFT, save WAV
+```
+
+## מבנה ה-Frontend (קבצים עיקריים)
+
+```
+frontend/src/
+├── App.jsx              # ניתוב (hash-based), sidebar, auth modal
+├── i18n.js              # מערכת תרגום עברית/אנגלית - כל הטקסטים כאן
+├── helpers.jsx          # אייקונים, פונקציות עזר
+│
+├── api/
+│   ├── auth.js          # פונקציות auth: signUp, signIn, googleLogin, signOut
+│   └── songs.js         # כל קריאות ה-API: upload, getSong, getListenUrl, library...
+│
+├── components/
+│   ├── AuthModal.jsx    # מודל הרשמה/התחברות (+ Google OAuth)
+│   ├── NeedAuth.jsx     # הודעת "צריך להתחבר"
+│   ├── LibrarySongCard.jsx   # כרטיס שיר בספריה האישית
+│   └── PublicSongCard.jsx    # כרטיס שיר בספריה הציבורית (+ נגן + דירוג)
+│
+└── pages/
+    ├── HomePage.jsx     # דף נחיתה + תמחור
+    ├── UploadPage.jsx   # העלאת שיר (בחירת מודל, נראות, progress bar)
+    ├── SongPage.jsx     # דף שיר - ספינר בזמן עיבוד, 3 נגנים כשמוכן
+    ├── LibraryPage.jsx  # ספריה אישית
+    ├── ExplorePage.jsx  # ספריה ציבורית
+    ├── SettingsPage.jsx # הגדרות + שינוי סיסמה + מחיקת חשבון
+    ├── UpgradePage.jsx  # שדרוג ל-Pro
+    └── AdminPage.jsx    # פאנל ניהול (super_admin בלבד)
+```
+
+---
+
+## מודלי ה-AI
+
+### Basic tier (מודל מקומי)
+
+- רשת **UNet** שאומנה על הפרדת מוזיקה
+- קובץ ה-checkpoint נמצא מחוץ לריפו (LOCAL_MODEL_ROOT)
+- עובד על **ספקטרוגרמה**: STFT → mask prediction → ISTFT
+- מהיר אבל פחות מדויק
+
+**Flow טכני:**
+```
+audio_io.load_mono(input) → waveform
+audio_io.stft(waveform) → spectrogram (complex)
+np.abs(spectrogram) → magnitude
+model(magnitude) → mask (0..1)
+vocals = mask × spectrogram
+background = (1-mask) × spectrogram
+audio_io.istft(vocals) → vocals.wav
+audio_io.istft(background) → background.wav
+```
+
+### Professional tier (Demucs)
+
+- **htdemucs_ft** של Meta - state-of-the-art בהפרדת מוזיקה
+- נטען אוטומטית מ-HuggingFace Hub (פעם ראשונה)
+- מפריד ל-4 stems (vocals, drums, bass, other)
+- אנחנו מערבבים drums+bass+other → background
+- איטי יותר אבל הרבה יותר מדויק
+
+---
+
+## איך ה-Auth עובד
+
+```
+Frontend                          Backend (/auth/...)
+────────                          ───────────────────
+signUp(email, pw) ─────────────> POST /auth/signup
+                                   ├─ hash password (bcrypt)
+                                   ├─ create User in DB
+                                   ├─ create session (UUID)
+                                   └─ Set-Cookie: session={uuid}; HttpOnly; SameSite=Lax
+
+signIn(email, pw) ─────────────> POST /auth/login
+                                   ├─ find user by email
+                                   ├─ verify password
+                                   └─ Set-Cookie: session={uuid}
+
+googleLogin(credential) ───────> POST /auth/google
+                                   ├─ verify Google ID token
+                                   ├─ find or create user
+                                   └─ Set-Cookie: session={uuid}
+
+currentUser() ─────────────────> GET /auth/me
+                                   ├─ read cookie → find session
+                                   └─ return user data (or 401)
+
+כל בקשה אחרי login:
+  הדפדפן שולח את ה-cookie אוטומטית
+  → Backend: current_user() dependency → מחלץ user מה-session
+```
+
+ה-session הוא **httpOnly cookie** - ה-JavaScript לא יכול לגשת אליו, רק הדפדפן שולח אותו אוטומטית.
+
+---
+
+## Signed URLs - גישה לקבצים
+
+הקבצים ב-MinIO הם **פרטיים** תמיד. אין public URLs.
+
+כדי להאזין או להוריד, הבקאנד מייצר **Signed URL** - כתובת זמנית עם חתימה קריפטוגרפית:
+
+```
+GET /songs/{id}/listen-url/vocals
+  → Backend:
+      1. בודק שהמשתמש מורשה
+      2. מוצא את ה-storage_key של הקובץ ב-DB
+      3. storage.generate_signed_url(key, ttl=600) → MinIO מייצר URL חתום
+      4. שומר SignedUrlGrant ב-DB (audit)
+      5. מחזיר: { url: "http://minio:9000/bucket/...?X-Amz-Signature=...", expires_in: 600 }
+  → Frontend:
+      <audio src={url} /> → הדפדפן ניגש ישירות ל-MinIO עם ה-URL החתום
+```
+
+---
+
+## הרצה מקומית
 
 ```bash
-cp .env.example .env          # local placeholders only — never real secrets
+# 1. העתק את קובץ ההגדרות
+cp .env.example .env
+# ערוך את .env עם הערכים שלך
 
-docker compose config         # validate the Compose file
-docker compose build          # build the backend + frontend images (worker reuses backend)
-docker compose up -d          # start all local services (postgres, redis, minio, backend, worker, frontend)
+# 2. בנה והרם
+docker compose build
+docker compose up -d
 
-# Backend /health check (reachable from the host):
-curl http://localhost:8000/health   # -> {"status":"ok","service":"stemspace-backend"}
-# Frontend shell check (reachable from the host):
-curl http://localhost:5173          # -> HTML shell, <title>StemSpace — Phase 0 frontend shell</title>
-
-# Backend tests (includes the worker startup stub test):
-docker compose run --rm --no-deps backend python -m pytest -q
-# Worker startup check (exits 0 after printing one safe stub line):
-docker compose run --rm --no-deps worker python -m app.worker --check
-# Frontend build smoke check:
-docker compose run --rm --no-deps frontend npm run build
-
-docker compose logs --tail=20 worker   # -> "[stemspace-worker] Phase 0 worker startup stub ..."
-docker compose down           # stop everything
+# 3. בדוק
+curl http://localhost:8000/health   # Backend
+open http://localhost:5173          # Frontend
+open http://localhost:8080          # Adminer (DB)
+open http://localhost:9001          # MinIO Console
 ```
 
-`docker compose build` builds only the `backend` and `frontend` images (the `worker` reuses the
-backend image; `postgres` / `redis` / `minio` are pulled). The `backend` container serves
-`GET /health` via uvicorn; the `worker` container runs the Phase 0 startup stub
-(`python -m app.worker`) that prints one safe line and idles; the `frontend` container runs the
-Vite dev server for the Phase 0 empty shell, bound to `0.0.0.0:5173` and mapped to the host
-`FRONTEND_PORT` (default 5173). The frontend service has **no** `env_file` — the shell needs no
-config and must never receive backend/storage secrets or internal service URLs.
+### משתני סביבה חשובים (.env)
 
-> **Behind a TLS-intercepting proxy:** the frontend image's `npm install` fetches from the public
-> npm registry. If Docker builds run behind a TLS-intercepting proxy (a corporate TLS proxy), a
-> fresh container won't trust the proxy's CA and the install fails. Configure Docker/container CA
-> trust **outside the repository**; do **not** disable TLS verification. The committed Dockerfile
-> carries no TLS bypass.
+| משתנה | תיאור |
+|---|---|
+| `DATABASE_URL` | חיבור ל-PostgreSQL |
+| `CELERY_BROKER_URL` | חיבור ל-Redis |
+| `S3_ENDPOINT_URL` | כתובת MinIO |
+| `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` | הרשאות MinIO |
+| `LOCAL_MODEL_HOST_ROOT` | נתיב למודל ה-Basic על המחשב |
+| `VITE_GOOGLE_CLIENT_ID` | Google OAuth client ID |
+| `SMTP_HOST` / `SMTP_USER` / `SMTP_PASSWORD` | שליחת מיילים |
 
-## Repository layout
+---
 
-```text
-.
-├── README.md
-├── .env.example          # placeholders only — never real secrets
-├── .gitignore
-├── .gitattributes
-├── .editorconfig
-├── docker-compose.yml    # local services: postgres, redis, minio, backend, worker, frontend
-├── docs/                 # project documentation and task files
-│   ├── README.md
-│   ├── coding-rules.md
-│   ├── git-workflow.md
-│   ├── tasks/phase-0/    # six Phase 0 task docs + phase-0-final-closure-gate.md
-│   ├── decisions/        # DEC-0001..0003
-│   ├── prd/              # PRD references when supplied
-│   ├── architecture/     # architecture/LLD references when supplied
-│   └── spike/            # spike results (e.g. AI benchmark evidence)
-├── backend/              # FastAPI backend (Phase 0: /health + config only)
-│   ├── Dockerfile
-│   ├── .dockerignore
-│   ├── requirements.txt
-│   ├── app/              # main.py (/health) + config.py + worker.py (P0-004 stub)
-│   └── tests/            # test_health.py, test_config.py, test_worker_startup.py
-├── frontend/             # React + Vite empty shell (Phase 0: no product UI)
-│   ├── Dockerfile
-│   ├── .dockerignore
-│   ├── package.json      # + package-lock.json (react, react-dom, vite)
-│   ├── index.html
-│   ├── vite.config.js    # dev server bound to 0.0.0.0:5173
-│   └── src/              # main.jsx, App.jsx (placeholder), index.css
-└── infra/                # local infra assets (later Phase 0 tasks)
+## ה-DB Models העיקריים
+
+| טבלה | תיאור |
+|---|---|
+| `User` | משתמש - email, password_hash, role, tier, status |
+| `Song` | שיר - title, status (uploaded/processing/ready/failed), visibility, user_id |
+| `AudioFile` | קובץ אודיו - song_id, purpose (original/vocals/background), storage_key |
+| `SeparationJob` | משימת הפרדה - song_id, status, model_tier, error_message |
+| `DailyUsage` | שימוש יומי - basic_count, professional_count |
+| `SignedUrlGrant` | audit - מי ביקש URL ומתי |
+| `SongRating` | דירוג שיר ציבורי |
+| `SongReport` | דיווח על שיר ציבורי |
+
+---
+
+## סיכום ה-Flow בתמונה אחת
+
 ```
-
-## Coding rules (summary)
-
-Full rules: `docs/coding-rules.md`. Highlights:
-
-- **Minimal code, no over-engineering** — implement only the current approved task; no future
-  abstractions, no duplicate logic (`docs/decisions/DEC-0002`).
-- **Private storage only** — no public buckets, no permanent object URLs; the backend grants
-  short-lived signed URLs only after authorization (`docs/decisions/DEC-0003`).
-- **Frontend** — API calls only through `src/api`; no business logic inside components; no
-  messy inline CSS.
-- **Backend** — thin routes, focused services, explicit Pydantic schemas.
-
-## Git workflow
-
-Commit conventions (commit after each completed feature/task, right-sized commits and
-messages) are documented in `docs/git-workflow.md`.
-
-## Secrets policy
-
-Never commit, request or print real passwords, tokens, client secrets, private keys,
-certificates or private connection strings. Use **placeholders only** (`docs/coding-rules.md`).
-
-## Phase 0 does NOT build
-
-To keep scope closed, Phase 0 deliberately does **not** build:
-
-- upload API;
-- queue/job processing;
-- DB domain models;
-- authentication;
-- AI model execution / inference;
-- billing;
-- admin;
-- public library;
-- public storage;
-- resumable upload;
-- extra stems beyond Vocals + Background.
-
-## Evidence expectations
-
-Every implementation task returns an evidence report (see
-`stemspace-dev-pack-v0.1/templates/evidence-report-template.md`) containing: changed files;
-checks/commands run; automated test results; manual verification; deviations; blockers; and a
-confirmation that no out-of-scope work was done. Phase 0 closure additionally requires the full
-service-startup evidence listed in `docs/tasks/phase-0/phase-0-final-closure-gate.md` (that gate
-is **documented, not executed**, until a separate review authorizes running it).
+[משתמש]                [Frontend]              [Backend]              [Worker]            [MinIO]
+   │                       │                       │                     │                   │
+   │── לוחץ "העלה" ──────>│                       │                     │                   │
+   │                       │── POST /upload ──────>│                     │                   │
+   │                       │                       │── upload_bytes ────────────────────────>│
+   │                       │                       │── INSERT Song, Job │                   │
+   │                       │                       │── run_separation.delay ──> Redis        │
+   │                       │<── 201 {song_id} ─────│                     │                   │
+   │                       │                       │                     │                   │
+   │── רואה ספינר ────────│── GET /songs/{id} ───>│                     │                   │
+   │   (polling כל 3s)     │<── {status:processing}│                     │                   │
+   │                       │                       │                     │                   │
+   │                       │                       │   Worker picks job from Redis           │
+   │                       │                       │                     │── download ──────>│
+   │                       │                       │                     │<── audio file ────│
+   │                       │                       │                     │                   │
+   │                       │                       │                     │── AI model ──┐    │
+   │                       │                       │                     │   (UNet or   │    │
+   │                       │                       │                     │    Demucs)   │    │
+   │                       │                       │                     │<─────────────┘    │
+   │                       │                       │                     │                   │
+   │                       │                       │                     │── upload vocals ─>│
+   │                       │                       │                     │── upload bg ─────>│
+   │                       │                       │                     │── UPDATE Song     │
+   │                       │                       │                     │   status="ready"  │
+   │                       │                       │                     │                   │
+   │── רואה נגנים ────────│── GET /songs/{id} ───>│                     │                   │
+   │                       │<── {status:ready} ────│                     │                   │
+   │                       │── GET listen-url ────>│                     │                   │
+   │                       │<── signed URL ────────│                     │                   │
+   │── מנגן ──────────────│── <audio src=URL> ──────────────────────────────────────────────>│
+   │                       │<── audio stream ───────────────────────────────────────────────<│
+```
