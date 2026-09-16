@@ -1,0 +1,69 @@
+/* VocalSplit — Premium Dark Audio Studio */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* --- surfaces --- */
+  --bg: #0a0a12;
+  --bg-secondary: #0f0f1a;
+  --card: rgba(255, 255, 255, 0.04);
+  --card-solid: #14142a;
+  --card-hover: rgba(255, 255, 255, 0.07);
+  --raised: rgba(255, 255, 255, 0.06);
+  --line: rgba(255, 255, 255, 0.08);
+  --line-light: rgba(255, 255, 255, 0.06);
+  --glass: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+
+  /* --- text --- */
+  --text: #f0f0f5;
+  --text-secondary: #a0a0b8;
+  --text-muted: #6b6b80;
+
+  /* --- brand --- */
+  --primary: #7c3aed;
+  --primary-soft: rgba(124, 58, 237, 0.15);
+  --primary-hover: #9333ea;
+  --primary-glow: rgba(124, 58, 237, 0.30);
+  --accent: #06b6d4;
+  --accent-soft: rgba(6, 182, 212, 0.12);
+  --accent-glow: rgba(6, 182, 212, 0.25);
+
+  /* --- stems --- */
+  --vocal: #f472b6;
+  --vocal-soft: rgba(244, 114, 182, 0.12);
+  --vocal-glow: rgba(244, 114, 182, 0.25);
+  --instrumental: #34d399;
+  --instrumental-soft: rgba(52, 211, 153, 0.12);
+  --instrumental-glow: rgba(52, 211, 153, 0.25);
+
+  /* --- status --- */
+  --ok: #34d399;
+  --ok-soft: rgba(52, 211, 153, 0.12);
+  --warn: #fbbf24;
+  --warn-soft: rgba(251, 191, 36, 0.12);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.10);
+
+  /* --- sidebar --- */
+  --sidebar-bg: linear-gradient(180deg, #0e0e1c 0%, #121228 50%, #0a0a18 100%);
+  --sidebar-text: rgba(255, 255, 255, 0.55);
+  --sidebar-text-active: #ffffff;
+  --sidebar-hover: rgba(255, 255, 255, 0.06);
+  --sidebar-active-bg: rgba(124, 58, 237, 0.2);
+  --sidebar-line: rgba(255, 255, 255, 0.06);
+
+  /* --- layout --- */
+  --sidebar-w: 240px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
+  --shadow-card: 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-card-hover: 0 8px 32px rgba(0,0,0,0.4);
+  --shadow-glow: 0 4px 24px var(--primary-glow);
+  --shadow-modal: 0 32px 80px rgba(0,0,0,0.5), 0 0 1px rgba(255,255,255,0.1);
+
+  font-family: 'Inter', 'Assistant', system-ui, sans-serif;
+  line-height: 1.6;
+  color: var(--text);
+}
