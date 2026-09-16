@@ -16,8 +16,41 @@ if errorlevel 1 (
 )
 
 echo.
+echo Checking Docker Hub login...
+docker pull hello-world >nul 2>&1
+if errorlevel 1 (
+    echo.
+    echo ============================================
+    echo   Docker Hub requires login to pull images.
+    echo   Create a free account at hub.docker.com
+    echo   then run: docker login
+    echo ============================================
+    echo.
+    echo Running docker login now...
+    docker login
+    if errorlevel 1 (
+        echo Login failed. Please try again.
+        pause
+        exit /b 1
+    )
+)
+
+echo.
 echo Starting VocalSplit...
 docker compose up -d --build
+if errorlevel 1 (
+    echo.
+    echo =============================================
+    echo   Something went wrong. Common fixes:
+    echo   1. Run: docker login
+    echo   2. Make sure .env file exists (copy from .env.example)
+    echo   3. Restart Docker Desktop and try again
+    echo =============================================
+    echo.
+    pause
+    exit /b 1
+)
+
 echo.
 echo VocalSplit is running!
 echo App:     http://localhost:5173

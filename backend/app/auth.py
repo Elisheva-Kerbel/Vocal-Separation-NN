@@ -385,6 +385,8 @@ def current_user(
     user = db.get(User, session.user_id)
     if user is None:
         raise _not_authenticated()
+    if user.status == "blocked":
+        raise _error(403, "account_blocked", "החשבון שלך נחסם על ידי מנהל המערכת. לבירורים, פנה/י להנהלה.")
     if user.status != ACTIVE_STATUS:
         raise _error(403, "account_not_active", "This account is not active.")
 
@@ -452,7 +454,11 @@ def login(
     stored_hash = user.password_hash if user is not None else _DUMMY_PASSWORD_HASH
     password_ok = verify_password(payload.password, stored_hash)
 
-    if user is None or not password_ok or user.status != ACTIVE_STATUS:
+    if user is None or not password_ok:
+        raise _invalid_credentials()
+    if user.status == "blocked":
+        raise _error(403, "account_blocked", "החשבון שלך נחסם על ידי מנהל המערכת. לבירורים, פנה/י להנהלה.")
+    if user.status != ACTIVE_STATUS:
         raise _invalid_credentials()
 
     _start_session(db, user, response)

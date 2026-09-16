@@ -263,17 +263,21 @@ def list_all_songs(
     db: DbSession = Depends(get_db),
 ) -> list[dict]:
     _require_admin(user)
+    from app.db.models import SeparationJob
     songs = db.scalars(
         select(Song).where(Song.deleted_at.is_(None))
         .order_by(Song.created_at.desc()).offset(offset).limit(limit)
     ).all()
-    return [
-        {"id": str(s.id), "title": s.title, "status": s.status,
-         "visibility": s.visibility, "model_tier": s.model_tier,
-         "owner_email": s.owner.email if s.owner else None,
-         "created_at": s.created_at.isoformat()}
-        for s in songs
-    ]
+    result = []
+    for s in songs:
+        job = db.scalars(select(SeparationJob).where(SeparationJob.song_id == s.id).limit(1)).first()
+        result.append({
+            "id": str(s.id), "title": s.title, "status": s.status,
+            "visibility": s.visibility, "model_tier": job.model_tier if job else None,
+            "owner_email": s.owner.email if s.owner else None,
+            "created_at": s.created_at.isoformat(),
+        })
+    return result
 
 
 # --- Audit Log ---

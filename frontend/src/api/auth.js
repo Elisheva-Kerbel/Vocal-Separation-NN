@@ -21,6 +21,13 @@ const MESSAGES = {
 
 const FALLBACK = 'Something went wrong. Try again.'
 
+function extractMessage(payload) {
+  const code = payload?.detail?.error
+  if (MESSAGES[code]) return MESSAGES[code]
+  if (payload?.detail?.message) return payload.detail.message
+  return FALLBACK
+}
+
 /** Mirrors the backend's own rule so an obviously short password is caught before
  *  a round trip. The backend still enforces it — this is a courtesy check. */
 export const MIN_PASSWORD_LENGTH = 8
@@ -43,7 +50,7 @@ async function post(path, body) {
   if (!response.ok) {
     // Only the fixed code is read. Server text, status codes and any other
     // detail never reach the user.
-    throw new Error(MESSAGES[payload?.detail?.error] ?? FALLBACK)
+    throw new Error(extractMessage(payload))
   }
   return payload
 }

@@ -1183,7 +1183,7 @@ function AdminPage({ user }) {
   return (
     <section className="page-section">
       <div className="wrap">
-        <h2>{Icons.shield} לוח ניהול</h2>
+        <h2>לוח ניהול</h2>
         {error && <p className="error">{error}</p>}
 
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
