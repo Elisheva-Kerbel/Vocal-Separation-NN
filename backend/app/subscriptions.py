@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
 from app.auth import current_user, get_db
+from app.constants import UserTier
 from app.db.models import Coupon, CouponRedemption, User
 
 router = APIRouter(prefix="/subscriptions", tags=["subscriptions"])
@@ -43,7 +44,7 @@ def subscribe(
     if payload.plan not in ("monthly", "annual"):
         raise HTTPException(status_code=400, detail={"error": "invalid_plan", "message": "Plan must be 'monthly' or 'annual'."})
 
-    if user.tier == "pro":
+    if user.tier == UserTier.PRO:
         raise HTTPException(status_code=400, detail={"error": "already_pro", "message": "כבר יש לך מנוי Pro."})
 
     price = PRO_MONTHLY_PRICE if payload.plan == "monthly" else PRO_ANNUAL_PRICE
@@ -76,13 +77,13 @@ def subscribe(
 
     db.add(CouponRedemption(coupon_id=coupon.id, user_id=user.id))
     coupon.redemption_count += 1
-    user.tier = "pro"
+    user.tier = UserTier.PRO
     user.subscription_expires_at = now + datetime.timedelta(days=coupon.days_valid)
     db.commit()
 
     return SubscribeResponse(
         message=f"הקופון הופעל! שודרגת לרמה מקצועית ל-{coupon.days_valid} ימים.",
-        tier="pro",
+        tier=UserTier.PRO,
         plan=payload.plan,
         price=0,
         currency=CURRENCY,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { statusBadgeClass, Icons, STATUS_LABELS, VIS_LABELS } from '../helpers.jsx'
+import { statusBadgeClass, Icons } from '../helpers.jsx'
 import { getSong, getListenUrl, getDownloadUrl, renameSong, deleteSong } from '../api/songs.js'
 
 export default function SongPage({ songId, user, t }) {
@@ -85,7 +85,7 @@ export default function SongPage({ songId, user, t }) {
       await renameSong(songId, titleDraft.trim())
       setSong(prev => ({ ...prev, title: titleDraft.trim() }))
       setEditingTitle(false)
-      setMsg('השם עודכן')
+      setMsg(t('titleUpdated'))
       setTimeout(() => setMsg(''), 2000)
     } catch (f) { setError(f.message) }
   }
@@ -99,7 +99,7 @@ export default function SongPage({ songId, user, t }) {
 
   function onSave() {
     setSaved(true)
-    setMsg('השיר נשמר בספרייה!')
+    setMsg(t('savedToLibrary'))
     setTimeout(() => { window.location.hash = '#/library' }, 1200)
   }
 
@@ -124,17 +124,17 @@ export default function SongPage({ songId, user, t }) {
                   <input ref={titleRef} className="field-input" value={titleDraft} onChange={e => setTitleDraft(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') onRename(); if (e.key === 'Escape') setEditingTitle(false) }}
                     style={{ flex: 1, fontSize: '1.1rem' }} autoFocus />
-                  <button className="btn" onClick={onRename} style={{ padding: '0.4rem 1rem' }}>שמור</button>
-                  <button className="ghost" onClick={() => { setEditingTitle(false); setTitleDraft(song.title || '') }}>ביטול</button>
+                  <button className="btn" onClick={onRename} style={{ padding: '0.4rem 1rem' }}>{t('save')}</button>
+                  <button className="ghost" onClick={() => { setEditingTitle(false); setTitleDraft(song.title || '') }}>{t('cancel')}</button>
                 </div>
               ) : (
-                <h2 style={{ margin: 0, cursor: 'pointer' }} onClick={() => setEditingTitle(true)} title="לחץ לשינוי שם">
-                  {song.title || 'ללא שם'} <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>&#9998;</span>
+                <h2 style={{ margin: 0, cursor: 'pointer' }} onClick={() => setEditingTitle(true)} title={t('clickToRename')}>
+                  {song.title || t('noTitle')} <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>&#9998;</span>
                 </h2>
               )}
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <span className={statusBadgeClass(song.status)}>{STATUS_LABELS[song.status] || song.status}</span>
-                <span className="badge neutral">{VIS_LABELS[song.visibility] || song.visibility}</span>
+                <span className={statusBadgeClass(song.status)}>{t(song.status) || song.status}</span>
+                <span className="badge neutral">{t(song.visibility) || song.visibility}</span>
               </div>
             </div>
           )}
@@ -147,8 +147,8 @@ export default function SongPage({ songId, user, t }) {
               <div className="processing-anim">
                 <span className="spinner" style={{ width: 48, height: 48 }} />
               </div>
-              <h3 style={{ margin: '1.5rem 0 0.5rem', color: 'var(--text-primary)' }}>מפריד שירה ומוזיקה...</h3>
-              <p className="hint">זה יכול לקחת כמה דקות. תוצאות איכותיות שוות את ההמתנה.</p>
+              <h3 style={{ margin: '1.5rem 0 0.5rem', color: 'var(--text-primary)' }}>{t('separating')}</h3>
+              <p className="hint">{t('waitNote')}</p>
               <p style={{ fontFamily: 'monospace', fontSize: '1.5rem', color: 'var(--primary)', margin: '1rem 0 0' }}>{mm}:{ss}</p>
             </div>
           )}
@@ -184,23 +184,23 @@ export default function SongPage({ songId, user, t }) {
           )}
 
           {song.status === 'failed' && song.job && (
-            <p className="error">{song.job.error_message || 'ההפרדה נכשלה.'}</p>
+            <p className="error">{song.job.error_message || t('separationFailed')}</p>
           )}
         </div>
 
         {song.status === 'ready' && !saved && (
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <button className="btn" onClick={onSave}>שמור בספרייה</button>
-            <button className="btn danger" onClick={onDelete}>מחק</button>
+            <button className="btn" onClick={onSave}>{t('saveToLibrary')}</button>
+            <button className="btn danger" onClick={onDelete}>{t('delete')}</button>
           </div>
         )}
         {song.status === 'ready' && saved && (
-          <a href="#/library" className="btn secondary">לספרייה</a>
+          <a href="#/library" className="btn secondary">{t('toLibrary')}</a>
         )}
         {song.status === 'failed' && (
           <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <a href="#/upload" className="btn">העלה שיר חדש</a>
-            <button className="btn danger" onClick={onDelete}>מחק</button>
+            <a href="#/upload" className="btn">{t('uploadNew')}</a>
+            <button className="btn danger" onClick={onDelete}>{t('delete')}</button>
           </div>
         )}
       </div>

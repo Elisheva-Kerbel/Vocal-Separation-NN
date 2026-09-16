@@ -1,19 +1,25 @@
-"""Public Library routes (Phase 9) — discovery, publish/unpublish, ratings, reports."""
+"""Public Library routes (Phase 9) -- discovery, publish/unpublish, ratings, reports."""
 
 from __future__ import annotations
 
 import datetime
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session as DbSession
 
-from fastapi.responses import StreamingResponse
-
 from app.auth import current_user, get_db
+from app.constants import (
+    STEM_OUTPUT_CONTENT_TYPE,
+    ReportStatus,
+    SongStatus,
+    Visibility,
+)
 from app.db.models import AudioFile, ContentReport, Rating, Song, User
+from app.helpers import api_error, get_audio_file_or_404, get_public_song_or_404, validate_purpose
 
 router = APIRouter(prefix="/public", tags=["public"])
 
@@ -58,10 +64,10 @@ def public_library(
 ) -> PublicListResponse:
     base = (
         select(Song)
-        .where(Song.visibility == "public", Song.status == "ready", Song.deleted_at.is_(None))
+        .where(Song.visibility == Visibility.PUBLIC, Song.status == SongStatus.READY, Song.deleted_at.is_(None))
     )
     total = len(db.scalars(select(Song.id).where(
-        Song.visibility == "public", Song.status == "ready", Song.deleted_at.is_(None)
+        Song.visibility == Visibility.PUBLIC, Song.status == SongStatus.READY, Song.deleted_at.is_(None)
     )).all())
 
     songs = db.scalars(base.order_by(Song.created_at.desc()).offset(offset).limit(limit)).all()
@@ -84,9 +90,7 @@ def public_library(
 
 @router.get("/songs/{song_id}", response_model=PublicSong)
 def public_song(song_id: uuid.UUID, db: DbSession = Depends(get_db)) -> PublicSong:
-    song = db.get(Song, song_id)
-    if song is None or song.visibility != "public" or song.deleted_at is not None:
-        raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Song not found."})
+    song = get_public_song_or_404(db, song_id)
 
     avg = db.scalar(select(func.avg(Rating.score)).where(Rating.song_id == song_id))
     count = db.scalar(select(func.count(Rating.id)).where(Rating.song_id == song_id)) or 0
@@ -109,21 +113,9 @@ def public_listen_url(
     from app import storage
     from app.config import load_settings
 
-    if purpose not in ("vocals", "background", "original"):
-        raise HTTPException(status_code=400, detail={"error": "invalid_purpose", "message": "Purpose must be vocals, background, or original."})
-
-    song = db.get(Song, song_id)
-    if song is None or song.visibility != "public" or song.deleted_at is not None:
-        raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Song not found."})
-
-    audio_file = db.scalars(
-        select(AudioFile).where(
-            AudioFile.song_id == song_id,
-            AudioFile.purpose == purpose,
-        )
-    ).first()
-    if audio_file is None:
-        raise HTTPException(status_code=404, detail={"error": "stem_not_found", "message": "Stem not available."})
+    validate_purpose(purpose)
+    get_public_song_or_404(db, song_id)
+    audio_file = get_audio_file_or_404(db, song_id, purpose)
 
     settings = load_settings()
     ttl = settings.signed_url_listen_ttl
@@ -141,24 +133,12 @@ def public_stream(
 
     from app import storage
 
-    if purpose not in ("vocals", "background", "original"):
-        raise HTTPException(status_code=400, detail={"error": "invalid_purpose", "message": "Purpose must be vocals, background, or original."})
-
-    song = db.get(Song, song_id)
-    if song is None or song.visibility != "public" or song.deleted_at is not None:
-        raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Song not found."})
-
-    audio_file = db.scalars(
-        select(AudioFile).where(
-            AudioFile.song_id == song_id,
-            AudioFile.purpose == purpose,
-        )
-    ).first()
-    if audio_file is None:
-        raise HTTPException(status_code=404, detail={"error": "stem_not_found", "message": "Stem not available."})
+    validate_purpose(purpose)
+    get_public_song_or_404(db, song_id)
+    audio_file = get_audio_file_or_404(db, song_id, purpose)
 
     data = storage.download_bytes(audio_file.storage_key)
-    content_type = audio_file.content_type or "audio/wav"
+    content_type = audio_file.content_type or STEM_OUTPUT_CONTENT_TYPE
     return StreamingResponse(
         BytesIO(data),
         media_type=content_type,
@@ -175,13 +155,13 @@ def publish_song(
 ) -> dict:
     song = db.get(Song, song_id)
     if song is None or song.user_id != user.id or song.deleted_at is not None:
-        raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Song not found."})
-    if song.status != "ready":
-        raise HTTPException(status_code=400, detail={"error": "not_ready", "message": "Song must be ready before publishing."})
+        raise api_error(404, "not_found", "Song not found.")
+    if song.status != SongStatus.READY:
+        raise api_error(400, "not_ready", "Song must be ready before publishing.")
     if not payload.rights_confirmed:
-        raise HTTPException(status_code=400, detail={"error": "rights_required", "message": "You must confirm you have the rights."})
+        raise api_error(400, "rights_required", "You must confirm you have the rights.")
 
-    song.visibility = "public"
+    song.visibility = Visibility.PUBLIC
     song.rights_confirmed = True
     db.commit()
 
@@ -200,9 +180,9 @@ def unpublish_song(
 ) -> dict:
     song = db.get(Song, song_id)
     if song is None or song.user_id != user.id or song.deleted_at is not None:
-        raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Song not found."})
+        raise api_error(404, "not_found", "Song not found.")
 
-    song.visibility = "private"
+    song.visibility = Visibility.PRIVATE
     db.commit()
     return {"message": "Song unpublished."}
 
@@ -214,11 +194,9 @@ def rate_song(
     user: User = Depends(current_user),
     db: DbSession = Depends(get_db),
 ) -> dict:
-    song = db.get(Song, song_id)
-    if song is None or song.visibility != "public" or song.deleted_at is not None:
-        raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Song not found."})
+    song = get_public_song_or_404(db, song_id)
     if song.user_id == user.id:
-        raise HTTPException(status_code=400, detail={"error": "self_rating", "message": "You cannot rate your own song."})
+        raise api_error(400, "self_rating", "You cannot rate your own song.")
 
     existing = db.scalars(
         select(Rating).where(Rating.song_id == song_id, Rating.user_id == user.id)
@@ -238,9 +216,7 @@ def report_song(
     user: User = Depends(current_user),
     db: DbSession = Depends(get_db),
 ) -> dict:
-    song = db.get(Song, song_id)
-    if song is None or song.visibility != "public" or song.deleted_at is not None:
-        raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Song not found."})
+    get_public_song_or_404(db, song_id)
 
     db.add(ContentReport(song_id=song_id, reporter_id=user.id, reason=payload.reason))
     db.commit()

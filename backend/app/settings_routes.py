@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
 from app.auth import clear_auth_cookie, current_user, get_db, hash_password, verify_password, MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH
+from app.constants import GOOGLE_OAUTH_SENTINEL, UserRole, UserStatus, UserTier, Visibility
 from app.db.models import AudioFile, Song, User, UserSession
 from fastapi import Response
 
@@ -81,7 +82,7 @@ def change_password(
     user: User = Depends(current_user),
     db: DbSession = Depends(get_db),
 ) -> dict:
-    if user.password_hash == "google_oauth":
+    if user.password_hash == GOOGLE_OAUTH_SENTINEL:
         raise HTTPException(status_code=400, detail={"error": "google_account", "message": "חשבון Google — אין אפשרות לשנות סיסמה."})
     if not verify_password(payload.current_password, user.password_hash):
         raise HTTPException(status_code=400, detail={"error": "wrong_password", "message": "הסיסמה הנוכחית שגויה."})
@@ -100,11 +101,11 @@ def toggle_tier(
     user: User = Depends(current_user),
     db: DbSession = Depends(get_db),
 ) -> dict:
-    if user.role != "super_admin":
+    if user.role != UserRole.SUPER_ADMIN:
         raise HTTPException(status_code=403, detail={"error": "forbidden", "message": "Admin only."})
-    if user.tier == "pro":
+    if user.tier == UserTier.PRO:
         raise HTTPException(status_code=400, detail={"error": "cannot_downgrade", "message": "לא ניתן לרדת מרמה מקצועית."})
-    user.tier = "pro"
+    user.tier = UserTier.PRO
     db.commit()
     return {"tier": user.tier, "message": f"Tier switched to {user.tier}."}
 
@@ -122,13 +123,13 @@ def delete_account(
     songs = db.scalars(select(Song).where(Song.user_id == user.id)).all()
     for song in songs:
         song.deleted_at = datetime.datetime.now(datetime.timezone.utc)
-        song.visibility = "private"
+        song.visibility = Visibility.PRIVATE
 
     sessions = db.scalars(select(UserSession).where(UserSession.user_id == user.id)).all()
     for session in sessions:
         db.delete(session)
 
-    user.status = "deleted"
+    user.status = UserStatus.DELETED
     user.email = f"deleted_{user.id}@deleted.local"
 
     db.commit()

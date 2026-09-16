@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
 from app.config import load_settings
+from app.constants import GOOGLE_OAUTH_SENTINEL, UserStatus
 from app.db.models import User
 
 from .password import (
@@ -148,7 +149,7 @@ def login(
 
     if user is None or not password_ok:
         raise _invalid_credentials()
-    if user.status == "blocked":
+    if user.status == UserStatus.BLOCKED:
         raise _error(403, "account_blocked", "החשבון שלך נחסם על ידי מנהל המערכת. לבירורים, פנה/י להנהלה.")
     if user.status != ACTIVE_STATUS:
         raise _invalid_credentials()
@@ -229,7 +230,7 @@ def google_login(
     user = User(
         email=google_email,
         status=ACTIVE_STATUS,
-        password_hash="google_oauth",
+        password_hash=GOOGLE_OAUTH_SENTINEL,
     )
     db.add(user)
     db.commit()

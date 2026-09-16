@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
 from app.auth import current_user, get_db
+from app.constants import UserTier
 from app.db.models import Coupon, CouponRedemption, User
 
 router = APIRouter(prefix="/coupons", tags=["coupons"])
@@ -53,8 +54,8 @@ def redeem_coupon(
     db.add(CouponRedemption(coupon_id=coupon.id, user_id=user.id))
     coupon.redemption_count += 1
 
-    if coupon.tier_grant == "pro":
-        user.tier = "pro"
+    if coupon.tier_grant == UserTier.PRO:
+        user.tier = UserTier.PRO
 
     db.commit()
     return {"message": f"Coupon redeemed. You now have {coupon.tier_grant} tier."}

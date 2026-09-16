@@ -1,10 +1,5 @@
 import { useEffect, useState } from 'react'
 
-export const STEM_LABELS = { original: 'מקור', vocals: 'שירה', background: 'מוזיקה' }
-export const STATUS_LABELS = { queued: 'בתור', processing: 'בעיבוד', ready: 'מוכן', failed: 'נכשל', succeeded: 'מוכן' }
-export const VIS_LABELS = { private: 'פרטי', public: 'ציבורי' }
-export const TIER_LABELS = { free: 'חינם', pro: 'מקצועי' }
-
 export function statusBadgeClass(status) {
   if (status === 'ready' || status === 'succeeded') return 'badge ready'
   if (status === 'processing' || status === 'queued') return 'badge processing'

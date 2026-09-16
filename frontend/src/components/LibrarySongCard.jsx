@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { statusBadgeClass, Icons, STEM_LABELS, STATUS_LABELS, VIS_LABELS } from '../helpers.jsx'
+import { statusBadgeClass, Icons } from '../helpers.jsx'
 import { getListenUrl, getDownloadUrl } from '../api/songs.js'
 
-export default function LibrarySongCard({ song, onPublish, onUnpublish, onDelete }) {
+export default function LibrarySongCard({ song, onPublish, onUnpublish, onDelete, t }) {
   const [listenUrls, setListenUrls] = useState({})
   const [error, setError] = useState('')
 
@@ -29,12 +29,12 @@ export default function LibrarySongCard({ song, onPublish, onUnpublish, onDelete
 
   return (
     <article className="song-card">
-      <h3><a href={`#/song/${song.id}`}>{song.title || 'ללא שם'}</a></h3>
+      <h3><a href={`#/song/${song.id}`}>{song.title || t('noTitle')}</a></h3>
       <div style={{ display: 'flex', gap: '0.35rem', margin: '0.5rem 0', flexWrap: 'wrap' }}>
-        <span className={statusBadgeClass(song.status)}>{STATUS_LABELS[song.status] || song.status}</span>
-        <span className="badge neutral">{VIS_LABELS[song.visibility] || song.visibility}</span>
+        <span className={statusBadgeClass(song.status)}>{t(song.status) || song.status}</span>
+        <span className="badge neutral">{t(song.visibility) || song.visibility}</span>
         {song.model_tier && <span className={`badge ${song.model_tier === 'professional' ? 'inst' : 'primary'} model-badge`}>
-          {song.model_tier === 'professional' ? 'מקצועי' : 'בסיסי'}
+          {t(song.model_tier)}
         </span>}
       </div>
       <p className="hint">{new Date(song.created_at).toLocaleDateString('he-IL')}</p>
@@ -43,11 +43,11 @@ export default function LibrarySongCard({ song, onPublish, onUnpublish, onDelete
         <div className="song-card-stems">
           {['original', 'vocals', 'background'].map(purpose => (
             <div key={purpose} className="stem-row">
-              <span className={`badge ${purpose === 'vocals' ? 'vocal' : purpose === 'background' ? 'inst' : 'neutral'}`} style={{ fontSize: '0.7rem', minWidth: '3rem', textAlign: 'center' }}>{STEM_LABELS[purpose] || 'מקור'}</span>
+              <span className={`badge ${purpose === 'vocals' ? 'vocal' : purpose === 'background' ? 'inst' : 'neutral'}`} style={{ fontSize: '0.7rem', minWidth: '3rem', textAlign: 'center' }}>{t(purpose)}</span>
               {listenUrls[purpose] ? (
                 <audio controls src={listenUrls[purpose]} style={{ flex: 1, height: 32 }} />
               ) : (
-                <button className="ghost" style={{ fontSize: '0.75rem' }} onClick={() => loadListen(purpose)}>{Icons.headphones} האזן</button>
+                <button className="ghost" style={{ fontSize: '0.75rem' }} onClick={() => loadListen(purpose)}>{Icons.headphones} {t('listen')}</button>
               )}
               <button className="ghost" style={{ fontSize: '0.75rem' }} onClick={() => onDownload(purpose)}>{Icons.download}</button>
             </div>
@@ -59,12 +59,12 @@ export default function LibrarySongCard({ song, onPublish, onUnpublish, onDelete
 
       <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
         {song.status === 'ready' && song.visibility === 'private' && (
-          <button className="ghost" onClick={() => onPublish(song.id)}>{Icons.globe} פרסם</button>
+          <button className="ghost" onClick={() => onPublish(song.id)}>{Icons.globe} {t('publish')}</button>
         )}
         {song.visibility === 'public' && (
-          <button className="ghost" onClick={() => onUnpublish(song.id)}>{Icons.eyeOff} הסר</button>
+          <button className="ghost" onClick={() => onUnpublish(song.id)}>{Icons.eyeOff} {t('unpublish')}</button>
         )}
-        <button className="ghost" style={{ color: 'var(--danger)' }} onClick={() => onDelete(song.id)}>{Icons.trash} מחק</button>
+        <button className="ghost" style={{ color: 'var(--danger)' }} onClick={() => onDelete(song.id)}>{Icons.trash} {t('delete')}</button>
       </div>
     </article>
   )

@@ -96,6 +96,10 @@ export function unpublishSong(songId) {
   return request(`/public/songs/${songId}/unpublish`, { method: 'POST' })
 }
 
+export function getPublicListenUrl(songId, purpose) {
+  return request(`/public/songs/${songId}/listen-url/${purpose}`)
+}
+
 export function getPublicLibrary(params = {}) {
   const q = new URLSearchParams()
   if (params.offset) q.set('offset', params.offset)

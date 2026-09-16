@@ -109,7 +109,7 @@ export default function App() {
   } else if (hash === '#/upgrade') {
     page = user ? <UpgradePage user={user} setUser={setUser} t={t} /> : <NeedAuth openAuth={openAuth} t={t} />
   } else if (hash === '#/admin') {
-    page = user && user.role === 'super_admin' ? <AdminPage user={user} /> : <NeedAuth openAuth={openAuth} t={t} />
+    page = user && user.role === 'super_admin' ? <AdminPage user={user} t={t} /> : <NeedAuth openAuth={openAuth} t={t} />
   } else {
     page = <HomePage user={user} openAuth={openAuth} t={t} />
   }
@@ -129,7 +129,7 @@ export default function App() {
             <a href="#/explore" className={`sidebar-link ${currentPage === 'explore' ? 'active' : ''}`}>{Icons.explore}<span>{t('explore')}</span></a>
             <a href="#/settings" className={`sidebar-link ${currentPage === 'settings' ? 'active' : ''}`}>{Icons.settings}<span>{t('settings')}</span></a>
             {user.role === 'super_admin' && (
-              <a href="#/admin" className={`sidebar-link ${currentPage === 'admin' ? 'active' : ''}`}>{Icons.shield}<span>ניהול</span></a>
+              <a href="#/admin" className={`sidebar-link ${currentPage === 'admin' ? 'active' : ''}`}>{Icons.shield}<span>{t('admin')}</span></a>
             )}
           </nav>
           {user.tier !== 'pro' && (

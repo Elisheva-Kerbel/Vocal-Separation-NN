@@ -9,6 +9,8 @@ import uuid
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.constants import UserRole, UserTier
+
 
 def _text_only(value: object) -> str:
     """Coerce a non-string credential field to ``""`` before validation.
@@ -59,8 +61,8 @@ class AuthUserRead(BaseModel):
     status: str
     preferred_language: str | None = Field(alias="preferredLanguage")
     email_opt_in: bool = Field(alias="emailOptIn")
-    role: str = "free"
-    tier: str = "free"
+    role: str = UserRole.FREE
+    tier: str = UserTier.FREE
 
 
 class AuthMessage(BaseModel):

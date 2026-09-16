@@ -5,7 +5,7 @@ from __future__ import annotations
 import datetime
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
@@ -13,7 +13,14 @@ from sqlalchemy.orm import Session as DbSession
 
 from app.auth import current_user, get_db
 from app.config import load_settings
+from app.constants import (
+    STEM_OUTPUT_CONTENT_TYPE,
+    MAX_TITLE_LENGTH,
+    GrantType,
+    Visibility,
+)
 from app.db.models import AudioFile, SeparationJob, SignedUrlGrant, Song, User
+from app.helpers import api_error, get_audio_file_or_404, validate_purpose
 
 router = APIRouter(prefix="/songs", tags=["songs"])
 
@@ -53,20 +60,16 @@ class SignedUrlResponse(BaseModel):
     purpose: str
 
 
-def _error(status_code: int, code: str, message: str) -> HTTPException:
-    return HTTPException(status_code=status_code, detail={"error": code, "message": message})
-
-
 def _get_song_or_404(db: DbSession, song_id: uuid.UUID) -> Song:
     song = db.get(Song, song_id)
     if song is None or song.deleted_at is not None:
-        raise _error(404, "song_not_found", "Song not found.")
+        raise api_error(404, "song_not_found", "Song not found.")
     return song
 
 
 def _check_access(song: Song, user: User) -> None:
-    if song.user_id != user.id and song.visibility != "public":
-        raise _error(403, "forbidden", "You do not have access to this song.")
+    if song.user_id != user.id and song.visibility != Visibility.PUBLIC:
+        raise api_error(403, "forbidden", "You do not have access to this song.")
 
 
 @router.get("/{song_id}", response_model=SongDetail)
@@ -131,20 +134,10 @@ def get_listen_url(
 ) -> SignedUrlResponse:
     from app import storage
 
-    if purpose not in ("vocals", "background", "original"):
-        raise _error(400, "invalid_purpose", "Purpose must be vocals, background, or original.")
-
+    validate_purpose(purpose)
     song = _get_song_or_404(db, song_id)
     _check_access(song, user)
-
-    audio_file = db.scalars(
-        select(AudioFile).where(
-            AudioFile.song_id == song_id,
-            AudioFile.purpose == purpose,
-        )
-    ).first()
-    if audio_file is None:
-        raise _error(404, "stem_not_found", "Stem not available.")
+    audio_file = get_audio_file_or_404(db, song_id, purpose)
 
     settings = load_settings()
     ttl = settings.signed_url_listen_ttl
@@ -153,7 +146,7 @@ def get_listen_url(
     grant = SignedUrlGrant(
         audio_file_id=audio_file.id,
         user_id=user.id,
-        grant_type="listen",
+        grant_type=GrantType.LISTEN,
         expires_at=datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=ttl),
     )
     db.add(grant)
@@ -171,20 +164,10 @@ def get_download_url(
 ) -> SignedUrlResponse:
     from app import storage
 
-    if purpose not in ("vocals", "background", "original"):
-        raise _error(400, "invalid_purpose", "Purpose must be vocals, background, or original.")
-
+    validate_purpose(purpose)
     song = _get_song_or_404(db, song_id)
     _check_access(song, user)
-
-    audio_file = db.scalars(
-        select(AudioFile).where(
-            AudioFile.song_id == song_id,
-            AudioFile.purpose == purpose,
-        )
-    ).first()
-    if audio_file is None:
-        raise _error(404, "stem_not_found", "Stem not available.")
+    audio_file = get_audio_file_or_404(db, song_id, purpose)
 
     settings = load_settings()
     ttl = settings.signed_url_download_ttl
@@ -194,7 +177,7 @@ def get_download_url(
     grant = SignedUrlGrant(
         audio_file_id=audio_file.id,
         user_id=user.id,
-        grant_type="download",
+        grant_type=GrantType.DOWNLOAD,
         expires_at=datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=ttl),
     )
     db.add(grant)
@@ -214,23 +197,13 @@ def stream_audio(
 
     from app import storage
 
-    if purpose not in ("vocals", "background", "original"):
-        raise _error(400, "invalid_purpose", "Purpose must be vocals, background, or original.")
-
+    validate_purpose(purpose)
     song = _get_song_or_404(db, song_id)
     _check_access(song, user)
-
-    audio_file = db.scalars(
-        select(AudioFile).where(
-            AudioFile.song_id == song_id,
-            AudioFile.purpose == purpose,
-        )
-    ).first()
-    if audio_file is None:
-        raise _error(404, "stem_not_found", "Stem not available.")
+    audio_file = get_audio_file_or_404(db, song_id, purpose)
 
     data = storage.download_bytes(audio_file.storage_key)
-    content_type = audio_file.content_type or "audio/wav"
+    content_type = audio_file.content_type or STEM_OUTPUT_CONTENT_TYPE
     return StreamingResponse(
         BytesIO(data),
         media_type=content_type,
@@ -255,7 +228,7 @@ def rename_song(
 ) -> dict:
     song = _get_song_or_404(db, song_id)
     if song.user_id != user.id:
-        raise _error(403, "forbidden", "You do not have access to this song.")
-    song.title = payload.title[:256]
+        raise api_error(403, "forbidden", "You do not have access to this song.")
+    song.title = payload.title[:MAX_TITLE_LENGTH]
     db.commit()
     return {"title": song.title}

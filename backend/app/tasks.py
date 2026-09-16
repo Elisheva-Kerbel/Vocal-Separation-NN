@@ -1,4 +1,4 @@
-"""Celery tasks — async separation (Phase 5)."""
+"""Celery tasks -- async separation (Phase 5)."""
 
 from __future__ import annotations
 
@@ -9,7 +9,13 @@ import tempfile
 import uuid
 
 from app.celery_app import celery
-from app.config import load_settings
+from app.constants import (
+    STEM_OUTPUT_CONTENT_TYPE,
+    JobStatus,
+    ModelTier,
+    SongStatus,
+    UserStatus,
+)
 
 
 @celery.task(bind=True, max_retries=2, default_retry_delay=30)
@@ -27,7 +33,7 @@ def run_separation(self, job_id: str, song_id: str, user_id: str, storage_key: s
         if job is None:
             return {"status": "error", "message": "Job not found"}
 
-        job.status = "running"
+        job.status = JobStatus.RUNNING
         job.started_at = datetime.datetime.now(datetime.timezone.utc)
         db.commit()
 
@@ -36,7 +42,7 @@ def run_separation(self, job_id: str, song_id: str, user_id: str, storage_key: s
             input_path = os.path.join(work_dir, "input")
             storage.download_to_file(storage_key, input_path)
 
-            if model_tier == "professional":
+            if model_tier == ModelTier.PROFESSIONAL:
                 from ai.demucs_inference import run_demucs_separation
                 outputs = run_demucs_separation(input_path, work_dir)
             else:
@@ -52,7 +58,7 @@ def run_separation(self, job_id: str, song_id: str, user_id: str, storage_key: s
                     uuid.UUID(user_id), uuid.UUID(song_id), stem.value, ext,
                 )
                 file_size = os.path.getsize(local_path)
-                storage.upload_from_file(local_path, out_key, "audio/wav")
+                storage.upload_from_file(local_path, out_key, STEM_OUTPUT_CONTENT_TYPE)
 
                 existing = db.scalars(
                     select(AudioFile).where(
@@ -68,15 +74,15 @@ def run_separation(self, job_id: str, song_id: str, user_id: str, storage_key: s
                         song_id=uuid.UUID(song_id),
                         purpose=stem.value,
                         storage_key=out_key,
-                        content_type="audio/wav",
+                        content_type=STEM_OUTPUT_CONTENT_TYPE,
                         byte_size=file_size,
                     )
                     db.add(audio_file)
 
-            job.status = "succeeded"
+            job.status = JobStatus.SUCCEEDED
             job.finished_at = datetime.datetime.now(datetime.timezone.utc)
             if song:
-                song.status = "ready"
+                song.status = SongStatus.READY
             db.commit()
 
             _finalize_usage(db, uuid.UUID(user_id), uuid.UUID(song_id), uuid.UUID(job_id), model_tier)
@@ -84,13 +90,13 @@ def run_separation(self, job_id: str, song_id: str, user_id: str, storage_key: s
             return {"status": "succeeded", "job_id": job_id}
 
         except Exception as exc:
-            job.status = "failed"
+            job.status = JobStatus.FAILED
             job.error_message = str(exc)[:1000]
             job.finished_at = datetime.datetime.now(datetime.timezone.utc)
 
             song = db.get(Song, uuid.UUID(song_id))
             if song:
-                song.status = "failed"
+                song.status = SongStatus.FAILED
             db.commit()
 
             if self.request.retries < self.max_retries:
@@ -115,7 +121,7 @@ def send_new_song_emails(self, song_title: str, owner_name: str) -> dict:
         users = db.scalars(
             select(User).where(
                 User.email_opt_in.is_(True),
-                User.status == "active",
+                User.status == UserStatus.ACTIVE,
             )
         ).all()
 
@@ -145,7 +151,7 @@ def send_new_song_emails(self, song_title: str, owner_name: str) -> dict:
         db.close()
 
 
-def _finalize_usage(db, user_id: uuid.UUID, song_id: uuid.UUID, job_id: uuid.UUID, model_tier: str = "basic") -> None:
+def _finalize_usage(db, user_id: uuid.UUID, song_id: uuid.UUID, job_id: uuid.UUID, model_tier: str = ModelTier.BASIC) -> None:
     from sqlalchemy import select
 
     from app.db.models import DailyUsage, UsageEvent
@@ -176,7 +182,7 @@ def _finalize_usage(db, user_id: uuid.UUID, song_id: uuid.UUID, job_id: uuid.UUI
     ).first()
     if daily:
         daily.successful_count += 1
-        if model_tier == "professional":
+        if model_tier == ModelTier.PROFESSIONAL:
             daily.professional_count += 1
         else:
             daily.basic_count += 1
@@ -185,7 +191,7 @@ def _finalize_usage(db, user_id: uuid.UUID, song_id: uuid.UUID, job_id: uuid.UUI
             user_id=user_id,
             usage_date=today,
             successful_count=1,
-            basic_count=0 if model_tier == "professional" else 1,
-            professional_count=1 if model_tier == "professional" else 0,
+            basic_count=0 if model_tier == ModelTier.PROFESSIONAL else 1,
+            professional_count=1 if model_tier == ModelTier.PROFESSIONAL else 0,
         ))
     db.commit()

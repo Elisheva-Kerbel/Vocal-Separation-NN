@@ -52,7 +52,7 @@ export default function LibraryPage({ user, t }) {
         ) : (
           <div className="grid">
             {songs.map(s => (
-              <LibrarySongCard key={s.id} song={s} onPublish={onPublish} onUnpublish={onUnpublish} onDelete={onDelete} />
+              <LibrarySongCard key={s.id} song={s} onPublish={onPublish} onUnpublish={onUnpublish} onDelete={onDelete} t={t} />
             ))}
           </div>
         )}

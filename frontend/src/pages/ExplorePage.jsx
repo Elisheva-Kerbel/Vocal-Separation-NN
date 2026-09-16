@@ -31,7 +31,7 @@ export default function ExplorePage({ user, t }) {
         ) : (
           <div className="grid">
             {songs.map(s => (
-              <PublicSongCard key={s.id} song={s} user={user} onRate={onRate} />
+              <PublicSongCard key={s.id} song={s} user={user} onRate={onRate} t={t} />
             ))}
           </div>
         )}

@@ -11,6 +11,15 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session as DbSession
 
 from app.auth import current_user, get_db
+from app.constants import (
+    ADMIN_ROLES,
+    ReportStatus,
+    SongStatus,
+    UserRole,
+    UserStatus,
+    UserTier,
+    Visibility,
+)
 from app.db.models import (
     AdminAuditEvent,
     ContentReport,
@@ -21,13 +30,11 @@ from app.db.models import (
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
-ADMIN_ROLES = {"content_moderator", "user_admin", "coupon_admin", "super_admin"}
-
 
 def _require_admin(user: User, allowed_roles: set[str] | None = None) -> None:
     if user.role not in ADMIN_ROLES:
         raise HTTPException(status_code=403, detail={"error": "forbidden", "message": "Admin access required."})
-    if allowed_roles and user.role not in allowed_roles and user.role != "super_admin":
+    if allowed_roles and user.role not in allowed_roles and user.role != UserRole.SUPER_ADMIN:
         raise HTTPException(status_code=403, detail={"error": "forbidden", "message": "Insufficient permissions."})
 
 
@@ -51,7 +58,7 @@ class UserAdminView(BaseModel):
 class CouponCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     code: str = Field(max_length=64)
-    tier_grant: str = "pro"
+    tier_grant: str = UserTier.PRO
     days_valid: int = Field(default=30, ge=1)
     max_redemptions: int = Field(default=1, ge=1)
     expires_at: datetime.datetime | None = None
@@ -88,7 +95,7 @@ def list_users(
     user: User = Depends(current_user),
     db: DbSession = Depends(get_db),
 ) -> list[UserAdminView]:
-    _require_admin(user, {"user_admin"})
+    _require_admin(user, {UserRole.USER_ADMIN})
     users = db.scalars(select(User).order_by(User.created_at.desc()).offset(offset).limit(limit)).all()
     return [UserAdminView(id=u.id, email=u.email, status=u.status, role=u.role, tier=u.tier, created_at=u.created_at) for u in users]
 
@@ -99,11 +106,11 @@ def block_user(
     user: User = Depends(current_user),
     db: DbSession = Depends(get_db),
 ) -> dict:
-    _require_admin(user, {"user_admin"})
+    _require_admin(user, {UserRole.USER_ADMIN})
     target = db.get(User, user_id)
     if target is None:
         raise HTTPException(status_code=404, detail={"error": "not_found", "message": "User not found."})
-    target.status = "blocked"
+    target.status = UserStatus.BLOCKED
     _audit(db, user, "block_user", "user", str(user_id))
     db.commit()
     return {"message": "User blocked."}
@@ -115,11 +122,11 @@ def unblock_user(
     user: User = Depends(current_user),
     db: DbSession = Depends(get_db),
 ) -> dict:
-    _require_admin(user, {"user_admin"})
+    _require_admin(user, {UserRole.USER_ADMIN})
     target = db.get(User, user_id)
     if target is None:
         raise HTTPException(status_code=404, detail={"error": "not_found", "message": "User not found."})
-    target.status = "active"
+    target.status = UserStatus.ACTIVE
     _audit(db, user, "unblock_user", "user", str(user_id))
     db.commit()
     return {"message": "User unblocked."}
@@ -129,13 +136,13 @@ def unblock_user(
 
 @router.get("/reports", response_model=list[ReportView])
 def list_reports(
-    status: str = Query("pending"),
+    status: str = Query(ReportStatus.PENDING),
     offset: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     user: User = Depends(current_user),
     db: DbSession = Depends(get_db),
 ) -> list[ReportView]:
-    _require_admin(user, {"content_moderator"})
+    _require_admin(user, {UserRole.CONTENT_MODERATOR})
     reports = db.scalars(
         select(ContentReport).where(ContentReport.status == status)
         .order_by(ContentReport.created_at.desc()).offset(offset).limit(limit)
@@ -151,7 +158,7 @@ def action_report(
     user: User = Depends(current_user),
     db: DbSession = Depends(get_db),
 ) -> dict:
-    _require_admin(user, {"content_moderator"})
+    _require_admin(user, {UserRole.CONTENT_MODERATOR})
     report = db.get(ContentReport, report_id)
     if report is None:
         raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Report not found."})
@@ -159,13 +166,13 @@ def action_report(
     if action == "remove":
         song = db.get(Song, report.song_id)
         if song:
-            song.visibility = "private"
+            song.visibility = Visibility.PRIVATE
             song.deleted_at = datetime.datetime.now(datetime.timezone.utc)
-        report.status = "actioned"
+        report.status = ReportStatus.ACTIONED
         report.resolved_by = user.id
         _audit(db, user, "remove_song", "song", str(report.song_id), f"Report {report_id}")
     elif action == "dismiss":
-        report.status = "dismissed"
+        report.status = ReportStatus.DISMISSED
         report.resolved_by = user.id
         _audit(db, user, "dismiss_report", "report", str(report_id))
     else:
@@ -184,7 +191,7 @@ def list_coupons(
     user: User = Depends(current_user),
     db: DbSession = Depends(get_db),
 ) -> list[CouponView]:
-    _require_admin(user, {"coupon_admin"})
+    _require_admin(user, {UserRole.COUPON_ADMIN})
     coupons = db.scalars(select(Coupon).order_by(Coupon.created_at.desc()).offset(offset).limit(limit)).all()
     return [CouponView(id=c.id, code=c.code, tier_grant=c.tier_grant, days_valid=c.days_valid,
                          max_redemptions=c.max_redemptions, redemption_count=c.redemption_count,
@@ -197,7 +204,7 @@ def create_coupon(
     user: User = Depends(current_user),
     db: DbSession = Depends(get_db),
 ) -> CouponView:
-    _require_admin(user, {"coupon_admin"})
+    _require_admin(user, {UserRole.COUPON_ADMIN})
     coupon = Coupon(
         code=payload.code, tier_grant=payload.tier_grant,
         days_valid=payload.days_valid, max_redemptions=payload.max_redemptions,
@@ -219,7 +226,7 @@ def deactivate_coupon(
     user: User = Depends(current_user),
     db: DbSession = Depends(get_db),
 ) -> dict:
-    _require_admin(user, {"coupon_admin"})
+    _require_admin(user, {UserRole.COUPON_ADMIN})
     coupon = db.get(Coupon, coupon_id)
     if coupon is None:
         raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Coupon not found."})
@@ -238,12 +245,12 @@ def get_stats(
 ) -> dict:
     _require_admin(user)
     total_users = db.scalar(select(func.count(User.id))) or 0
-    active_users = db.scalar(select(func.count(User.id)).where(User.status == "active")) or 0
+    active_users = db.scalar(select(func.count(User.id)).where(User.status == UserStatus.ACTIVE)) or 0
     total_songs = db.scalar(select(func.count(Song.id)).where(Song.deleted_at.is_(None))) or 0
-    public_songs = db.scalar(select(func.count(Song.id)).where(Song.visibility == "public", Song.deleted_at.is_(None))) or 0
-    ready_songs = db.scalar(select(func.count(Song.id)).where(Song.status == "ready", Song.deleted_at.is_(None))) or 0
-    processing_songs = db.scalar(select(func.count(Song.id)).where(Song.status.in_(["processing", "queued", "uploaded"]), Song.deleted_at.is_(None))) or 0
-    failed_songs = db.scalar(select(func.count(Song.id)).where(Song.status == "failed", Song.deleted_at.is_(None))) or 0
+    public_songs = db.scalar(select(func.count(Song.id)).where(Song.visibility == Visibility.PUBLIC, Song.deleted_at.is_(None))) or 0
+    ready_songs = db.scalar(select(func.count(Song.id)).where(Song.status == SongStatus.READY, Song.deleted_at.is_(None))) or 0
+    processing_songs = db.scalar(select(func.count(Song.id)).where(Song.status.in_([SongStatus.PROCESSING, SongStatus.UPLOADED]), Song.deleted_at.is_(None))) or 0
+    failed_songs = db.scalar(select(func.count(Song.id)).where(Song.status == SongStatus.FAILED, Song.deleted_at.is_(None))) or 0
     return {
         "total_users": total_users,
         "active_users": active_users,
@@ -289,7 +296,7 @@ def get_audit_log(
     user: User = Depends(current_user),
     db: DbSession = Depends(get_db),
 ) -> list[dict]:
-    _require_admin(user, {"super_admin"})
+    _require_admin(user, {UserRole.SUPER_ADMIN})
     events = db.scalars(
         select(AdminAuditEvent).order_by(AdminAuditEvent.created_at.desc()).offset(offset).limit(limit)
     ).all()

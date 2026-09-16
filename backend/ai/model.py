@@ -23,14 +23,5 @@ class Stem(str, Enum):
 
 
 class ModelTier(str, Enum):
-    """The accepted, logical model tiers a client may request (P1-002).
-
-    A ``ModelTier`` is a *logical server-side selector* only — never a checkpoint
-    path, filename, free checkpoint id or storage key. The tier -> checkpoint
-    mapping is resolved server-side by ``checkpoint_registry``. Only these two
-    tiers exist; no Free / Pro / Premium / Enterprise / Admin / Experimental /
-    Custom (or any other) tier may be added.
-    """
-
-    BASIC = "Basic"
-    PROFESSIONAL = "Professional"
+    BASIC = "basic"
+    PROFESSIONAL = "professional"

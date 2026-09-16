@@ -1,4 +1,4 @@
-"""Upload API (Phase 4) — authenticated file upload to private storage."""
+"""Upload API (Phase 4) -- authenticated file upload to private storage."""
 
 from __future__ import annotations
 
@@ -6,13 +6,22 @@ import hashlib
 import os
 import uuid
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session as DbSession
 
 from app.auth import current_user, get_db
 from app.config import load_settings
+from app.constants import (
+    MAX_TITLE_LENGTH,
+    AudioPurpose,
+    JobStatus,
+    ModelTier,
+    SongStatus,
+    Visibility,
+)
 from app.db.models import AudioFile, SeparationJob, Song, User
+from app.helpers import api_error
 from app.quotas import check_quota
 
 router = APIRouter(tags=["upload"])
@@ -37,10 +46,6 @@ class UploadResponse(BaseModel):
     model_tier: str
 
 
-def _error(status_code: int, code: str, message: str) -> HTTPException:
-    return HTTPException(status_code=status_code, detail={"error": code, "message": message})
-
-
 @router.post("/upload", status_code=201, response_model=UploadResponse)
 async def upload_song(
     file: UploadFile = File(...),
@@ -54,31 +59,31 @@ async def upload_song(
 
     settings = load_settings()
 
-    if model_choice not in ("basic", "professional"):
-        raise _error(400, "invalid_model_choice", "Model choice must be 'basic' or 'professional'.")
-    if visibility not in ("private", "public"):
-        raise _error(400, "invalid_visibility", "Visibility must be 'private' or 'public'.")
+    if model_choice not in (ModelTier.BASIC, ModelTier.PROFESSIONAL):
+        raise api_error(400, "invalid_model_choice", "Model choice must be 'basic' or 'professional'.")
+    if visibility not in (Visibility.PRIVATE, Visibility.PUBLIC):
+        raise api_error(400, "invalid_visibility", "Visibility must be 'private' or 'public'.")
 
     content_type = (file.content_type or "application/octet-stream").split(";")[0].strip().lower()
     if content_type not in ACCEPTED_TYPES:
-        raise _error(415, "unsupported_format", "Upload MP3, WAV, or M4A.")
+        raise api_error(415, "unsupported_format", "Upload MP3, WAV, or M4A.")
 
     data = await file.read()
     if len(data) == 0:
-        raise _error(400, "empty_file", "The uploaded file is empty.")
+        raise api_error(400, "empty_file", "The uploaded file is empty.")
     if len(data) > settings.max_upload_bytes:
-        raise _error(413, "file_too_large", f"Max {settings.max_upload_bytes // (1024*1024)} MB.")
+        raise api_error(413, "file_too_large", f"Max {settings.max_upload_bytes // (1024*1024)} MB.")
 
-    model_tier = "professional" if model_choice == "professional" else "basic"
+    model_tier = ModelTier.PROFESSIONAL if model_choice == ModelTier.PROFESSIONAL else ModelTier.BASIC
     check_quota(db, user, model_tier)
 
     ext = ACCEPTED_TYPES[content_type]
     song_id = uuid.uuid4()
-    storage_key = storage.generate_storage_key(user.id, song_id, "original", ext)
+    storage_key = storage.generate_storage_key(user.id, song_id, AudioPurpose.ORIGINAL, ext)
 
     title = file.filename or None
     if title:
-        title = os.path.splitext(title)[0][:256]
+        title = os.path.splitext(title)[0][:MAX_TITLE_LENGTH]
 
     checksum = hashlib.sha256(data).hexdigest()
 
@@ -86,15 +91,15 @@ async def upload_song(
         storage.ensure_bucket()
         storage.upload_bytes(data, storage_key, content_type)
     except Exception:
-        raise _error(500, "upload_failed", "Upload failed. Try again.")
+        raise api_error(500, "upload_failed", "Upload failed. Try again.")
 
-    song = Song(id=song_id, user_id=user.id, title=title, status="uploaded", visibility=visibility)
+    song = Song(id=song_id, user_id=user.id, title=title, status=SongStatus.UPLOADED, visibility=visibility)
     db.add(song)
     db.flush()
 
     audio_file = AudioFile(
         song_id=song_id,
-        purpose="original",
+        purpose=AudioPurpose.ORIGINAL,
         storage_key=storage_key,
         content_type=content_type,
         byte_size=len(data),
@@ -103,15 +108,15 @@ async def upload_song(
     )
     db.add(audio_file)
 
-    job = SeparationJob(song_id=song_id, status="queued", model_tier=model_tier)
+    job = SeparationJob(song_id=song_id, status=JobStatus.QUEUED, model_tier=model_tier)
     db.add(job)
     db.flush()
 
-    song.status = "processing"
+    song.status = SongStatus.PROCESSING
     db.commit()
 
     run_separation.delay(
         str(job.id), str(song_id), str(user.id), storage_key, model_tier,
     )
 
-    return UploadResponse(id=job.id, song_id=song_id, status="processing", title=title, model_tier=model_tier)
+    return UploadResponse(id=job.id, song_id=song_id, status=SongStatus.PROCESSING, title=title, model_tier=model_tier)

@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
 from app.config import load_settings
+from app.constants import ModelTier, UserTier
 from app.db.models import DailyUsage, User
 
 UNLIMITED_EMAILS = frozenset({
@@ -20,7 +21,7 @@ def _is_unlimited(user: User) -> bool:
     return user.email in UNLIMITED_EMAILS
 
 
-def check_quota(db: DbSession, user: User, model_choice: str = "basic") -> None:
+def check_quota(db: DbSession, user: User, model_choice: str = ModelTier.BASIC) -> None:
     if _is_unlimited(user):
         return
     settings = load_settings()
@@ -32,8 +33,8 @@ def check_quota(db: DbSession, user: User, model_choice: str = "basic") -> None:
         )
     ).first()
 
-    if model_choice == "professional":
-        if user.tier != "pro":
+    if model_choice == ModelTier.PROFESSIONAL:
+        if user.tier != UserTier.PRO:
             raise HTTPException(
                 status_code=403,
                 detail={"error": "pro_required", "message": "Professional separations require a Pro subscription."},
@@ -51,7 +52,7 @@ def check_quota(db: DbSession, user: User, model_choice: str = "basic") -> None:
                 },
             )
     else:
-        if user.tier == "pro":
+        if user.tier == UserTier.PRO:
             return
         used = daily.basic_count if daily else 0
         limit = settings.free_daily_limit
@@ -88,7 +89,7 @@ def get_usage_info(db: DbSession, user: User) -> dict:
             "professional_used": pro_used,
             "professional_limit": None,
         }
-    if user.tier == "pro":
+    if user.tier == UserTier.PRO:
         return {
             "tier": user.tier,
             "basic_used": basic_used,

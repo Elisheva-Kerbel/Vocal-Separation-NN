@@ -60,6 +60,12 @@ const T = {
     upgradeTitle: 'שדרג לרמה מקצועית',
     upgradeSub: 'קבל גישה למודל Demucs של Meta עם הפרדות באיכות סטודיו.',
     subscribeMonthly: 'הרשמה חודשית — ₪29/חודש', subscribing: 'מפעיל...',
+    noTitle: 'ללא שם', basic: 'בסיסי', professional: 'מקצועי',
+    noRating: 'ללא דירוג', hidePlayer: 'הסתר נגן', byAuthor: 'מאת',
+    admin: 'ניהול', save: 'שמור', cancel: 'ביטול', clickToRename: 'לחץ לשינוי שם',
+    separating: 'מפריד שירה ומוזיקה...', waitNote: 'זה יכול לקחת כמה דקות. תוצאות איכותיות שוות את ההמתנה.',
+    saveToLibrary: 'שמור בספרייה', toLibrary: 'לספרייה', uploadNew: 'העלה שיר חדש',
+    titleUpdated: 'השם עודכן', savedToLibrary: 'השיר נשמר בספרייה!', separationFailed: 'ההפרדה נכשלה.',
     footer: 'VocalSplit · פלטפורמת הפרדת שירים',
   },
   en: {
@@ -120,6 +126,12 @@ const T = {
     upgradeTitle: 'Upgrade to Professional',
     upgradeSub: 'Get access to Meta\'s Demucs model with studio-quality separations.',
     subscribeMonthly: 'Subscribe Monthly — ₪29/mo', subscribing: 'Activating...',
+    noTitle: 'Untitled', basic: 'Basic', professional: 'Professional',
+    noRating: 'No rating', hidePlayer: 'Hide player', byAuthor: 'by',
+    admin: 'Admin', save: 'Save', cancel: 'Cancel', clickToRename: 'Click to rename',
+    separating: 'Separating vocals and music...', waitNote: 'This may take a few minutes. Quality results are worth the wait.',
+    saveToLibrary: 'Save to Library', toLibrary: 'Go to Library', uploadNew: 'Upload New Song',
+    titleUpdated: 'Title updated', savedToLibrary: 'Song saved to library!', separationFailed: 'Separation failed.',
     footer: 'VocalSplit · Audio Separation Platform',
   }
 }

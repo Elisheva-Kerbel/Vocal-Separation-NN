@@ -14,6 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
 from app.config import load_settings
+from app.constants import UserStatus, UserTier
 from app.db.models import User, UserSession
 from app.db.session import get_sessionmaker
 
@@ -22,7 +23,7 @@ from app.db.session import get_sessionmaker
 SESSION_COOKIE_NAME = "stemspace_session"
 SESSION_TTL = datetime.timedelta(days=7)
 
-ACTIVE_STATUS = "active"
+ACTIVE_STATUS = UserStatus.ACTIVE
 
 
 # ---- DB dependency -----------------------------------------------------------
@@ -181,14 +182,14 @@ def current_user(
     user = db.get(User, session.user_id)
     if user is None:
         raise _not_authenticated()
-    if user.status == "blocked":
+    if user.status == UserStatus.BLOCKED:
         raise _error(403, "account_blocked", "החשבון שלך נחסם על ידי מנהל המערכת. לבירורים, פנה/י להנהלה.")
     if user.status != ACTIVE_STATUS:
         raise _error(403, "account_not_active", "This account is not active.")
 
-    if user.tier == "pro" and user.subscription_expires_at:
+    if user.tier == UserTier.PRO and user.subscription_expires_at:
         if _as_utc(user.subscription_expires_at) <= _now():
-            user.tier = "free"
+            user.tier = UserTier.FREE
             user.subscription_expires_at = None
             db.commit()
 

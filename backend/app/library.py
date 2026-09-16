@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
 from app.auth import current_user, get_db
+from app.constants import Visibility
 from app.db.models import SeparationJob, Song, User
 
 router = APIRouter(prefix="/library", tags=["library"])
@@ -101,6 +102,6 @@ def delete_song(
         return {"message": "Already deleted."}
 
     song.deleted_at = datetime.datetime.now(datetime.timezone.utc)
-    song.visibility = "private"
+    song.visibility = Visibility.PRIVATE
     db.commit()
     return {"message": "Song deleted."}
