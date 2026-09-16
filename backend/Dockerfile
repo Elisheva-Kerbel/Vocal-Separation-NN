@@ -17,7 +17,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
 
 # Install dependencies first for better layer caching.
 COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir \
+    --trusted-host pypi.org \
+    --trusted-host files.pythonhosted.org \
+    -r requirements.txt
 
 # Application code and tests (see .dockerignore for what is excluded).
 COPY . .
