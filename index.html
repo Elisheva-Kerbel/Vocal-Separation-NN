@@ -1,0 +1,2082 @@
+<title>VocalSplit Academy</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dockerfile.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/xml.min.js"></script>
+<style>
+/* Dark-first: a developer learning environment */
+:root {
+  --bg: #0f1117;
+  --bg-surface: #161822;
+  --bg-code: #1c1e2e;
+  --bg-sidebar: #0c0d12;
+  --fg: #e2e4ed;
+  --fg-dim: #8b8fa4;
+  --fg-code: #c9cce0;
+  --accent: #e8a948;
+  --accent-dim: rgba(232,169,72,0.15);
+  --green: #4ade80;
+  --green-dim: rgba(74,222,128,0.12);
+  --blue: #60a5fa;
+  --border: #2a2d3d;
+  --radius: 8px;
+  --font-body: 'IBM Plex Sans Hebrew', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f8f9fc;
+    --bg-surface: #ffffff;
+    --bg-code: #f0f2f8;
+    --bg-sidebar: #eef0f5;
+    --fg: #1a1c28;
+    --fg-dim: #6b7084;
+    --fg-code: #3a3e50;
+    --accent: #c47d14;
+    --accent-dim: rgba(196,125,20,0.1);
+    --green: #16a34a;
+    --green-dim: rgba(22,163,74,0.08);
+    --blue: #2563eb;
+    --border: #d5d8e2;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f8f9fc;
+  --bg-surface: #ffffff;
+  --bg-code: #f0f2f8;
+  --bg-sidebar: #eef0f5;
+  --fg: #1a1c28;
+  --fg-dim: #6b7084;
+  --fg-code: #3a3e50;
+  --accent: #c47d14;
+  --accent-dim: rgba(196,125,20,0.1);
+  --green: #16a34a;
+  --green-dim: rgba(22,163,74,0.08);
+  --blue: #2563eb;
+  --border: #d5d8e2;
+  color-scheme: light;
+}
+
+/* hljs theme override */
+.hljs{background:var(--bg-code)!important;color:var(--fg-code)!important}
+.hljs-keyword,.hljs-built_in{color:#c678dd}
+.hljs-string,.hljs-attr{color:#98c379}
+.hljs-number,.hljs-literal{color:#d19a66}
+.hljs-title,.hljs-function .hljs-title{color:#61afef}
+.hljs-comment{color:#5c6370;font-style:italic}
+.hljs-class .hljs-title{color:#e5c07b}
+.hljs-params{color:#abb2bf}
+.hljs-tag{color:#e06c75}
+.hljs-name{color:#e06c75}
+.hljs-attribute{color:#d19a66}
+.hljs-selector-class,.hljs-selector-id{color:#e5c07b}
+.hljs-property{color:#61afef}
+.hljs-meta{color:#56b6c2}
+.hljs-symbol{color:#56b6c2}
+.hljs-type{color:#e5c07b}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.7;
+  direction: rtl;
+}
+
+/* Layout: sidebar + main */
+.app { display: flex; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar {
+  width: 280px;
+  min-width: 280px;
+  background: var(--bg-sidebar);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 10;
+}
+.sidebar-header {
+  padding: 20px 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-logo {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+}
+.sidebar-logo span { color: var(--fg-dim); font-weight: 400; font-size: 13px; margin-right: 6px; }
+.sidebar-progress {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--fg-dim);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.progress-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--green);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.sidebar-nav { flex: 1; padding: 8px 0; overflow-y: auto; }
+
+.chapter-group { margin-bottom: 4px; }
+.chapter-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-dim);
+  cursor: pointer;
+  user-select: none;
+}
+.chapter-title:hover { color: var(--fg); }
+.chapter-title .arrow {
+  display: inline-block;
+  transition: transform 0.2s;
+  font-size: 9px;
+}
+.chapter-title.open .arrow { transform: rotate(90deg); }
+
+.chapter-lessons { overflow: hidden; }
+.chapter-lessons.collapsed { display: none; }
+
+.lesson-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 20px 6px 32px;
+  font-size: 13px;
+  color: var(--fg-dim);
+  cursor: pointer;
+  text-decoration: none;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: right;
+  font-family: inherit;
+  line-height: 1.4;
+  transition: background 0.15s, color 0.15s;
+}
+.lesson-link:hover { background: var(--accent-dim); color: var(--fg); }
+.lesson-link.active { background: var(--accent-dim); color: var(--accent); font-weight: 500; }
+.lesson-link .check {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  transition: all 0.2s;
+}
+.lesson-link .check.done {
+  background: var(--green-dim);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+/* Main content */
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 40px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+/* Lesson content */
+.lesson-header { margin-bottom: 32px; }
+.lesson-chapter {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.lesson-title {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.lesson-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 4px 12px;
+  background: var(--bg-code);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-dim);
+}
+.lesson-file .icon { color: var(--accent); }
+
+.lesson-body h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 36px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  color: var(--fg);
+}
+.lesson-body h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 24px 0 8px;
+  color: var(--fg);
+}
+.lesson-body p { margin: 0 0 14px; color: var(--fg); }
+.lesson-body ul, .lesson-body ol { margin: 0 0 14px; padding-right: 24px; }
+.lesson-body li { margin-bottom: 6px; }
+
+.concept {
+  background: var(--accent-dim);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin: 16px 0;
+  border-right: 3px solid var(--accent);
+}
+.concept-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.tech-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--blue);
+  margin: 2px;
+}
+
+/* Code blocks */
+.code-block {
+  margin: 16px 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  background: var(--border);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--fg-dim);
+}
+.code-block pre {
+  margin: 0;
+  padding: 16px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  background: var(--bg-code);
+}
+.code-block code { font-family: inherit; }
+
+.annotation {
+  background: var(--green-dim);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin: -8px 0 16px;
+  font-size: 13px;
+  color: var(--fg);
+  border-right: 3px solid var(--green);
+}
+.annotation strong { color: var(--green); }
+
+/* Nav buttons */
+.lesson-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  gap: 12px;
+}
+.nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+}
+.nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+.nav-btn.primary { background: var(--accent); color: #0f1117; border-color: var(--accent); font-weight: 600; }
+.nav-btn.primary:hover { opacity: 0.9; }
+.complete-btn {
+  padding: 10px 20px;
+  background: var(--green-dim);
+  border: 1px solid var(--green);
+  border-radius: var(--radius);
+  color: var(--green);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.complete-btn:hover { background: var(--green); color: #0f1117; }
+.complete-btn.is-done { opacity: 0.5; cursor: default; }
+
+/* Inline code */
+.lesson-body code:not(.hljs) {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--bg-code);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--accent);
+}
+
+/* Architecture diagram */
+.arch-diagram {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+.arch-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  text-align: center;
+}
+.arch-box .name { font-weight: 600; font-size: 14px; }
+.arch-box .tech { font-size: 11px; color: var(--fg-dim); margin-top: 4px; }
+.arch-box.highlight { border-color: var(--accent); background: var(--accent-dim); }
+
+/* Mobile */
+.mobile-toggle {
+  display: none;
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  z-index: 20;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #0f1117;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    right: 0;
+    top: 0;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    width: 280px;
+    min-width: 0;
+    box-shadow: -4px 0 20px rgba(0,0,0,0.3);
+  }
+  .sidebar.open { transform: translateX(0); }
+  .mobile-toggle { display: flex; align-items: center; justify-content: center; }
+  .main { padding: 24px 16px; }
+  .lesson-title { font-size: 22px; }
+  .arch-diagram { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Welcome page */
+.welcome { text-align: center; padding: 40px 0; }
+.welcome h1 {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 8px;
+}
+.welcome h1 span { color: var(--accent); }
+.welcome .sub { color: var(--fg-dim); font-size: 16px; margin-bottom: 32px; }
+.welcome .start-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  background: var(--accent);
+  color: #0f1117;
+  border: none;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.welcome .start-btn:hover { opacity: 0.9; }
+.stats-row {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin: 32px 0;
+  flex-wrap: wrap;
+}
+.stat { text-align: center; }
+.stat .num { font-size: 28px; font-weight: 700; color: var(--accent); }
+.stat .label { font-size: 12px; color: var(--fg-dim); }
+</style>
+
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">VocalSplit <span>Academy</span></div>
+      <div class="sidebar-progress">
+        <span id="progressText">0 / 20</span>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      </div>
+    </div>
+    <nav class="sidebar-nav" id="sidebarNav"></nav>
+  </aside>
+
+  <div class="main" id="mainContent"></div>
+</div>
+
+<button class="mobile-toggle" id="mobileToggle" aria-label="תפריט">&#9776;</button>
+
+<script>
+const LESSONS = [
+  // -- Chapter 1: Architecture --
+  {
+    id: 'intro',
+    chapter: 'סקירה כללית',
+    title: 'מה זה VocalSplit?',
+    file: null,
+    content: `
+<p>VocalSplit היא פלטפורמת הפרדת שירים מבוססת AI. משתמש מעלה שיר, והמערכת מפרידה אותו לשני ערוצים נפרדים: <strong>שירה</strong> (Vocals) ו<strong>מוזיקה</strong> (Background).</p>
+
+<h2>טכנולוגיות הפרויקט</h2>
+<p>
+<span class="tech-badge">Python 3.12</span>
+<span class="tech-badge">FastAPI</span>
+<span class="tech-badge">SQLAlchemy 2</span>
+<span class="tech-badge">PostgreSQL</span>
+<span class="tech-badge">Celery</span>
+<span class="tech-badge">Redis</span>
+<span class="tech-badge">MinIO / S3</span>
+<span class="tech-badge">React 18</span>
+<span class="tech-badge">Vite 5</span>
+<span class="tech-badge">Docker Compose</span>
+<span class="tech-badge">PyTorch</span>
+</p>
+
+<h2>ארכיטקטורה</h2>
+<p>המערכת בנויה מ-7 קונטיינרים שרצים ביחד דרך Docker Compose:</p>
+<div class="arch-diagram">
+  <div class="arch-box highlight"><div class="name">Frontend</div><div class="tech">React + Vite<br>Port 5173</div></div>
+  <div class="arch-box highlight"><div class="name">Backend</div><div class="tech">FastAPI<br>Port 8000</div></div>
+  <div class="arch-box highlight"><div class="name">Worker</div><div class="tech">Celery<br>AI Processing</div></div>
+  <div class="arch-box"><div class="name">PostgreSQL</div><div class="tech">Database<br>Port 5432</div></div>
+  <div class="arch-box"><div class="name">Redis</div><div class="tech">Message Broker<br>Port 6379</div></div>
+  <div class="arch-box"><div class="name">MinIO</div><div class="tech">File Storage (S3)<br>Port 9000</div></div>
+  <div class="arch-box"><div class="name">Adminer</div><div class="tech">DB Admin UI<br>Port 8080</div></div>
+</div>
+
+<h2>הזרימה המלאה: מהעלאה ועד האזנה</h2>
+<ol>
+<li><strong>משתמש מעלה שיר</strong> - הקובץ נשלח מ-React דרך XHR אל ה-Backend</li>
+<li><strong>Backend שומר ב-MinIO</strong> - הקובץ נשמר באחסון S3, ונוצרות רשומות ב-DB (Song, AudioFile, SeparationJob)</li>
+<li><strong>משימה נשלחת ל-Celery</strong> - דרך Redis כ-Message Broker</li>
+<li><strong>Worker מריץ את ההפרדה</strong> - מוריד מ-MinIO, מריץ מודל AI, מעלה את התוצאות בחזרה</li>
+<li><strong>משתמש מאזין</strong> - ה-Frontend מקבל Signed URLs מהבאקאנד ומשמיע את הקבצים</li>
+</ol>
+
+<div class="concept">
+<div class="concept-label">מושג מפתח: Signed URLs</div>
+קבצי האודיו לעולם לא חשופים ישירות. כל גישה לקובץ דורשת URL חתום עם תוקף מוגבל (10 דקות להאזנה, 5 דקות להורדה). ככה אין גישה ישירה לאחסון.
+</div>
+`
+  },
+  {
+    id: 'docker',
+    chapter: 'סקירה כללית',
+    title: 'Docker Compose - כל השירותים',
+    file: 'docker-compose.yml',
+    content: `
+<p>Docker Compose מאפשר להרים את כל 7 השירותים בפקודה אחת. כל שירות רץ בקונטיינר נפרד, וכולם מתקשרים דרך רשת פנימית של Docker.</p>
+
+<div class="concept">
+<div class="concept-label">מושג: Docker Compose</div>
+כלי שמנהל מספר קונטיינרים (containers) של Docker ביחד. במקום להריץ כל שירות בנפרד, קובץ YAML אחד מגדיר הכל: איזה images להריץ, איזה ports לפתוח, ואיזה volumes לחבר.
+</div>
+
+<h2>הגדרת בסיס הנתונים</h2>
+$CODE_YAML$
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: \${POSTGRES_DB:-stemspace}
+      POSTGRES_USER: \${POSTGRES_USER:-stemspace}
+      POSTGRES_PASSWORD: \${POSTGRES_PASSWORD:-change_me_local_only}
+    ports:
+      - "\${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+$END_CODE$
+
+<div class="annotation"><strong>image: postgres:16-alpine</strong> - גרסה קלה של PostgreSQL 16. Alpine Linux היא הפצת לינוקס מינימלית שחוסכת מקום. <code>\${POSTGRES_DB:-stemspace}</code> אומר: "קח מקובץ .env, אם אין - השתמש ב-stemspace". <strong>volumes</strong> שומר את הנתונים גם כשהקונטיינר נעצר.</div>
+
+<h2>Backend ו-Worker</h2>
+$CODE_YAML$
+  backend:
+    build:
+      context: ./backend
+    image: stemspace-backend:local
+    env_file:
+      - path: .env
+        required: false
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    ports:
+      - "\${BACKEND_PORT:-8000}:8000"
+
+  worker:
+    image: stemspace-backend:local     # אותו Image כמו Backend!
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    command: ["celery", "-A", "app.celery_app", "worker",
+              "--loglevel=info", "-Q", "separation,celery",
+              "--concurrency=2"]
+$END_CODE$
+
+<div class="annotation"><strong>image: stemspace-backend:local</strong> - ה-Worker משתמש באותו Image בדיוק כמו ה-Backend! ההבדל היחיד הוא ה-<code>command</code> - במקום להריץ את FastAPI, הוא מריץ את Celery שמאזין לתור המשימות. <strong>depends_on</strong> מבטיח שהשירותים האחרים יעלו קודם.</div>
+
+<h2>Frontend</h2>
+$CODE_YAML$
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "\${FRONTEND_PORT:-5173}:5173"
+$END_CODE$
+
+<div class="annotation">ה-Frontend רץ על <strong>Vite dev server</strong> בפורט 5173. Vite מפנה את כל הקריאות ל-API אל ה-Backend (proxy) - כך הדפדפן מדבר רק עם Frontend, ו-Frontend מעביר את הבקשות הלאה.</div>
+
+<h2>Volumes - שמירת נתונים</h2>
+$CODE_YAML$
+volumes:
+  postgres_data:    # נתוני בסיס הנתונים
+  minio_data:       # קבצי האודיו
+  model_cache:      # מודלי AI שהורדו
+$END_CODE$
+
+<div class="annotation">Docker Volumes שומרים נתונים מחוץ לקונטיינר. בלי Volume, כל <code>docker compose down</code> היה מוחק את בסיס הנתונים. Volumes מאפשרים לקונטיינר להיסגר ולקום מחדש בלי לאבד מידע.</div>
+`
+  },
+
+  // -- Chapter 2: Backend Core --
+  {
+    id: 'config',
+    chapter: 'ליבת הבאקאנד',
+    title: 'config.py - הגדרות המערכת',
+    file: 'backend/app/config.py',
+    content: `
+<p>קובץ ההגדרות מרכז את כל משתני הסביבה (Environment Variables) במקום אחד. שום קובץ אחר בפרויקט לא קורא ישירות מ-<code>os.getenv</code>.</p>
+
+<div class="concept">
+<div class="concept-label">מושג: Dataclass</div>
+<code>dataclass</code> הוא decorator של Python שיוצר class עם constructor אוטומטי. <code>frozen=True</code> הופך אותו ל-immutable - אחרי שנוצר, אי אפשר לשנות את הערכים שלו. זה מונע באגים שבהם מישהו משנה הגדרה בטעות תוך כדי ריצה.
+</div>
+
+$CODE_PYTHON$
+from dataclasses import dataclass, field
+
+@dataclass(frozen=True)
+class Settings:
+    """Immutable snapshot of local configuration."""
+
+    app_env: str
+    backend_host: str
+    backend_port: int
+    s3_endpoint_url: str
+    s3_public_endpoint_url: str
+    s3_bucket: str
+    s3_region: str
+    # field(repr=False) - הערך לא ייראה בלוגים!
+    s3_access_key_id: str = field(repr=False)
+    s3_secret_access_key: str = field(repr=False)
+    database_url: str = field(repr=False)
+$END_CODE$
+
+<div class="annotation"><strong>field(repr=False)</strong> - כש-Python מדפיס את האובייקט (למשל בלוג), הסיסמאות והמפתחות לא ייראו. זה עיקרון אבטחה חשוב: סודות לעולם לא מופיעים ב-log.</div>
+
+<h2>טעינת הגדרות מסביבה</h2>
+$CODE_PYTHON$
+def load_settings() -> Settings:
+    return Settings(
+        app_env=os.getenv("APP_ENV", "local"),
+        backend_port=int(os.getenv("BACKEND_PORT", "8000")),
+        s3_endpoint_url=os.getenv("S3_ENDPOINT_URL", ""),
+        database_url=os.getenv("DATABASE_URL", ""),
+        free_daily_limit=int(os.getenv("FREE_DAILY_LIMIT", "3")),
+        pro_daily_limit=int(os.getenv("PRO_DAILY_LIMIT", "10")),
+        # ... ועוד
+    )
+$END_CODE$
+
+<div class="annotation"><strong>os.getenv("APP_ENV", "local")</strong> - קרא את משתנה הסביבה APP_ENV. אם הוא לא קיים, השתמש ב-"local" כברירת מחדל. הפונקציה מחזירה <code>Settings</code> חדש עם כל הערכים.</div>
+
+<h2>גישה בטוחה ל-Database URL</h2>
+$CODE_PYTHON$
+class MissingDatabaseUrlError(RuntimeError):
+    """הערך לא מופיע בהודעת השגיאה - לעולם לא לחשוף סיסמאות"""
+
+def require_database_url(settings: Settings | None = None) -> str:
+    url = (settings or load_settings()).database_url
+    if not url.strip():
+        raise MissingDatabaseUrlError(
+            "DATABASE_URL is not set. Set it in your local .env file."
+        )
+    return url
+$END_CODE$
+
+<div class="annotation">שימו לב: הודעת השגיאה אומרת <em>מה</em> חסר, אבל לעולם <strong>לא מדפיסה את הערך עצמו</strong>. ה-Database URL מכיל סיסמה, ואסור שהיא תופיע בשום log או traceback.</div>
+`
+  },
+  {
+    id: 'constants',
+    chapter: 'ליבת הבאקאנד',
+    title: 'constants.py - ערכים קבועים',
+    file: 'backend/app/constants.py',
+    content: `
+<p>קובץ זה מרכז את <strong>כל</strong> הערכים הקבועים שמשמשים לסטטוסים, תפקידים, ורמות במערכת. במקום לכתוב מחרוזות כמו <code>"ready"</code> פזורות בקוד, כל ערך מוגדר פעם אחת כאן.</p>
+
+<div class="concept">
+<div class="concept-label">מושג: StrEnum</div>
+<code>StrEnum</code> (Python 3.11+) הוא Enum שגם מתנהג כמחרוזת. אפשר להשוות אותו עם <code>==</code> למחרוזת רגילה, לשמור אותו ישירות ב-DB, ועדיין ליהנות מהשלמה אוטומטית ב-IDE ומבדיקת שגיאות.
+</div>
+
+$CODE_PYTHON$
+from enum import StrEnum
+
+class SongStatus(StrEnum):
+    UPLOADED = "uploaded"
+    PROCESSING = "processing"
+    READY = "ready"
+    FAILED = "failed"
+
+class UserRole(StrEnum):
+    FREE = "free"
+    PRO = "pro"
+    CONTENT_MODERATOR = "content_moderator"
+    USER_ADMIN = "user_admin"
+    COUPON_ADMIN = "coupon_admin"
+    SUPER_ADMIN = "super_admin"
+
+# frozenset = קבוצה שלא ניתנת לשינוי
+ADMIN_ROLES = frozenset({
+    UserRole.CONTENT_MODERATOR,
+    UserRole.USER_ADMIN,
+    UserRole.COUPON_ADMIN,
+    UserRole.SUPER_ADMIN,
+})
+$END_CODE$
+
+<div class="annotation"><strong>למה לא פשוט מחרוזות?</strong> אם תכתוב <code>"procssing"</code> (שגיאת כתיב), Python לא תתריע. אבל אם תכתוב <code>SongStatus.PROCSSING</code>, ה-IDE יסמן שגיאה מיד. זה מונע באגים שקשה לגלות.</div>
+
+<h2>עוד Enums חשובים</h2>
+$CODE_PYTHON$
+class AudioPurpose(StrEnum):
+    ORIGINAL = "original"   # הקובץ המקורי
+    VOCALS = "vocals"       # ערוץ השירה
+    BACKGROUND = "background"  # ערוץ המוזיקה
+
+class ModelTier(StrEnum):
+    BASIC = "basic"          # מודל UNet מקומי
+    PROFESSIONAL = "professional"  # Demucs של Meta
+
+GOOGLE_OAUTH_SENTINEL = "google_oauth"
+STEM_OUTPUT_CONTENT_TYPE = "audio/wav"
+MAX_TITLE_LENGTH = 256
+$END_CODE$
+
+<div class="annotation"><strong>GOOGLE_OAUTH_SENTINEL</strong> - ערך מיוחד שנשמר בשדה password_hash של משתמשים שנרשמו דרך Google. ככה המערכת יודעת שלמשתמש הזה אין סיסמה מקומית ואי אפשר לעשות לו login רגיל.</div>
+`
+  },
+  {
+    id: 'main',
+    chapter: 'ליבת הבאקאנד',
+    title: 'main.py - נקודת הכניסה',
+    file: 'backend/app/main.py',
+    content: `
+<p>זה הקובץ שמפעיל את שרת ה-API. הוא יוצר אפליקציית FastAPI, מגדיר CORS, ומחבר את כל ה-Routers.</p>
+
+<div class="concept">
+<div class="concept-label">מושג: FastAPI</div>
+FastAPI הוא framework ל-Python לבניית REST APIs. הוא מבוסס על Type Hints של Python, יוצר תיעוד אוטומטי, ומהיר מאוד. בניגוד ל-Flask, הוא asynchronous מובנה ומשתמש ב-Pydantic לוולידציה.
+</div>
+
+$CODE_PYTHON$
+from fastapi import Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI(title="VocalSplit Backend", version="0.1.0")
+
+# CORS - מאפשר ל-Frontend (port 5173) לדבר עם Backend (port 8000)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,   # שליחת cookies
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+$END_CODE$
+
+<div class="annotation"><strong>CORS (Cross-Origin Resource Sharing)</strong> - הדפדפן חוסם בקשות בין דומיינים שונים כברירת מחדל. כי ה-Frontend רץ על port 5173 וה-Backend על 8000, צריך להגיד לבאקאנד במפורש: "תאפשר בקשות מ-5173". בלי זה, כל קריאת API תיכשל.</div>
+
+<h2>חיבור כל ה-Routers</h2>
+$CODE_PYTHON$
+# כל Router אחראי על קבוצת endpoints
+app.include_router(auth_router)     # /auth/signup, /auth/login, ...
+app.include_router(upload_router)   # /upload
+app.include_router(songs_router)    # /songs/{id}, /songs/{id}/status, ...
+app.include_router(library_router)  # /library
+app.include_router(public_router)   # /public/library, /public/songs/{id}
+app.include_router(admin_router)    # /admin/users, /admin/reports, ...
+$END_CODE$
+
+<div class="annotation"><strong>Router</strong> ב-FastAPI זה כמו "תת-אפליקציה". במקום לכתוב את כל ה-endpoints בקובץ אחד ענק, כל תחום מקבל Router משלו בקובץ נפרד. <code>include_router</code> מחבר את כולם לאפליקציה הראשית.</div>
+
+<h2>Endpoints בסיסיים</h2>
+$CODE_PYTHON$
+@app.get("/health")
+def health() -> dict[str, str]:
+    return {"status": "ok", "service": SERVICE_NAME}
+
+@app.get("/quota")
+def quota_info(
+    user: User = Depends(current_user),     # חייב להיות מחובר
+    db: DbSession = Depends(get_db),        # מקבל חיבור ל-DB
+):
+    return get_usage_info(db, user)
+$END_CODE$
+
+<div class="annotation"><strong>Depends()</strong> - מנגנון <strong>Dependency Injection</strong> של FastAPI. במקום שהפונקציה תיצור בעצמה חיבור ל-DB או תבדוק אימות, FastAPI מזריק את הדברים האלה אוטומטית. <code>Depends(current_user)</code> בודק שה-cookie תקין ומחזיר את המשתמש. אם הוא לא מחובר, FastAPI מחזיר 401 לפני שהפונקציה בכלל רצה.</div>
+`
+  },
+
+  // -- Chapter 3: Database --
+  {
+    id: 'db-base',
+    chapter: 'שכבת הנתונים',
+    title: 'base.py - הבסיס של SQLAlchemy',
+    file: 'backend/app/db/base.py',
+    content: `
+<p>קובץ קצר אבל קריטי - הוא מגדיר את ה-Base class שממנו יורשים כל המודלים של בסיס הנתונים.</p>
+
+<div class="concept">
+<div class="concept-label">מושג: ORM (Object-Relational Mapping)</div>
+SQLAlchemy הוא ORM - הוא ממפה בין טבלאות ב-DB לבין classes ב-Python. במקום לכתוב SQL ידנית, אתם יוצרים class שמייצג טבלה, ו-SQLAlchemy מתרגם את הפעולות ל-SQL. למשל: <code>User(email="a@b.com")</code> הופך ל-<code>INSERT INTO users (email) VALUES ('a@b.com')</code>.
+</div>
+
+$CODE_PYTHON$
+from sqlalchemy import MetaData
+from sqlalchemy.orm import DeclarativeBase
+
+# כללי שמות עקביים לכל ה-constraints
+NAMING_CONVENTION = {
+    "ix": "ix_%(column_0_label)s",           # Index
+    "uq": "uq_%(table_name)s_%(column_0_name)s",  # Unique
+    "ck": "ck_%(table_name)s_%(constraint_name)s",  # Check
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",  # FK
+    "pk": "pk_%(table_name)s",               # Primary Key
+}
+
+class Base(DeclarativeBase):
+    metadata = MetaData(naming_convention=NAMING_CONVENTION)
+$END_CODE$
+
+<div class="annotation"><strong>NAMING_CONVENTION</strong> - כשה-DB יוצר index או constraint, הוא בוחר שם אוטומטי. בלי כלל שמות, כל DB בוחר שם אחר, ו-Alembic (כלי המיגרציות) מתבלבל. עם כללים אחידים, השמות תמיד צפויים.</div>
+
+<h2>מה זה DeclarativeBase?</h2>
+<p>כל class שיורש מ-<code>Base</code> הופך לטבלה ב-DB. ה-<code>metadata</code> הוא אובייקט ש"זוכר" את כל הטבלאות, ו-Alembic משתמש בו כדי לייצר מיגרציות אוטומטית.</p>
+`
+  },
+  {
+    id: 'db-session',
+    chapter: 'שכבת הנתונים',
+    title: 'session.py - חיבור ל-Database',
+    file: 'backend/app/db/session.py',
+    content: `
+<p>הקובץ הזה מנהל את החיבור ל-PostgreSQL. עיקרון מפתח: <strong>הכל נטען עצלנית (lazily)</strong> - שום חיבור לא נפתח עד שמישהו באמת צריך אותו.</p>
+
+$CODE_PYTHON$
+from sqlalchemy import Engine, create_engine
+from sqlalchemy.orm import Session, sessionmaker
+
+from app.config import require_database_url
+
+# נוצר רק בקריאה הראשונה, לא ב-import
+_engine: Engine | None = None
+_session_factory: sessionmaker[Session] | None = None
+
+def get_engine() -> Engine:
+    global _engine
+    if _engine is None:
+        _engine = create_engine(require_database_url())
+    return _engine
+
+def get_sessionmaker() -> sessionmaker[Session]:
+    global _session_factory
+    if _session_factory is None:
+        _session_factory = sessionmaker(bind=get_engine())
+    return _session_factory
+$END_CODE$
+
+<div class="annotation"><strong>Lazy Loading</strong> - ה-engine נוצר רק כשמישהו קורא ל-<code>get_engine()</code> בפעם הראשונה. זה אומר ש-<code>import</code> של המודול לא פותח חיבור, ולכן הטסטים יכולים לרוץ בלי DB אמיתי, ו-endpoint כמו <code>/health</code> עובד גם בלי PostgreSQL.</div>
+
+<div class="concept">
+<div class="concept-label">מושג: Session ו-Engine</div>
+<strong>Engine</strong> = "המנוע" שמתחבר ל-DB ומנהל pool של חיבורים. נוצר פעם אחת.<br>
+<strong>Session</strong> = "שיחה" אחת עם ה-DB. כל בקשת HTTP מקבלת session משלה, עושה query, ובסוף ה-session נסגר. זה מונע בעיות של נעילות ושל מידע מעורבב בין בקשות.
+</div>
+`
+  },
+  {
+    id: 'models-user',
+    chapter: 'שכבת הנתונים',
+    title: 'models/user.py - מודל המשתמש',
+    file: 'backend/app/db/models/user.py',
+    content: `
+<p>המודל המרכזי של המערכת - כל משתמש רשום מיוצג ע"י class זה. הוא מגדיר את הטבלה <code>users</code> ב-PostgreSQL.</p>
+
+$CODE_PYTHON$
+class User(CreatedAtMixin, UpdatedAtMixin, Base):
+    __tablename__ = "users"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, primary_key=True, default=uuid.uuid4
+    )
+    email: Mapped[str] = mapped_column(
+        String(320), nullable=False, unique=True
+    )
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="active"
+    )
+    password_hash: Mapped[str] = mapped_column(
+        String(255), nullable=False
+    )
+    role: Mapped[str] = mapped_column(
+        String(32), nullable=False,
+        default="free", server_default="free"
+    )
+    tier: Mapped[str] = mapped_column(
+        String(16), nullable=False,
+        default="free", server_default="free"
+    )
+$END_CODE$
+
+<div class="annotation">
+<strong>Mapped[uuid.UUID]</strong> - Type hint של SQLAlchemy 2.x שאומר: "העמודה הזו מכילה UUID". <code>mapped_column</code> מגדיר את המאפיינים: <code>primary_key=True</code> = מפתח ראשי, <code>unique=True</code> = אי אפשר שני משתמשים עם אותו אימייל, <code>nullable=False</code> = חובה למלא.<br><br>
+<strong>default vs server_default</strong> - <code>default="free"</code> עובד ב-Python (כש-SQLAlchemy יוצר את האובייקט). <code>server_default="free"</code> עובד ב-DB (כשעושים INSERT ישירות ב-SQL). שניהם ביחד מבטיחים שהערך תמיד יהיה "free" אם לא ציינו אחרת.
+</div>
+
+<h2>Relationships - קשרים בין טבלאות</h2>
+$CODE_PYTHON$
+    songs: Mapped[list["Song"]] = relationship(
+        back_populates="owner"
+    )
+    daily_usage: Mapped[list["DailyUsage"]] = relationship(
+        back_populates="user"
+    )
+$END_CODE$
+
+<div class="annotation"><strong>relationship</strong> - מגדיר קשר One-to-Many. למשתמש אחד יכולים להיות הרבה שירים. <code>back_populates="owner"</code> אומר שב-Song יש שדה <code>owner</code> שמצביע בחזרה למשתמש. ככה אפשר לעבור בשני הכיוונים: <code>user.songs</code> ו-<code>song.owner</code>.</div>
+
+<h2>Check Constraints - הגנה ברמת ה-DB</h2>
+$CODE_PYTHON$
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('active', 'blocked', 'deleted')",
+            name="status_allowed"
+        ),
+        CheckConstraint(
+            "tier IN ('free', 'pro')",
+            name="tier_allowed"
+        ),
+    )
+$END_CODE$
+
+<div class="annotation"><strong>CheckConstraint</strong> - הגנה ברמת בסיס הנתונים. גם אם יש באג בקוד Python שמנסה לשמור <code>tier="super"</code>, ה-DB יסרב. זו שכבת הגנה נוספת מעבר ל-Enum בקוד.</div>
+`
+  },
+  {
+    id: 'models-song',
+    chapter: 'שכבת הנתונים',
+    title: 'models/song.py - שירים וקבצים',
+    file: 'backend/app/db/models/song.py',
+    content: `
+<p>שלושה מודלים קשורים: <strong>Song</strong> (השיר), <strong>AudioFile</strong> (קובץ אודיו), ו-<strong>SeparationJob</strong> (משימת הפרדה). שיר אחד יכול להכיל עד 3 קבצים (מקור, שירה, מוזיקה) ומשימת הפרדה אחת.</p>
+
+$CODE_PYTHON$
+class Song(CreatedAtMixin, UpdatedAtMixin, Base):
+    __tablename__ = "songs"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id"), nullable=False
+    )
+    title: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="uploaded", index=True
+    )
+    visibility: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="private"
+    )
+    deleted_at: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+$END_CODE$
+
+<div class="annotation"><strong>ForeignKey("users.id")</strong> - מצביע על משתמש. כל שיר שייך למשתמש אחד. <strong>deleted_at</strong> - מחיקה רכה (Soft Delete): במקום למחוק את השורה מה-DB, שומרים תאריך מחיקה. ככה אפשר לשחזר.</div>
+
+<h2>AudioFile - מטא-דאטה של קובץ אודיו</h2>
+$CODE_PYTHON$
+class AudioFile(CreatedAtMixin, UpdatedAtMixin, Base):
+    __tablename__ = "audio_files"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    song_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("songs.id"), nullable=False
+    )
+    purpose: Mapped[str] = mapped_column(String(32), nullable=False)
+    storage_key: Mapped[str] = mapped_column(
+        String(512), nullable=False, unique=True
+    )
+    byte_size: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    duration_seconds: Mapped[decimal.Decimal | None] = mapped_column(
+        Numeric, nullable=True
+    )
+
+    __table_args__ = (
+        UniqueConstraint("song_id", "purpose"),  # רק קובץ אחד לכל purpose
+    )
+$END_CODE$
+
+<div class="annotation"><strong>storage_key</strong> - הנתיב ב-MinIO/S3 (כמו <code>user-id/song-id/vocals.wav</code>). שדה זה <strong>לעולם לא נחשף ל-API</strong> - זה סוד פנימי. <code>UniqueConstraint("song_id", "purpose")</code> מבטיח שלכל שיר יש רק קובץ אחד מסוג "original", אחד "vocals" ואחד "background".</div>
+`
+  },
+
+  // -- Chapter 4: Auth --
+  {
+    id: 'auth-password',
+    chapter: 'מערכת אימות',
+    title: 'password.py - הצפנת סיסמאות',
+    file: 'backend/app/auth/password.py',
+    content: `
+<p>הקובץ הכי רגיש בפרויקט מבחינת אבטחה. הוא אחראי על הצפנת סיסמאות באלגוריתם <strong>scrypt</strong> ועל אימות שלהן.</p>
+
+<div class="concept">
+<div class="concept-label">מושג: Password Hashing</div>
+לעולם לא שומרים סיסמה כטקסט רגיל! במקום זה, מריצים אלגוריתם חד-כיווני (hash) שהופך את הסיסמה למחרוזת ארוכה. כשמשתמש מתחבר, מריצים את אותו אלגוריתם על מה שהקליד ובודקים אם התוצאה תואמת. גם אם ה-DB נפרץ, התוקף מקבל רק hash ולא את הסיסמאות עצמן.
+</div>
+
+$CODE_PYTHON$
+import base64, hashlib, hmac, secrets
+
+SCRYPT_N = 2**14   # עלות חישוב: 16,384 איטרציות
+SCRYPT_R = 8       # גודל בלוק
+SCRYPT_P = 1       # מקביליות
+SCRYPT_DKLEN = 32  # אורך התוצאה: 32 בתים
+SALT_BYTES = 16    # salt אקראי: 16 בתים
+
+def hash_password(password: str) -> str:
+    salt = secrets.token_bytes(SALT_BYTES)  # 16 בתים אקראיים
+    derived = hashlib.scrypt(
+        password.encode("utf-8"),
+        salt=salt, n=SCRYPT_N, r=SCRYPT_R, p=SCRYPT_P, dklen=SCRYPT_DKLEN,
+    )
+    # שומרים הכל ביחד: אלגוריתם + פרמטרים + salt + hash
+    return (
+        f"scrypt\${SCRYPT_N}\${SCRYPT_R}\${SCRYPT_P}\$"
+        f"{base64.b64encode(salt).decode()}\$"
+        f"{base64.b64encode(derived).decode()}"
+    )
+$END_CODE$
+
+<div class="annotation">
+<strong>Salt</strong> - מספר אקראי שמתווסף לכל סיסמה. בלי salt, שני משתמשים עם אותה סיסמה יקבלו אותו hash, ותוקף יוכל להשתמש ב-"rainbow table" מוכנה מראש. עם salt ייחודי לכל סיסמה, זה בלתי אפשרי.<br><br>
+<strong>הפורמט</strong>: <code>scrypt$16384$8$1$[salt_base64]$[hash_base64]</code> - הפרמטרים נשמרים יחד עם ה-hash, כדי שאם נעלה את העלות בעתיד, הסיסמאות הישנות עדיין יאומתו בהצלחה.
+</div>
+
+<h2>אימות סיסמה - Constant Time</h2>
+$CODE_PYTHON$
+def verify_password(password: str, stored_hash: str) -> bool:
+    try:
+        algorithm, n, r, p, salt_b64, hash_b64 = stored_hash.split("$")
+        if algorithm != "scrypt":
+            return False
+        salt = base64.b64decode(salt_b64)
+        expected = base64.b64decode(hash_b64)
+        derived = hashlib.scrypt(
+            password.encode("utf-8"),
+            salt=salt, n=int(n), r=int(r), p=int(p), dklen=len(expected),
+        )
+    except (ValueError, TypeError, MemoryError):
+        return False
+    # השוואה בזמן קבוע - מונע timing attack!
+    return hmac.compare_digest(derived, expected)
+$END_CODE$
+
+<div class="annotation"><strong>hmac.compare_digest</strong> - השוואה ב"זמן קבוע". השוואה רגילה (<code>==</code>) מפסיקה ברגע שמוצאת תו שונה, מה שמאפשר לתוקף לגלות כמה תווים הוא ניחש נכון לפי זמן התגובה (timing attack). <code>compare_digest</code> תמיד לוקח אותו זמן.</div>
+
+<h2>Non-Enumerating Login</h2>
+$CODE_PYTHON$
+# סיסמה מזויפת: כשמייל לא קיים, עדיין מריצים hash כדי שזמן
+# התגובה יהיה זהה - תוקף לא יכול לדעת אם המייל קיים או לא
+_DUMMY_PASSWORD_HASH = hash_password(secrets.token_urlsafe(16))
+$END_CODE$
+
+<div class="annotation">אם משתמש מנסה להתחבר עם מייל שלא קיים, המערכת עדיין מריצה hash (על הסיסמה המזויפת) כדי שזמן התגובה יהיה זהה. בלי זה, תוקף יכול לבדוק אילו אימיילים רשומים ואילו לא.</div>
+`
+  },
+  {
+    id: 'auth-session',
+    chapter: 'מערכת אימות',
+    title: 'session.py - ניהול Sessions',
+    file: 'backend/app/auth/session.py',
+    content: `
+<p>ניהול הסשנים - מהרגע שמשתמש מתחבר ועד שהוא מתנתק או שפג התוקף. כל סשן מבוסס על cookie מסוג httpOnly.</p>
+
+<div class="concept">
+<div class="concept-label">מושג: httpOnly Cookie</div>
+Cookie שמסומן כ-httpOnly לא נגיש מ-JavaScript בדפדפן. זה אומר שגם אם יש פירצת XSS באתר, הסקריפט הזדוני לא יכול לגנוב את ה-cookie. רק הדפדפן שולח אותו אוטומטית עם כל בקשה.
+</div>
+
+$CODE_PYTHON$
+SESSION_COOKIE_NAME = "stemspace_session"
+SESSION_TTL = datetime.timedelta(days=7)  # תוקף: 7 ימים
+
+def create_session_token() -> str:
+    """Token אקראי בן 256 ביט - מוחזר פעם אחת, לעולם לא נשמר"""
+    return secrets.token_urlsafe(32)
+
+def hash_session_token(token: str) -> str:
+    """רק ה-SHA-256 של ה-token נשמר ב-DB"""
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+$END_CODE$
+
+<div class="annotation"><strong>למה לשמור hash ולא את ה-token עצמו?</strong> אם ה-DB נפרץ, התוקף מקבל רק hash-ים. הוא לא יכול להשתמש בהם כ-cookies כי ה-Backend מחפש את ה-hash של מה שנשלח, לא את ה-hash עצמו. זו אותה לוגיקה כמו סיסמאות, רק ש-SHA-256 מספיק כי ה-token אקראי (אין מה לנחש).</div>
+
+<h2>הגדרת ה-Cookie</h2>
+$CODE_PYTHON$
+def set_auth_cookie(response: Response, token: str) -> None:
+    response.set_cookie(
+        SESSION_COOKIE_NAME,
+        token,
+        max_age=int(SESSION_TTL.total_seconds()),
+        httponly=True,      # לא נגיש מ-JavaScript
+        samesite="lax",     # הגנה מ-CSRF
+        secure=_cookie_secure(),  # HTTPS only (חוץ מ-local)
+        path="/",
+    )
+$END_CODE$
+
+<h2>current_user - ה-Guard של כל route מוגן</h2>
+$CODE_PYTHON$
+def current_user(
+    request: Request, db: DbSession = Depends(get_db)
+) -> User:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    if not token:
+        raise _not_authenticated()  # 401
+
+    session = _lookup_session(db, token)
+    if session is None:
+        raise _not_authenticated()  # 401
+
+    user = db.get(User, session.user_id)
+    if user.status == UserStatus.BLOCKED:
+        raise _error(403, "account_blocked", "...")
+
+    # בדיקת תפוגת מנוי Pro
+    if user.tier == UserTier.PRO and user.subscription_expires_at:
+        if _as_utc(user.subscription_expires_at) <= _now():
+            user.tier = UserTier.FREE  # שדרוג אוטומטי למטה
+            db.commit()
+
+    return user
+$END_CODE$
+
+<div class="annotation">זו הפונקציה שמגנה על כל ה-endpoints שדורשים משתמש מחובר. היא: (1) מוציאה את ה-cookie מהבקשה, (2) מחפשת את ה-hash שלו ב-DB, (3) בודקת שהמשתמש לא חסום, (4) בודקת אם המנוי פג ומורידה לחינם אם כן. כל endpoint שכותב <code>user: User = Depends(current_user)</code> מקבל את כל ההגנות האלה אוטומטית.</div>
+`
+  },
+
+  // -- Chapter 5: Storage --
+  {
+    id: 'storage',
+    chapter: 'אחסון ומשימות',
+    title: 'storage.py - אחסון קבצים ב-S3',
+    file: 'backend/app/storage.py',
+    content: `
+<p>כל קבצי האודיו נשמרים ב-MinIO (שירות אחסון תואם S3). הקובץ הזה הוא השכבה היחידה שמדברת עם האחסון - שום קוד אחר לא יודע על S3.</p>
+
+<div class="concept">
+<div class="concept-label">מושג: S3 / MinIO</div>
+S3 (Simple Storage Service) הוא שירות אחסון אובייקטים של AWS. MinIO הוא תחליף קוד פתוח שמריצים מקומית. שניהם משתמשים באותו API, אז הקוד עובד עם שניהם בלי שינוי. כל קובץ מזוהה ע"י "key" (כמו נתיב) ונשמר ב-"bucket" (כמו תיקייה ראשית).
+</div>
+
+$CODE_PYTHON$
+import boto3
+from functools import lru_cache
+
+@lru_cache(maxsize=1)
+def _s3_client():
+    settings = load_settings()
+    return boto3.client(
+        "s3",
+        endpoint_url=settings.s3_endpoint_url or None,
+        aws_access_key_id=settings.s3_access_key_id,
+        aws_secret_access_key=settings.s3_secret_access_key,
+        config=BotoConfig(signature_version="s3v4"),
+    )
+$END_CODE$
+
+<div class="annotation"><strong>@lru_cache(maxsize=1)</strong> - decorator שזוכר את התוצאה. הפונקציה רצה רק פעם אחת ואחרי זה מחזירה את אותו client. ככה לא יוצרים client חדש בכל בקשה. <strong>boto3</strong> הוא ה-SDK של AWS ל-Python.</div>
+
+<h2>Signed URLs - גישה מוגבלת בזמן</h2>
+$CODE_PYTHON$
+def generate_signed_url(
+    storage_key: str,
+    ttl_seconds: int,
+    *,
+    download_filename: str | None = None,
+) -> str:
+    params = {"Bucket": _bucket(), "Key": storage_key}
+    if download_filename:
+        params["ResponseContentDisposition"] = (
+            f'attachment; filename="{download_filename}"'
+        )
+    return _s3_public_client().generate_presigned_url(
+        "get_object",
+        Params=params,
+        ExpiresIn=ttl_seconds,
+    )
+$END_CODE$
+
+<div class="annotation"><strong>Presigned URL</strong> - URL שמכיל חתימה דיגיטלית עם תאריך תפוגה. הלקוח מקבל URL כמו <code>https://minio:9000/bucket/file?X-Amz-Signature=abc&X-Amz-Expires=600</code>. ה-URL עובד 10 דקות (להאזנה) או 5 דקות (להורדה) ואז פג. ככה אי אפשר לשתף קישורים ישירים לקבצים.</div>
+`
+  },
+
+  // -- Chapter 6: AI --
+  {
+    id: 'ai-model',
+    chapter: 'מודל ה-AI',
+    title: 'local_model.py - ארכיטקטורת UNet',
+    file: 'backend/ai/local_model.py',
+    content: `
+<p>זה הלב של הפרויקט - רשת נוירונים מסוג <strong>U-Net</strong> שמפרידה שירה ממוזיקה. המודל מקבל ספקטרוגרמה (ייצוג ויזואלי של אודיו) ומחזיר mask שמסמן "איפה השירה".</p>
+
+<div class="concept">
+<div class="concept-label">מושג: U-Net</div>
+ארכיטקטורת רשת נוירונים בצורת U. היא <strong>מכווצת</strong> (encoder) את הקלט לייצוג קטן, ואז <strong>מרחיבה</strong> (decoder) אותו בחזרה לגודל המקורי. ה-"U" בשם בא מהצורה: המידע זורם למטה (כיווץ) ואז למעלה (הרחבה), עם <strong>skip connections</strong> - קיצורי דרך שמחברים ישירות בין הכיווץ להרחבה, כדי לא לאבד פרטים.
+</div>
+
+$CODE_PYTHON$
+# קבועים שתואמים את אופן האימון
+SAMPLE_RATE = 22050     # דגימות לשנייה
+N_FFT = 1024            # חלון FFT
+HOP_LENGTH = 256        # צעד בין חלונות
+INPUT_CHANNELS = 1      # ספקטרוגרמה בערוץ אחד
+MASK_CHANNELS = 1       # mask פלט בערוץ אחד
+$END_CODE$
+
+<div class="annotation"><strong>STFT (Short-Time Fourier Transform)</strong> - הופך אודיו מגל קול (amplitude over time) לספקטרוגרמה (frequency over time). ה-N_FFT קובע את רזולוציית התדר, ו-HOP_LENGTH קובע את רזולוציית הזמן. כמו לפרק אור לקשת צבעים, אבל עם צלילים.</div>
+
+<h2>הרשת עצמה</h2>
+$CODE_PYTHON$
+class SmallUNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        # Encoder - מכווץ: 1 -> 16 -> 32 ערוצים
+        self.enc1 = conv_block(INPUT_CHANNELS, 16)
+        self.enc2 = conv_block(16, 32)
+        self.pool = nn.MaxPool2d(kernel_size=2)
+
+        # Bottleneck - הנקודה הצרה: 64 ערוצים
+        self.bottleneck = conv_block(32, 64)
+
+        # Decoder - מרחיב בחזרה: 64+32 -> 32, 32+16 -> 16
+        self.dec2 = conv_block(64 + 32, 32)   # 64 מלמטה + 32 מ-skip
+        self.dec1 = conv_block(32 + 16, 16)   # 32 מלמטה + 16 מ-skip
+
+        # שכבת פלט: ערוץ mask אחד
+        self.out_conv = nn.Conv2d(16, MASK_CHANNELS, kernel_size=1)
+
+    def forward(self, x):
+        e1 = self.enc1(x)              # 1 -> 16 ערוצים
+        e2 = self.enc2(self.pool(e1))  # 16 -> 32 (חצי גודל)
+        b = self.bottleneck(self.pool(e2))  # 32 -> 64 (רבע גודל)
+
+        d2 = self.dec2(self._up_to(b, e2))  # 64+32=96 -> 32
+        d1 = self.dec1(self._up_to(d2, e1)) # 32+16=48 -> 16
+
+        mask = torch.sigmoid(self.out_conv(d1))  # [0, 1]
+        return mask
+$END_CODE$
+
+<div class="annotation">
+<strong>conv_block</strong> - שתי שכבות Conv2d + ReLU. כל שכבה "רואה" אזור 3x3 של הספקטרוגרמה.<br>
+<strong>MaxPool2d(2)</strong> - מקטין את הגודל בחצי לכל כיוון.<br>
+<strong>_up_to(b, e2)</strong> - מגדיל את b לגודל של e2 ומחבר אותם (skip connection).<br>
+<strong>sigmoid</strong> - דוחף כל ערך לטווח [0, 1]. ערך 1 = "כאן יש שירה", 0 = "כאן אין שירה".<br><br>
+התוצאה: mask של שירה. כופלים את ה-mask בספקטרוגרמה המקורית כדי לקבל את ערוץ השירה, ו-(1 - mask) כדי לקבל את המוזיקה.
+</div>
+`
+  },
+
+  // -- Chapter 7: Frontend --
+  {
+    id: 'fe-app',
+    chapter: 'הפרונטאנד',
+    title: 'App.jsx - הקומפוננטה הראשית',
+    file: 'frontend/src/App.jsx',
+    content: `
+<p>זו הקומפוננטה שמנהלת את כל האפליקציה: ניתוב (routing), מצב המשתמש (auth state), sidebar, וטעינת דפים.</p>
+
+<div class="concept">
+<div class="concept-label">מושג: React State & Hooks</div>
+<code>useState</code> - יוצר משתנה שכש-React יודע עליו. כשהוא משתנה, React מרנדר מחדש את הקומפוננטה.<br>
+<code>useEffect</code> - מריץ קוד "אחרי" שהקומפוננטה נטענה (side effects). משמש לקריאות API, listeners, ו-timers.
+</div>
+
+$CODE_JAVASCRIPT$
+export default function App() {
+  const [user, setUser] = useState(null)
+  const [authOpen, setAuthOpen] = useState(false)
+  const [quota, setQuota] = useState(null)
+  const hash = useHash()            // מאזין ל-URL hash (#/...)
+  const { lang, setLang, t } = useLang(user)  // i18n
+
+  // בטעינה: בדוק אם המשתמש מחובר
+  useEffect(() => {
+    let live = true
+    currentUser().then((account) => {
+      if (live) {
+        setUser(account)
+        if (account) refreshQuota()
+      }
+    })
+    return () => { live = false }  // cleanup
+  }, [])
+$END_CODE$
+
+<div class="annotation"><strong>let live = true</strong> ו-<strong>cleanup</strong> - דפוס חשוב ב-React. אם הקומפוננטה "מתה" (unmount) לפני שהתשובה מהשרת חזרה, <code>live</code> הופך ל-false ולא מעדכנים state של קומפוננטה שכבר לא קיימת. בלי זה תקבלו warning של React.</div>
+
+<h2>Routing - ניתוב בלי ספרייה</h2>
+$CODE_JAVASCRIPT$
+  // ניתוב לפי hash (הכתובת אחרי #)
+  const currentPage =
+      hash.startsWith('#/song/') ? 'song'
+    : hash === '#/library' ? 'library'
+    : hash === '#/explore' ? 'explore'
+    : hash === '#/settings' ? 'settings'
+    : hash === '#/upload' ? 'upload'
+    : 'home'
+
+  // בחירת הדף לפי ה-hash
+  let page
+  if (hash.startsWith('#/song/')) {
+    page = <SongPage songId={hash.replace('#/song/', '')} user={user} t={t} />
+  } else if (hash === '#/library') {
+    page = user
+      ? <LibraryPage user={user} t={t} />
+      : <NeedAuth openAuth={openAuth} t={t} />
+  }
+  // ...
+$END_CODE$
+
+<div class="annotation"><strong>Hash-based routing</strong> - במקום להשתמש ב-React Router, הניתוב מבוסס על <code>window.location.hash</code>. כשהכתובת היא <code>/#/library</code>, ה-hash הוא <code>#/library</code> ומציגים את LibraryPage. יתרון: עובד בלי הגדרות שרת מיוחדות. חיסרון: לא מקצועי כמו React Router, אבל מספיק לפרויקט הזה.</div>
+
+<h2>Conditional Rendering - הצגה מותנית</h2>
+$CODE_JAVASCRIPT$
+  return (
+    <div className={\`app-layout \${user ? '' : 'no-sidebar'}\`}>
+      {user && (
+        <aside className="sidebar">
+          {/* ... navigation links ... */}
+          {user.role === 'super_admin' && (
+            <a href="#/admin">{t('admin')}</a>
+          )}
+        </aside>
+      )}
+      {/* ... */}
+    </div>
+  )
+$END_CODE$
+
+<div class="annotation"><strong>{user && (...)}</strong> - אם user קיים (מחובר), מציגים את ה-sidebar. אם לא, מציגים topbar אחר עם כפתור "התחבר". <strong>{user.role === 'super_admin' && (...)}</strong> - קישור לדף ניהול מופיע רק ל-super admin.</div>
+`
+  },
+  {
+    id: 'fe-i18n',
+    chapter: 'הפרונטאנד',
+    title: 'i18n.js - עברית ואנגלית',
+    file: 'frontend/src/i18n.js',
+    content: `
+<p>מערכת תרגום פשוטה: מילון עברית/אנגלית, hook שמנהל את השפה הנוכחית, וכיוון טקסט (RTL/LTR) אוטומטי.</p>
+
+<div class="concept">
+<div class="concept-label">מושג: i18n (Internationalization)</div>
+i18n = "i" + 18 אותיות + "n" (מהמילה internationalization). במקום לכתוב טקסטים ישירות בקוד (<code>"Upload Song"</code>), משתמשים במפתח (<code>t('upload')</code>) שמתורגם לפי השפה הנוכחית.
+</div>
+
+$CODE_JAVASCRIPT$
+const T = {
+  he: {
+    vocals: 'שירה',
+    background: 'מוזיקה',
+    upload: 'העלאת שיר',
+    signIn: 'התחבר',
+    signUp: 'צור חשבון',
+    heroTitle1: 'הפרדת שירים',
+    heroTitle2: 'ברמה מקצועית',
+    forgotPw: 'שכחתי סיסמה',
+    // ... ~80 מפתחות
+  },
+  en: {
+    vocals: 'Vocals',
+    background: 'Music',
+    upload: 'Upload Song',
+    signIn: 'Sign In',
+    signUp: 'Sign Up',
+    heroTitle1: 'Vocal Separation',
+    heroTitle2: 'Studio Quality',
+    forgotPw: 'Forgot password',
+    // ...
+  }
+}
+$END_CODE$
+
+<h2>ה-Hook שמנהל הכל</h2>
+$CODE_JAVASCRIPT$
+export function useLang(user) {
+  const [lang, setLang] = useState(() => {
+    // עדיפות: העדפת המשתמש > localStorage > ברירת מחדל
+    if (user?.preferred_language) return user.preferred_language
+    return localStorage.getItem('vocalsplit_lang') || 'he'
+  })
+
+  useEffect(() => {
+    localStorage.setItem('vocalsplit_lang', lang)
+    document.documentElement.lang = lang
+    // RTL לעברית, LTR לאנגלית
+    document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr'
+  }, [lang])
+
+  // פונקציית התרגום: מחפשת בשפה הנוכחית, fallback לעברית
+  const t = (key) => (T[lang] || T.he)[key] || T.he[key] || key
+  return { lang, setLang, t }
+}
+$END_CODE$
+
+<div class="annotation"><strong>dir = 'rtl'</strong> - כשהשפה עברית, כל ה-CSS מתהפך אוטומטית: טקסט ימינה, sidebar בצד ימין, וכו'. <code>document.documentElement</code> מצביע על תגית <code>&lt;html&gt;</code>. פונקציית <code>t</code> מחפשת קודם בשפה הנוכחית, ואם לא מוצאת - חוזרת לעברית, ואם גם שם אין - מחזירה את ה-key עצמו.</div>
+`
+  },
+  {
+    id: 'fe-api',
+    chapter: 'הפרונטאנד',
+    title: 'api/auth.js - קריאות לשרת',
+    file: 'frontend/src/api/auth.js',
+    content: `
+<p>שכבת ה-API של הפרונטאנד - פונקציות שמתקשרות עם ה-Backend. כל הקריאות ל-<code>/auth/*</code> מרוכזות כאן.</p>
+
+$CODE_JAVASCRIPT$
+const BASE = '/auth'
+const MIN_PASSWORD_LENGTH = 8
+
+async function post(path, body) {
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    credentials: 'same-origin',  // שליחת cookies!
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.message || data.detail?.message || 'Error')
+  }
+  return res.json()
+}
+$END_CODE$
+
+<div class="annotation"><strong>credentials: 'same-origin'</strong> - אומר ל-fetch לשלוח cookies עם הבקשה. בלי זה, ה-httpOnly session cookie לא יישלח וה-Backend לא יזהה את המשתמש. זה חיוני למערכת ה-auth כולה.</div>
+
+<h2>פונקציות ה-Auth</h2>
+$CODE_JAVASCRIPT$
+export async function signUp(email, password) {
+  return post(BASE + '/signup', { email, password })
+}
+
+export async function signIn(email, password) {
+  return post(BASE + '/login', { email, password })
+}
+
+export async function currentUser() {
+  const res = await fetch(BASE + '/me', { credentials: 'same-origin' })
+  if (!res.ok) return null  // לא מחובר = null, לא שגיאה
+  return res.json()
+}
+
+export async function forgotPassword(email) {
+  return post(BASE + '/forgot-password', { email })
+}
+
+export async function resetPassword(token, password) {
+  return post(BASE + '/reset-password', { token, password })
+}
+$END_CODE$
+
+<div class="annotation"><strong>currentUser</strong> - מוחזרת <code>null</code> אם המשתמש לא מחובר (במקום לזרוק שגיאה). ככה ב-<code>App.jsx</code> אפשר לכתוב פשוט <code>if (user)</code> לבדוק אם מחובר. <strong>forgotPassword</strong> ו-<strong>resetPassword</strong> - חלק מזרימת איפוס הסיסמה שנוספה לאחרונה.</div>
+`
+  },
+
+  // -- Chapter 8: CSS --
+  {
+    id: 'fe-css',
+    chapter: 'הפרונטאנד',
+    title: 'CSS - עיצוב המערכת',
+    file: 'frontend/src/styles/tokens.css',
+    content: `
+<p>המערכת משתמשת ב-CSS custom properties (משתנים) כ-Design Tokens. כל צבע, מרווח וגודל מוגדר פעם אחת ומשמש בכל הקבצים.</p>
+
+<div class="concept">
+<div class="concept-label">מושג: CSS Custom Properties</div>
+<code>--primary: #6c3bef</code> מגדיר משתנה CSS. <code>var(--primary)</code> משתמש בו. יתרון: משנים צבע במקום אחד ו-<strong>כל</strong> האתר משתנה. משמש גם ל-dark mode - מגדירים מחדש את המשתנים ב-<code>@media (prefers-color-scheme: dark)</code>.
+</div>
+
+$CODE_CSS$
+:root {
+  /* Colors */
+  --primary: #6c3bef;
+  --primary-light: #a78bfa;
+  --bg: #0a0a1a;
+  --bg-card: #12122a;
+  --text: #e8e8f0;
+  --text-dim: #8888a8;
+  --border: #2a2a4a;
+
+  /* Spacing & Sizing */
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.3);
+
+  /* Typography */
+  --font: 'Assistant', 'Segoe UI', sans-serif;
+}
+$END_CODE$
+
+<h2>דוגמה: כפתור</h2>
+$CODE_CSS$
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn:hover { opacity: 0.9; }
+.btn:active { transform: scale(0.98); }
+.btn.full { width: 100%; }
+.btn.secondary {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+$END_CODE$
+
+<div class="annotation"><strong>transition</strong> - אנימציה קצרה כשעוברים עם העכבר. <code>transform: scale(0.98)</code> בלחיצה נותן תחושה פיזית. <strong>.full</strong> ו-<strong>.secondary</strong> הם modifier classes - מוסיפים אותם על <code>.btn</code> כדי לשנות את ההתנהגות.</div>
+
+<h2>Layout: Sidebar + Content</h2>
+$CODE_CSS$
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+.sidebar {
+  width: 240px;
+  position: sticky;   /* נשאר קבוע בגלילה */
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  border-left: 1px solid var(--border);
+}
+.content-area {
+  flex: 1;            /* תופס את כל המקום שנשאר */
+  min-width: 0;       /* מאפשר לתוכן להתכווץ */
+}
+$END_CODE$
+
+<div class="annotation"><strong>position: sticky</strong> - ה-sidebar נשאר קבוע בצד גם כשגוללים את התוכן הראשי. <strong>min-width: 0</strong> - חשוב ב-flexbox! בלי זה, אם יש טקסט ארוך או קוד שלא נשבר, ה-flex item יתפרץ מחוץ למסך.</div>
+`
+  },
+
+  // -- Summary chapters --
+  {
+    id: 'flow-upload',
+    chapter: 'זרימות מלאות',
+    title: 'זרימת העלאה והפרדה',
+    file: null,
+    content: `
+<p>בואו נעקוב אחרי מה קורה מהרגע שמשתמש לוחץ "העלה שיר" ועד שהוא שומע את התוצאה:</p>
+
+<h2>1. Frontend - העלאת הקובץ</h2>
+$CODE_JAVASCRIPT$
+// frontend/src/api/songs.js
+export function uploadSong(file, model, visibility, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    const form = new FormData()
+    form.append('file', file)
+    form.append('model_choice', model)     // "basic" / "professional"
+    form.append('visibility', visibility)  // "private" / "public"
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(e.loaded / e.total)
+    }
+    xhr.open('POST', '/upload')
+    xhr.withCredentials = true
+    xhr.send(form)
+  })
+}
+$END_CODE$
+<div class="annotation"><strong>XHR במקום fetch</strong> - למה לא fetch? כי <code>xhr.upload.onprogress</code> מאפשר להציג progress bar אמיתי. ב-fetch אין דרך פשוטה לעקוב אחרי התקדמות ההעלאה.</div>
+
+<h2>2. Backend - קבלת הקובץ</h2>
+$CODE_PYTHON$
+# backend/app/upload.py
+@router.post("/upload")
+async def upload(
+    file: UploadFile,
+    model_choice: str = Form("basic"),
+    user: User = Depends(current_user),
+    db: DbSession = Depends(get_db),
+):
+    # 1. בדיקת מכסה
+    check_quota(db, user, model_choice)
+    # 2. שמירה ב-MinIO
+    key = generate_storage_key(user.id, song.id, "original", ext)
+    upload_fileobj(file.file, key, content_type)
+    # 3. יצירת רשומות ב-DB
+    song = Song(user_id=user.id, title=file.filename, status="uploaded")
+    audio = AudioFile(song_id=song.id, purpose="original", storage_key=key)
+    job = SeparationJob(song_id=song.id, status="queued", model_tier=model_choice)
+    # 4. שליחה לתור המשימות
+    run_separation.delay(str(job.id))
+$END_CODE$
+
+<h2>3. Worker - הפרדה ב-AI</h2>
+$CODE_PYTHON$
+# backend/app/tasks.py
+@celery_app.task(bind=True, queue="separation")
+def run_separation(self, job_id: str):
+    # 1. הורדת הקובץ מ-MinIO
+    audio_bytes = download_bytes(original.storage_key)
+    # 2. הרצת המודל (Basic או Professional)
+    if job.model_tier == ModelTier.PROFESSIONAL:
+        vocals, background = demucs_separate(audio_bytes)
+    else:
+        vocals, background = local_separate(audio_bytes)
+    # 3. העלאת התוצאות ל-MinIO
+    upload_bytes(vocals, vocals_key, "audio/wav")
+    upload_bytes(background, bg_key, "audio/wav")
+    # 4. עדכון סטטוס ב-DB
+    song.status = SongStatus.READY
+    job.status = JobStatus.SUCCEEDED
+$END_CODE$
+
+<h2>4. Frontend - האזנה לתוצאות</h2>
+$CODE_JAVASCRIPT$
+// frontend/src/pages/SongPage.jsx
+// Polling: כל שנייה בודק אם ההפרדה הסתיימה
+useEffect(() => {
+  if (song?.status !== 'ready') {
+    const timer = setInterval(async () => {
+      const updated = await getSongStatus(songId)
+      if (updated.status === 'ready') {
+        clearInterval(timer)
+        setSong(updated)
+      }
+    }, 1000)
+    return () => clearInterval(timer)
+  }
+}, [song?.status])
+$END_CODE$
+
+<div class="annotation">ברגע שהסטטוס הופך ל-"ready", ה-Frontend מפסיק לבדוק ומציג נגני אודיו. כשהמשתמש לוחץ "play", ה-Frontend מבקש Signed URL מהבאקאנד, ומשמיע את הקובץ ישירות מ-MinIO.</div>
+`
+  },
+  {
+    id: 'flow-auth',
+    chapter: 'זרימות מלאות',
+    title: 'זרימת ההתחברות',
+    file: null,
+    content: `
+<p>מה קורה כשמשתמש לוחץ "התחבר" ומזין אימייל וסיסמה:</p>
+
+<h2>1. Frontend שולח את הנתונים</h2>
+$CODE_JAVASCRIPT$
+// AuthModal.jsx -> onAuthSubmit
+const form = new FormData(event.currentTarget)
+const user = await signIn(form.get('email'), form.get('password'))
+// signIn = POST /auth/login { email, password }
+$END_CODE$
+
+<h2>2. Backend מאמת</h2>
+$CODE_PYTHON$
+# backend/app/auth/routes.py
+@router.post("/auth/login")
+def login(body: LoginRequest, response: Response, db = Depends(get_db)):
+    user = db.scalars(
+        select(User).where(User.email == body.email)
+    ).first()
+
+    # Non-enumerating: אם המייל לא קיים, עדיין מריצים hash
+    stored = user.password_hash if user else _DUMMY_PASSWORD_HASH
+    if not verify_password(body.password, stored):
+        raise api_error(401, "invalid_credentials", "...")
+
+    if user.status != UserStatus.ACTIVE:
+        raise api_error(403, "account_blocked", "...")
+
+    # יצירת session חדש
+    _start_session(db, user, response)  # מגדיר cookie
+    return AuthUserRead.model_validate(user, from_attributes=True)
+$END_CODE$
+
+<div class="annotation">הצד הקריטי: <strong>_DUMMY_PASSWORD_HASH</strong>. אם האימייל לא קיים, המערכת עדיין מריצה <code>verify_password</code> על hash מזויף. זמן התגובה זהה, כך שתוקף לא יכול להבחין בין "אימייל לא קיים" ל"סיסמה שגויה".</div>
+
+<h2>3. Session נוצר</h2>
+$CODE_PYTHON$
+def _start_session(db, user, response):
+    token = create_session_token()  # 256 ביט אקראי
+    db.add(UserSession(
+        user_id=user.id,
+        token_hash=hash_session_token(token),  # SHA-256
+        expires_at=_now() + SESSION_TTL,  # +7 ימים
+    ))
+    db.commit()
+    set_auth_cookie(response, token)  # httpOnly cookie
+$END_CODE$
+
+<h2>4. Cookie חוזר לדפדפן</h2>
+<p>ה-Browser מקבל את ה-cookie, ומעכשיו כל בקשה ל-Backend שולחת אותו אוטומטית. ב-Frontend, <code>currentUser()</code> (שנקראת ב-<code>App.jsx</code> בטעינה) מחזירה את פרטי המשתמש.</p>
+
+<h2>5. מה קורה בהתנתקות</h2>
+$CODE_PYTHON$
+@router.post("/auth/logout")
+def logout(request: Request, response: Response, db = Depends(get_db)):
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    if token:
+        session = db.scalars(
+            select(UserSession).where(
+                UserSession.token_hash == hash_session_token(token)
+            )
+        ).first()
+        if session:
+            db.delete(session)  # מוחק מה-DB
+            db.commit()
+    clear_auth_cookie(response)     # מוחק את ה-cookie
+$END_CODE$
+<div class="annotation">התנתקות = מחיקת ה-session מה-DB + מחיקת ה-cookie. גם אם מישהו שמר את ה-cookie, הוא לא יעבוד יותר כי ה-hash שלו לא קיים ב-DB.</div>
+`
+  },
+  {
+    id: 'security',
+    chapter: 'סיכום',
+    title: 'עקרונות אבטחה בפרויקט',
+    file: null,
+    content: `
+<p>סיכום של כל עקרונות האבטחה שראינו לאורך הקורס:</p>
+
+<h2>סיסמאות</h2>
+<ul>
+<li><strong>scrypt hashing</strong> - אלגוריתם שדורש הרבה זיכרון, קשה ל-brute force</li>
+<li><strong>Salt ייחודי</strong> - לכל סיסמה salt אקראי משלה</li>
+<li><strong>Constant-time comparison</strong> - <code>hmac.compare_digest</code> מונע timing attacks</li>
+<li><strong>Non-enumerating login</strong> - אי אפשר לגלות אילו אימיילים רשומים</li>
+</ul>
+
+<h2>Sessions</h2>
+<ul>
+<li><strong>httpOnly cookies</strong> - JavaScript לא יכול לגשת ל-cookie (הגנה מ-XSS)</li>
+<li><strong>SameSite=Lax</strong> - הגנה מ-CSRF</li>
+<li><strong>SHA-256 token hash</strong> - רק ה-hash נשמר ב-DB, לא ה-token</li>
+<li><strong>7-day TTL</strong> - תוקף מוחלט, בלי הארכה אוטומטית</li>
+</ul>
+
+<h2>אחסון</h2>
+<ul>
+<li><strong>Signed URLs</strong> - גישה מוגבלת בזמן לקבצים</li>
+<li><strong>storage_key לעולם לא נחשף</strong> - ה-API מחזיר signed URL, לא את הנתיב ב-S3</li>
+<li><strong>CORS מוגבל</strong> - רק localhost:5173 מורשה</li>
+</ul>
+
+<h2>הגדרות</h2>
+<ul>
+<li><strong>field(repr=False)</strong> - סודות לא מופיעים ב-logs</li>
+<li><strong>DATABASE_URL לעולם לא ב-error</strong> - הודעות שגיאה לא מכילות ערכים</li>
+<li><strong>קובץ .env לא ב-git</strong> - סודות נשארים מקומיים</li>
+</ul>
+
+<div class="concept">
+<div class="concept-label">עיקרון מנחה: Defense in Depth</div>
+כל שכבה מגנה בעצמה, בלי לסמוך על שכבות אחרות. StrEnum מגן בקוד, CheckConstraint מגן ב-DB, repr=False מגן בלוגים, Signed URLs מגנים על קבצים. גם אם שכבה אחת נפרצת, השאר ממשיכות להגן.
+</div>
+`
+  },
+  {
+    id: 'project-structure',
+    chapter: 'סיכום',
+    title: 'מבנה הפרויקט המלא',
+    file: null,
+    content: `
+<h2>Backend</h2>
+$CODE_PYTHON$
+backend/
+  app/
+    __init__.py
+    main.py           # FastAPI app factory + routers
+    config.py         # הגדרות מסביבה (dataclass)
+    constants.py      # StrEnums: סטטוסים, תפקידים, רמות
+    helpers.py        # פונקציות עזר משותפות
+    celery_app.py     # הגדרת Celery
+    worker.py         # נקודת כניסה ל-Worker
+    email_service.py  # שליחת מיילים
+    storage.py        # שכבת S3/MinIO
+    upload.py         # POST /upload
+    songs.py          # CRUD שירים
+    library.py        # ספרייה אישית
+    public.py         # ספרייה ציבורית
+    quotas.py         # מכסות שימוש
+    tasks.py          # משימות Celery (הפרדה)
+    admin.py          # ניהול (RBAC)
+    coupons.py        # קופונים
+    subscriptions.py  # מנויים
+    settings_routes.py# הגדרות משתמש
+    demo.py           # דמו מקומי
+    auth/
+      routes.py       # signup, login, logout, Google, reset
+      password.py     # scrypt hashing
+      session.py      # cookie sessions + current_user
+      schemas.py      # Pydantic validation
+    db/
+      base.py         # DeclarativeBase
+      session.py      # engine + sessionmaker
+      models/
+        user.py       # User, UserSession
+        song.py       # Song, AudioFile, SeparationJob
+        social.py     # Tag, Rating, ContentReport
+        billing.py    # DailyUsage, Coupon
+        admin.py      # AuditEvent, SignedUrlGrant
+        password_reset.py  # PasswordResetToken
+    schemas/
+      core.py         # Read-only Pydantic schemas
+  ai/
+    local_model.py    # SmallUNet architecture
+    local_inference.py# STFT -> mask -> separate
+    demucs_inference.py # Meta's htdemucs_ft
+    checkpoint_registry.py
+  alembic/
+    versions/         # מיגרציות DB
+$END_CODE$
+
+<h2>Frontend</h2>
+$CODE_JAVASCRIPT$
+frontend/src/
+  main.jsx            // React entry point
+  App.jsx             // Routing + auth state + layout
+  i18n.js             // Hebrew/English translations
+  helpers.jsx         // Icons + useHash
+  api/
+    auth.js           // Auth API calls
+    songs.js          // Songs, library, admin API
+    demo.js           // Demo API
+  components/
+    AuthModal.jsx     // Login/signup + Google
+    NeedAuth.jsx      // "Please sign in"
+    LibrarySongCard.jsx  // Song card + players
+    PublicSongCard.jsx   // Public song + rating
+  pages/
+    HomePage.jsx      // Landing page + pricing
+    UploadPage.jsx    // File upload + drag & drop
+    SongPage.jsx      // Song detail + stem players
+    LibraryPage.jsx   // Personal library
+    ExplorePage.jsx   // Public library
+    SettingsPage.jsx  // User settings
+    AdminPage.jsx     // Admin dashboard
+    UpgradePage.jsx   // Upgrade to Pro
+    ForgotPasswordPage.jsx  // Password reset request
+    ResetPasswordPage.jsx   // New password form
+  styles/
+    tokens.css        // Design tokens
+    base.css          // Reset + defaults
+    layout.css        // Sidebar + topbar + grid
+    components.css    // Buttons, cards, forms
+    landing.css       // Marketing page
+    pages.css         // Page-specific
+    responsive.css    // Mobile breakpoints
+$END_CODE$
+
+<div class="concept">
+<div class="concept-label">כלל ארגון: Separation of Concerns</div>
+כל קובץ אחראי על דבר אחד. <code>storage.py</code> רק מדבר עם S3, <code>quotas.py</code> רק בודק מכסות, <code>password.py</code> רק מצפין סיסמאות. אף קובץ לא עושה שני דברים שלא קשורים זה לזה.
+</div>
+`
+  },
+  {
+    id: 'tech-glossary',
+    chapter: 'סיכום',
+    title: 'מילון מושגים',
+    file: null,
+    content: `
+<h2>Backend</h2>
+<ul>
+<li><strong>FastAPI</strong> - Framework ל-REST APIs ב-Python. מבוסס על Type Hints ו-Pydantic. מייצר תיעוד אוטומטי ב-/docs</li>
+<li><strong>SQLAlchemy</strong> - ORM (Object Relational Mapper). ממפה classes ל-טבלאות ב-DB</li>
+<li><strong>Alembic</strong> - כלי מיגרציות. מייצר scripts שמשנים את מבנה ה-DB בצורה מבוקרת ו-reversible</li>
+<li><strong>Pydantic</strong> - ספריית validation. בודק שהנתונים שמגיעים מהלקוח בפורמט הנכון</li>
+<li><strong>Celery</strong> - מנהל משימות אסינכרוניות. ה-Backend שולח משימה, ו-Worker מריץ אותה ברקע</li>
+<li><strong>Redis</strong> - מסד נתונים בזיכרון. כאן משמש כ-Message Broker בין Backend ל-Worker</li>
+<li><strong>PostgreSQL</strong> - מסד נתונים רלציוני. שומר משתמשים, שירים, סשנים, וכו'</li>
+<li><strong>MinIO / S3</strong> - אחסון אובייקטים. שומר קבצי אודיו. S3 = AWS, MinIO = תחליף מקומי</li>
+<li><strong>Dependency Injection</strong> - דפוס שבו פונקציה מקבלת את מה שהיא צריכה מבחוץ (Depends) במקום ליצור בעצמה</li>
+<li><strong>Middleware</strong> - שכבה שרצה על כל בקשה, לפני ה-endpoint. CORS middleware מוסיף headers</li>
+</ul>
+
+<h2>Frontend</h2>
+<ul>
+<li><strong>React</strong> - ספריית UI. בונים ממשק מ-components שכל אחד מנהל state משלו</li>
+<li><strong>Vite</strong> - כלי build ו-dev server. מהיר מ-Webpack, תומך ב-HMR (Hot Module Replacement)</li>
+<li><strong>JSX</strong> - תחביר שמשלב HTML בתוך JavaScript. <code>&lt;div&gt;{user.name}&lt;/div&gt;</code></li>
+<li><strong>useState</strong> - Hook שיוצר state variable. שינוי שלו גורם ל-re-render</li>
+<li><strong>useEffect</strong> - Hook ל-side effects: קריאות API, timers, event listeners</li>
+<li><strong>Props</strong> - נתונים שעוברים מ-parent ל-child component. כמו arguments של פונקציה</li>
+</ul>
+
+<h2>AI</h2>
+<ul>
+<li><strong>U-Net</strong> - ארכיטקטורת רשת נוירונים בצורת U. מצוינת ל-segmentation (חלוקה לאזורים)</li>
+<li><strong>STFT</strong> - Short-Time Fourier Transform. הופך אודיו לספקטרוגרמה (תמונה של תדרים לאורך זמן)</li>
+<li><strong>Demucs</strong> - מודל של Meta להפרדת מוזיקה. State of the art. גרסת htdemucs_ft</li>
+<li><strong>Mask</strong> - "מסכה" שמכפילים בספקטרוגרמה כדי לחלץ רק חלק מסוים (שירה / מוזיקה)</li>
+<li><strong>PyTorch</strong> - ספריית Deep Learning של Facebook/Meta. מגדירים רשתות נוירונים כ-Python classes</li>
+</ul>
+
+<h2>תשתית</h2>
+<ul>
+<li><strong>Docker</strong> - מריץ אפליקציות בקונטיינרים מבודדים. כל שירות רץ בסביבה שלו</li>
+<li><strong>Docker Compose</strong> - מנהל מספר קונטיינרים ביחד. <code>docker compose up</code> מפעיל הכל</li>
+<li><strong>Volume</strong> - אחסון שנשאר גם אחרי שקונטיינר מושמד. לנתוני DB ולקבצים</li>
+<li><strong>Environment Variables</strong> - הגדרות שעוברות לאפליקציה מבחוץ. סיסמאות, URLs, flags</li>
+</ul>
+`
+  }
+];
+
+// Group lessons by chapter
+function getChapters() {
+  const map = new Map();
+  LESSONS.forEach((l, i) => {
+    if (!map.has(l.chapter)) map.set(l.chapter, []);
+    map.get(l.chapter).push({ ...l, index: i });
+  });
+  return map;
+}
+
+// State
+let currentIndex = 0;
+let completed = new Set();
+try {
+  const saved = localStorage.getItem('vs_completed');
+  if (saved) completed = new Set(JSON.parse(saved));
+} catch(e){}
+
+function saveCompleted() {
+  try { localStorage.setItem('vs_completed', JSON.stringify([...completed])); } catch(e){}
+}
+
+function renderSidebar() {
+  const nav = document.getElementById('sidebarNav');
+  const chapters = getChapters();
+  let html = '';
+  for (const [chapter, lessons] of chapters) {
+    const allDone = lessons.every(l => completed.has(l.id));
+    html += '<div class="chapter-group">';
+    html += '<div class="chapter-title open" onclick="toggleChapter(this)"><span class="arrow">&#9654;</span> ' + chapter + (allDone ? ' &#10003;' : '') + '</div>';
+    html += '<div class="chapter-lessons">';
+    lessons.forEach(l => {
+      const active = l.index === currentIndex ? 'active' : '';
+      const done = completed.has(l.id) ? 'done' : '';
+      html += '<button class="lesson-link ' + active + '" onclick="goTo(' + l.index + ')">';
+      html += '<span class="check ' + done + '">' + (done ? '&#10003;' : '') + '</span>';
+      html += l.title + '</button>';
+    });
+    html += '</div></div>';
+  }
+  nav.innerHTML = html;
+  updateProgress();
+}
+
+function updateProgress() {
+  const total = LESSONS.length;
+  const done = completed.size;
+  document.getElementById('progressText').textContent = done + ' / ' + total;
+  document.getElementById('progressFill').style.width = (done / total * 100) + '%';
+}
+
+function toggleChapter(el) {
+  el.classList.toggle('open');
+  const lessons = el.nextElementSibling;
+  lessons.classList.toggle('collapsed');
+}
+
+function processContent(raw) {
+  let html = raw;
+  // Replace $CODE_LANG$...$END_CODE$ with code blocks
+  html = html.replace(/\$CODE_(\w+)\$([\s\S]*?)\$END_CODE\$/g, (_, lang, code) => {
+    const langName = {PYTHON:'Python',JAVASCRIPT:'JavaScript',YAML:'YAML',CSS:'CSS',DOCKERFILE:'Dockerfile'}[lang] || lang;
+    const trimmed = code.replace(/^\n/, '').replace(/\n$/, '');
+    return '<div class="code-block"><div class="code-header"><span>' + langName + '</span></div><pre><code class="language-' + lang.toLowerCase() + '">' + escapeHtml(trimmed) + '</code></pre></div>';
+  });
+  return html;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderLesson(index) {
+  currentIndex = index;
+  const lesson = LESSONS[index];
+  const main = document.getElementById('mainContent');
+
+  let html = '<div class="lesson-header">';
+  html += '<div class="lesson-chapter">' + lesson.chapter + '</div>';
+  html += '<h1 class="lesson-title">' + lesson.title + '</h1>';
+  if (lesson.file) {
+    html += '<div class="lesson-file"><span class="icon">&#128196;</span> ' + lesson.file + '</div>';
+  }
+  html += '</div>';
+
+  html += '<div class="lesson-body">' + processContent(lesson.content) + '</div>';
+
+  // Nav
+  html += '<div class="lesson-nav">';
+  if (index > 0) {
+    html += '<button class="nav-btn" onclick="goTo(' + (index-1) + ')">&#8594; ' + LESSONS[index-1].title + '</button>';
+  } else {
+    html += '<span></span>';
+  }
+  const isDone = completed.has(lesson.id);
+  html += '<button class="complete-btn ' + (isDone ? 'is-done' : '') + '" onclick="markComplete(\'' + lesson.id + '\')">' + (isDone ? '&#10003; הושלם' : 'סמן כהושלם') + '</button>';
+  if (index < LESSONS.length - 1) {
+    html += '<button class="nav-btn primary" onclick="goTo(' + (index+1) + ')">' + LESSONS[index+1].title + ' &#8592;</button>';
+  } else {
+    html += '<span></span>';
+  }
+  html += '</div>';
+
+  main.innerHTML = html;
+  main.scrollTop = 0;
+  window.scrollTo(0, 0);
+
+  // Highlight code
+  main.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+
+  renderSidebar();
+
+  // Close mobile sidebar
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+function goTo(index) {
+  renderLesson(index);
+}
+
+function markComplete(id) {
+  if (completed.has(id)) return;
+  completed.add(id);
+  saveCompleted();
+  renderLesson(currentIndex);
+}
+
+// Mobile toggle
+document.getElementById('mobileToggle').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+
+// Init
+renderLesson(0);
+</script>
