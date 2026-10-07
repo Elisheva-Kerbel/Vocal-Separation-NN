@@ -1,462 +1,511 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl" data-theme="dark">
+<html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VocalSplit Academy</title>
-<meta name="description" content="אתר לימוד מקיף בעברית על פרויקט VocalSplit: הפרדת שירים לווקאל ולרקע עם FastAPI, React, Docker ובינה מלאכותית.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Heebo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+/* ═══════════════════ TOKENS ═══════════════════ */
 :root{
-  --bg:#0a0a12;
-  --bg-2:#0f0f1c;
-  --panel:#13132a;
-  --panel-2:#1a1a38;
-  --line:#2a2a52;
-  --text:#e8e8f4;
-  --muted:#9d9dbd;
-  --purple:#7c3aed;
-  --purple-2:#a78bfa;
-  --cyan:#06b6d4;
-  --cyan-2:#67e8f9;
-  --green:#34d399;
-  --amber:#fbbf24;
-  --red:#f87171;
-  --pink:#f472b6;
-  --code-bg:#0c0c1a;
-  --radius:14px;
-  --side-w:290px;
-  --shadow:0 10px 40px rgba(0,0,0,.45);
+  --bg:#0a0a12;--bg2:#0f0f1a;--card:#13132a;--glass:rgba(19,19,42,.7);
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --purple:#7c3aed;--purple2:#a78bfa;--purple3:rgba(124,58,237,.15);
+  --cyan:#06b6d4;--cyan2:#67e8f9;--cyan3:rgba(6,182,212,.12);
+  --green:#22c55e;--green2:#4ade80;--green3:rgba(34,197,94,.12);
+  --red:#ef4444;--pink:#f472b6;--amber:#f59e0b;
+  --radius:12px;--radius-sm:8px;
+  --sidebar-w:280px;
+  --font:'Heebo','Inter',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  color-scheme:dark;
 }
-*{box-sizing:border-box}
-html{scroll-behavior:smooth;scroll-padding-top:76px}
+
+/* ═══════════════════ RESET ═══════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
 body{
-  margin:0;background:var(--bg);color:var(--text);
-  font-family:'Inter','Heebo','Segoe UI',Arial,sans-serif;
-  font-size:17px;line-height:1.85;
-  background-image:
-    radial-gradient(900px 500px at 85% -10%,rgba(124,58,237,.18),transparent 60%),
-    radial-gradient(700px 500px at 5% 20%,rgba(6,182,212,.10),transparent 60%);
-  background-attachment:fixed;
-  -webkit-font-smoothing:antialiased;
+  font-family:var(--font);background:var(--bg);color:var(--text);
+  line-height:1.7;font-size:16px;min-height:100vh;
+  overflow-x:hidden;
 }
-a{color:var(--cyan-2)}
-code,pre,.mono{font-family:'JetBrains Mono','Cascadia Code',Consolas,monospace}
-p{margin:0 0 1em}
-h1,h2,h3,h4{line-height:1.35;margin:0 0 .6em}
-h2{font-size:2rem;font-weight:800}
-h3{font-size:1.35rem;font-weight:700;color:var(--purple-2);margin-top:2rem}
-h4{font-size:1.05rem;font-weight:700;color:var(--cyan-2)}
-ul,ol{padding-inline-start:1.4em;margin:0 0 1em}
-li{margin-bottom:.4em}
-strong{color:#fff}
-hr{border:0;border-top:1px solid var(--line);margin:2.5rem 0}
-
-/* inline code in prose */
-p code,li code,td code,.lx code,.callout code,dd code,h4 code{
-  direction:ltr;unicode-bidi:isolate;display:inline-block;
-  background:rgba(124,58,237,.16);color:#d8c9ff;border:1px solid rgba(124,58,237,.35);
-  border-radius:6px;padding:0 .4em;font-size:.86em;line-height:1.6;
-  max-width:100%;overflow-wrap:anywhere;word-break:break-word;vertical-align:baseline
+body::before{
+  content:'';position:fixed;inset:0;z-index:-1;
+  background:
+    radial-gradient(ellipse 600px 400px at 20% 30%,rgba(124,58,237,.08),transparent),
+    radial-gradient(ellipse 500px 350px at 80% 70%,rgba(6,182,212,.06),transparent);
 }
-.lx>div,.card,.callout,.flow li>div,main>section{min-width:0}
-main{overflow-x:clip}
+a{color:var(--cyan2);text-decoration:none}
+a:hover{text-decoration:underline}
+img{max-width:100%}
+code{font-family:var(--mono);font-size:.88em;direction:ltr;unicode-bidi:isolate;
+  background:var(--purple3);padding:2px 6px;border-radius:4px}
 
-/* progress bar */
-#progress{position:fixed;top:0;right:0;left:0;height:3px;z-index:300;background:transparent}
-#progress i{display:block;height:100%;width:0;background:linear-gradient(270deg,var(--purple),var(--cyan));transition:width .1s}
-
-/* topbar (mobile) */
-.topbar{display:none;position:fixed;top:0;right:0;left:0;height:56px;z-index:200;
-  background:rgba(10,10,18,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);
-  align-items:center;justify-content:space-between;padding:0 16px}
-.topbar b{font-size:1.05rem;background:linear-gradient(90deg,var(--purple-2),var(--cyan-2));-webkit-background-clip:text;background-clip:text;color:transparent}
-.burger{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:10px;
-  width:42px;height:42px;font-size:1.3rem;cursor:pointer}
-
-/* sidebar */
-.sidebar{position:fixed;top:0;right:0;bottom:0;width:var(--side-w);z-index:250;
-  background:linear-gradient(180deg,#0d0d1e,#09090f);border-left:1px solid var(--line);
-  overflow-y:auto;padding:22px 16px 40px;transition:transform .25s}
-.brand{display:flex;align-items:center;gap:12px;margin-bottom:22px;text-decoration:none}
-.brand .logo{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;
-  background:linear-gradient(135deg,var(--purple),var(--cyan));box-shadow:0 0 22px rgba(124,58,237,.5)}
-.brand .logo svg{width:24px;height:24px}
-.brand span{font-weight:800;font-size:1.15rem;color:#fff;line-height:1.1}
-.brand small{display:block;font-weight:500;font-size:.72rem;color:var(--muted);letter-spacing:.08em}
-.nav-title{font-size:.72rem;font-weight:700;letter-spacing:.12em;color:var(--muted);margin:20px 10px 6px;text-transform:uppercase}
-.nav a{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;color:var(--text);
-  text-decoration:none;font-size:.93rem;line-height:1.4;border:1px solid transparent;transition:.15s}
-.nav a:hover{background:var(--panel)}
-.nav a.active{background:linear-gradient(270deg,rgba(124,58,237,.28),rgba(6,182,212,.10));border-color:rgba(124,58,237,.5);color:#fff}
-.nav a .n{flex:none;width:24px;height:24px;border-radius:7px;background:var(--panel-2);display:grid;place-items:center;
-  font-size:.74rem;font-weight:700;color:var(--purple-2)}
-.nav .sub a{font-size:.82rem;padding:5px 12px 5px 12px;margin-inline-start:34px;color:var(--muted)}
-.nav .sub a.active{color:#fff}
-.nav .sub a .mono{font-size:.76rem;direction:ltr;unicode-bidi:isolate}
-.overlay-nav{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:240}
-
-/* main */
-main{margin-right:var(--side-w);padding:0 clamp(18px,4vw,64px) 80px;max-width:calc(var(--side-w) + 1180px)}
-section.sec{padding-top:56px;margin-top:20px}
-.sec-head{display:flex;align-items:center;gap:14px;margin-bottom:1.4rem;flex-wrap:wrap}
-.sec-num{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-weight:800;font-size:1.2rem;
-  background:linear-gradient(135deg,var(--purple),#5b21b6);box-shadow:0 0 24px rgba(124,58,237,.4)}
-.sec-head h2{margin:0}
-.lead{font-size:1.15rem;color:#cfcfe6}
-.eyebrow{color:var(--cyan-2);font-weight:700;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase}
-
-/* hero */
-.hero{padding:70px 0 20px;position:relative}
-.hero h1{font-size:clamp(2.4rem,6vw,4.2rem);font-weight:800;margin:.2em 0;letter-spacing:-.02em}
-.grad{background:linear-gradient(90deg,var(--purple-2),var(--cyan-2));-webkit-background-clip:text;background-clip:text;color:transparent}
-.wave{display:flex;align-items:center;gap:4px;height:70px;margin:18px 0 6px;direction:ltr}
-.wave i{display:block;width:5px;border-radius:4px;background:linear-gradient(180deg,var(--cyan),var(--purple));
-  animation:pulse 1.4s ease-in-out infinite;height:20%}
-@keyframes pulse{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
-.chips{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0}
-.chip{padding:6px 14px;border-radius:999px;background:var(--panel);border:1px solid var(--line);font-size:.88rem;color:var(--muted)}
-.chip b{color:#fff}
-.badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin:18px 0 8px}
-.tbadge{all:unset;box-sizing:border-box;cursor:pointer;display:block;padding:14px 14px 12px;border-radius:14px;
-  background:var(--panel);border:1px solid var(--line);transition:.18s;position:relative;overflow:hidden}
-.tbadge::before{content:"";position:absolute;inset-inline-start:0;top:0;bottom:0;width:4px;background:var(--c,var(--purple))}
-.tbadge:hover,.tbadge:focus-visible{transform:translateY(-3px);border-color:var(--c,var(--purple));box-shadow:0 8px 28px rgba(0,0,0,.4);background:var(--panel-2)}
-.tbadge:focus-visible{outline:2px solid var(--cyan)}
-.tbadge strong{display:block;font-size:1rem;direction:ltr;text-align:right;color:#fff}
-.tbadge span{display:block;font-size:.78rem;color:var(--muted);line-height:1.45;margin-top:3px}
-.tbadge em{font-style:normal;position:absolute;top:8px;inset-inline-end:10px;font-size:.66rem;color:var(--c,var(--purple-2));font-weight:700;letter-spacing:.06em}
-.hint{color:var(--muted);font-size:.9rem}
-
-/* tech link inside prose */
-.tl{color:var(--cyan-2);cursor:pointer;border-bottom:1px dashed var(--cyan);text-decoration:none;white-space:nowrap}
-.tl:hover{color:#fff;border-bottom-style:solid}
-
-/* cards, callouts */
-.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;margin:1.2rem 0}
-.card h4{margin-top:0}
-.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:1.2rem 0}
-.grid2 .card{margin:0}
-.callout{border-radius:12px;padding:14px 18px;margin:1.2rem 0;border:1px solid;border-inline-start-width:5px}
-.callout b.t{display:block;margin-bottom:4px}
-.callout.tip{background:rgba(6,182,212,.08);border-color:rgba(6,182,212,.45)}
-.callout.tip b.t{color:var(--cyan-2)}
-.callout.warn{background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.5)}
-.callout.warn b.t{color:var(--amber)}
-.callout.danger{background:rgba(248,113,113,.09);border-color:rgba(248,113,113,.5)}
-.callout.danger b.t{color:var(--red)}
-.callout.analogy{background:rgba(124,58,237,.10);border-color:rgba(124,58,237,.5)}
-.callout.analogy b.t{color:var(--purple-2)}
-.callout p:last-child,.callout ul:last-child{margin-bottom:0}
-
-/* tables */
-.tbl-wrap{overflow-x:auto;margin:1.2rem 0;border:1px solid var(--line);border-radius:12px}
-table{border-collapse:collapse;width:100%;font-size:.93rem}
-th,td{padding:10px 14px;text-align:right;border-bottom:1px solid var(--line);vertical-align:top}
-th{background:var(--panel-2);color:var(--purple-2);font-weight:700;white-space:nowrap}
-tr:last-child td{border-bottom:0}
-td{background:rgba(19,19,42,.6)}
-
-/* code blocks */
-.codeblock{direction:ltr;text-align:left;margin:1.2rem 0;border-radius:12px;overflow:hidden;
-  border:1px solid var(--line);background:var(--code-bg);box-shadow:var(--shadow)}
-.cb-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;
-  background:#15152e;border-bottom:1px solid var(--line);font-size:.8rem;color:var(--muted)}
-.cb-head .file{color:#fff;font-weight:600;display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cb-head .file::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:16px 0 0 var(--amber),32px 0 0 var(--red);margin-right:38px;flex:none}
-.cb-head .meta{display:flex;align-items:center;gap:10px;flex:none}
-.cb-head .lang{text-transform:uppercase;letter-spacing:.08em;font-size:.7rem;color:var(--cyan-2)}
-.copy{font:inherit;font-size:.74rem;background:var(--panel-2);color:var(--text);border:1px solid var(--line);
-  border-radius:7px;padding:3px 10px;cursor:pointer}
-.copy:hover{border-color:var(--purple)}
-.codeblock pre{margin:0;padding:12px 0;overflow:auto;font-size:.82rem;line-height:1.65;tab-size:4;counter-reset:ln}
-.codeblock.tall pre{max-height:560px}
-.codeblock code{display:block;min-width:max-content;font-family:'JetBrains Mono',Consolas,monospace}
-.line{display:block;padding:0 16px 0 0;white-space:pre}
-.line::before{counter-increment:ln;content:counter(ln);display:inline-block;width:3.4em;margin-right:14px;text-align:right;
-  color:#4b4b78;user-select:none;border-right:1px solid #22223f;padding-right:10px}
-.line:hover{background:rgba(124,58,237,.08)}
-.codeblock.mini pre{padding:8px 0;font-size:.8rem}
-.codeblock.mini .line::before{width:2.2em}
-.tk-kw{color:#c792ea}.tk-str{color:#a5e075}.tk-cm{color:#6b6b9a;font-style:italic}
-.tk-num{color:#f78c6c}.tk-fn{color:#82aaff}.tk-cls{color:#ffcb6b}.tk-dec{color:#f07178}
-.tk-const{color:#89ddff}.tk-key{color:#7fdbca}.tk-var{color:#f78c6c}.tk-flag{color:#ffcb6b}.tk-tag{color:#f07178}
-
-/* line-by-line explanation */
-.explain{margin:1.2rem 0 2.4rem;border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden}
-.explain>h4{margin:0;padding:12px 20px;background:var(--panel-2);border-bottom:1px solid var(--line);color:var(--purple-2)}
-.lx{display:grid;grid-template-columns:96px 1fr;gap:16px;padding:14px 20px;border-bottom:1px solid var(--line)}
-.lx:last-child{border-bottom:0}
-.lx .lr{font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--cyan-2);background:rgba(6,182,212,.1);
-  border-radius:8px;padding:3px 8px;align-self:start;text-align:center;direction:ltr}
-.lx>div p:last-child{margin-bottom:0}
-.lx strong.k{color:var(--cyan-2)}
-
-.file-head{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:3.2rem}
-.file-head h3{margin:0;direction:ltr;unicode-bidi:isolate;font-family:'JetBrains Mono',monospace;font-size:1.12rem;color:#fff}
-.file-head h3{max-width:100%;overflow-wrap:anywhere;word-break:break-all}
-.file-head .pill{font-size:.76rem;padding:2px 10px;border-radius:999px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.5);color:var(--purple-2)}
-.file-head .pill.c{background:rgba(6,182,212,.15);border-color:rgba(6,182,212,.5);color:var(--cyan-2)}
-
-/* architecture diagram */
-.diagram{background:var(--bg-2);border:1px solid var(--line);border-radius:16px;padding:12px;margin:1.4rem 0;overflow-x:auto}
-.diagram svg{display:block;min-width:820px;width:100%;height:auto;direction:ltr}
-.diagram text{font-family:'Inter','Heebo',sans-serif}
-.flow{counter-reset:fl;list-style:none;padding:0;margin:1.2rem 0}
-.flow li{counter-increment:fl;display:grid;grid-template-columns:44px 1fr;gap:14px;padding:14px 16px;margin-bottom:10px;
-  background:var(--panel);border:1px solid var(--line);border-radius:12px;align-items:start}
-.flow li::before{content:counter(fl);width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:800;
-  background:linear-gradient(135deg,var(--purple),var(--cyan));color:#fff}
-.flow li b{color:#fff}
-
-/* container cards */
-.svc{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px;margin:1.2rem 0}
-.svc .card{margin:0;border-top:3px solid var(--c,var(--purple))}
-.svc h4{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#fff;direction:ltr;margin-bottom:.5em}
-.svc h4 span{font-size:.72rem;font-weight:600;color:var(--c,var(--purple-2));background:rgba(255,255,255,.05);border-radius:999px;padding:1px 10px}
-
-/* DB entity chips */
-.er{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:1.2rem 0;direction:ltr}
-.er .ent{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:.82rem}
-.er .ent b{display:block;padding:7px 12px;background:var(--panel-2);color:#fff;font-family:'JetBrains Mono',monospace}
-.er .ent span{display:block;padding:2px 12px;color:var(--muted);font-family:'JetBrains Mono',monospace;line-height:1.7}
-.er .ent span i{font-style:normal;color:var(--amber)}
-.er .ent span u{text-decoration:none;color:var(--cyan-2)}
-.er .ent span:last-child{padding-bottom:8px}
-
-/* modal */
-.modal-bg{position:fixed;inset:0;z-index:500;background:rgba(5,5,12,.78);backdrop-filter:blur(6px);
-  display:none;align-items:flex-start;justify-content:center;padding:4vh 16px;overflow:auto}
-.modal-bg.open{display:flex}
-.modal{width:min(900px,100%);background:#10101f;border:1px solid var(--purple);border-radius:18px;
-  box-shadow:0 0 0 1px rgba(124,58,237,.3),0 30px 80px rgba(0,0,0,.7);animation:pop .22s ease-out;overflow:hidden}
-@keyframes pop{from{transform:translateY(18px) scale(.97);opacity:0}to{transform:none;opacity:1}}
-.modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 24px;
-  background:linear-gradient(270deg,rgba(124,58,237,.35),rgba(6,182,212,.12));border-bottom:1px solid var(--line);
-  position:sticky;top:0;z-index:2;backdrop-filter:blur(8px)}
-.modal-head h3{margin:0;color:#fff;font-size:1.4rem;direction:ltr;unicode-bidi:isolate}
-.modal-head small{display:block;color:var(--cyan-2);font-size:.78rem;letter-spacing:.06em}
-.modal-close{background:var(--panel);border:1px solid var(--line);color:#fff;width:40px;height:40px;border-radius:10px;font-size:1.2rem;cursor:pointer;flex:none}
-.modal-close:hover{border-color:var(--red);color:var(--red)}
-.modal-body{padding:22px 26px 30px;font-size:1rem;line-height:1.85}
-.modal-body h4{margin-top:1.6rem}
-.modal-body dl{margin:0 0 1em}
-.modal-body dt{font-weight:700;color:#fff;margin-top:.9em}
-.modal-body dd{margin:.2em 0 0;color:#cfcfe6;margin-inline-start:0;padding-inline-start:14px;border-inline-start:2px solid var(--line)}
-.modal-body .where{background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.4);border-radius:12px;padding:12px 16px;margin-top:1.4rem}
-.modal-body .where b{color:var(--cyan-2)}
-
-/* footer marker */
-.part-end{margin-top:3rem;padding:18px;text-align:center;border:1px dashed var(--line);border-radius:14px;color:var(--muted);font-size:.9rem}
-
-@media (max-width:980px){
-  .topbar{display:flex}
-  .sidebar{transform:translateX(100%);box-shadow:var(--shadow)}
-  .sidebar.open{transform:none}
-  .overlay-nav.open{display:block}
-  main{margin-right:0;padding-top:56px}
-  html{scroll-padding-top:70px}
-  .lx{grid-template-columns:1fr;gap:6px}
-  .lx .lr{justify-self:start}
-  h2{font-size:1.6rem}
-  .file-head h3{font-size:.98rem}
-  body{font-size:16px}
+/* ═══════════════════ SIDEBAR ═══════════════════ */
+.sidebar{
+  position:fixed;top:0;right:0;bottom:0;width:var(--sidebar-w);
+  background:linear-gradient(180deg,#0d0d20 0%,#0a0a16 100%);
+  border-left:1px solid rgba(124,58,237,.2);
+  z-index:100;overflow-y:auto;
+  display:flex;flex-direction:column;
+  transition:transform .3s ease;
 }
-@media (max-width:520px){
-  .badge-grid{grid-template-columns:repeat(2,1fr)}
-  .modal-body{padding:16px 16px 24px}
-  .cb-head .lang{display:none}
+.sidebar-brand{
+  padding:1.5rem;border-bottom:1px solid rgba(124,58,237,.15);
+  text-align:center;
 }
-@media (prefers-reduced-motion:reduce){
-  html{scroll-behavior:auto}
-  .wave i,.modal{animation:none}
+.sidebar-brand h2{
+  font-size:1.3rem;background:linear-gradient(135deg,var(--purple2),var(--cyan2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;font-weight:700;
 }
-@media print{.sidebar,.topbar,#progress{display:none}main{margin:0}}
+.sidebar-brand .progress-wrap{
+  margin-top:.8rem;background:rgba(255,255,255,.06);border-radius:999px;
+  height:8px;overflow:hidden;
+}
+.sidebar-brand .progress-bar{
+  height:100%;border-radius:999px;
+  background:linear-gradient(90deg,var(--purple),var(--cyan));
+  transition:width .4s ease;width:0;
+}
+.sidebar-brand .progress-text{
+  font-size:.78rem;color:var(--text3);margin-top:.4rem;
+}
+.sidebar-nav{flex:1;padding:1rem .8rem;display:flex;flex-direction:column;gap:4px}
 
-/* ===== Bridging styles for parts 2-4 ===== */
-.section-card{padding-top:56px;margin-top:20px}
-.section-card .section-title{font-size:1.8rem;margin:0 0 1rem;color:#fff;display:flex;align-items:center;gap:.6rem}
-.section-card .section-icon{font-size:1.6rem}
-.section-card .file-path{direction:ltr;unicode-bidi:isolate;font-family:'JetBrains Mono',monospace;font-size:.95rem;color:var(--purple-2,#a78bfa);margin-bottom:1rem;background:rgba(124,58,237,.1);padding:6px 14px;border-radius:8px;display:inline-block}
-.section-card .file-path .line-count{color:var(--cyan-2,#67e8f9);font-size:.82rem;margin-inline-start:8px}
-.section-card h3{color:#e2e8f0;font-size:1.25rem;margin:2rem 0 .8rem;border-bottom:1px solid rgba(124,58,237,.3);padding-bottom:.4rem}
-.section-card h4{color:var(--cyan-2,#67e8f9);font-size:1.05rem;margin:1.5rem 0 .5rem}
-.section-card p,.section-card li{color:#cbd5e1;line-height:1.85;font-size:1.02rem}
-.section-card ul,.section-card ol{padding-inline-start:1.5rem;margin:.6rem 0}
-.section-card code{direction:ltr;unicode-bidi:isolate;font-family:'JetBrains Mono',monospace;background:rgba(124,58,237,.15);padding:2px 6px;border-radius:4px;font-size:.88em;color:#e2e8f0}
-pre.code-block,.code-block pre{direction:ltr!important;text-align:left;background:#0d0d1a;border:1px solid rgba(124,58,237,.25);border-radius:12px;padding:1.2rem;margin:1rem 0;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:.82rem;line-height:1.6;color:#e2e8f0;white-space:pre;tab-size:4}
+.nav-chapter{border-radius:var(--radius-sm)}
+.nav-chapter-link{
+  display:flex;align-items:center;gap:.6rem;
+  padding:10px 12px;border-radius:var(--radius-sm);
+  color:var(--text2);font-size:.92rem;font-weight:500;
+  transition:all .2s;cursor:pointer;text-decoration:none;
+}
+.nav-chapter-link:hover{background:var(--purple3);color:var(--text);text-decoration:none}
+.nav-chapter-link.active{background:rgba(124,58,237,.2);color:#fff;border-right:3px solid var(--purple)}
+.nav-icon{font-size:1.1rem;flex-shrink:0;width:24px;text-align:center}
+.nav-title{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav-check{font-size:.9rem;color:var(--green2);opacity:0;transition:opacity .3s}
+.nav-check.done{opacity:1}
+
+/* ═══════════════════ MAIN CONTENT ═══════════════════ */
+.main{margin-right:var(--sidebar-w);min-height:100vh}
+.main-inner{max-width:900px;margin:0 auto;padding:2rem 2rem 4rem}
+
+/* ═══════════════════ HOME PAGE ═══════════════════ */
+.home-hero{text-align:center;padding:4rem 0 2rem}
+.home-hero h1{font-size:2.8rem;font-weight:800;margin-bottom:.5rem}
+.home-hero h1 .grad{
+  background:linear-gradient(135deg,var(--purple2),var(--cyan2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.home-hero .lead{color:var(--text2);font-size:1.1rem;max-width:600px;margin:0 auto 2rem;line-height:1.8}
+
+.chapters-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.2rem;margin-top:2rem}
+.chapter-card{
+  background:var(--card);border:1px solid rgba(124,58,237,.15);
+  border-radius:var(--radius);padding:1.5rem;cursor:pointer;
+  transition:all .25s;position:relative;overflow:hidden;
+}
+.chapter-card:hover{border-color:rgba(124,58,237,.4);transform:translateY(-2px);box-shadow:0 8px 30px rgba(124,58,237,.1)}
+.chapter-card .card-icon{font-size:2rem;margin-bottom:.8rem}
+.chapter-card h3{font-size:1.1rem;color:#fff;margin-bottom:.4rem}
+.chapter-card p{font-size:.88rem;color:var(--text3);line-height:1.6}
+.chapter-card .card-status{
+  position:absolute;top:12px;left:12px;
+  width:24px;height:24px;border-radius:50%;
+  border:2px solid var(--text3);display:flex;align-items:center;justify-content:center;
+  font-size:.7rem;transition:all .3s;
+}
+.chapter-card .card-status.done{border-color:var(--green);background:var(--green3);color:var(--green2)}
+.chapter-card .card-badge{
+  position:absolute;bottom:12px;left:12px;
+  font-size:.75rem;color:var(--text3);
+}
+
+/* ═══════════════════ PAGE LAYOUT ═══════════════════ */
+.page{animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+.page-header{
+  display:flex;align-items:center;gap:1rem;
+  padding:2rem 0 1.5rem;border-bottom:1px solid rgba(124,58,237,.15);margin-bottom:2rem;
+}
+.page-icon{font-size:2.5rem}
+.page-title{font-size:2rem;font-weight:700;color:#fff}
+.page-desc{color:var(--text2);font-size:.95rem;margin-top:.2rem}
+
+.page-content{direction:rtl}
+
+/* ═══════════════════ SECTION STYLES (Part 1 format) ═══════════════════ */
+section.sec{padding-top:20px;margin-top:20px}
+.sec-head{display:flex;align-items:center;gap:12px;margin-bottom:1.2rem}
+.sec-head .n{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:36px;height:36px;border-radius:50%;font-weight:700;font-size:1rem;
+  background:linear-gradient(135deg,var(--purple),rgba(124,58,237,.6));color:#fff;flex-shrink:0;
+}
+.sec-head h2{font-size:1.6rem;color:#fff;margin:0}
+
+.file-head{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:2rem}
+.file-head h3{margin:0;direction:ltr;unicode-bidi:isolate;font-family:var(--mono);font-size:1.05rem;color:#fff;overflow-wrap:anywhere}
+.file-head .pill{font-size:.76rem;padding:2px 10px;border-radius:999px;background:var(--purple3);border:1px solid rgba(124,58,237,.5);color:var(--purple2)}
+.file-head .pill.c{background:var(--cyan3);border-color:rgba(6,182,212,.5);color:var(--cyan2)}
+
+.explain{margin-top:1rem}
+.explain p,.explain li{color:var(--text2);line-height:1.85;font-size:1rem}
+.explain h4{color:var(--cyan2);font-size:1.05rem;margin:1.5rem 0 .5rem}
+.explain ul,.explain ol{padding-inline-start:1.4rem}
+.explain strong{color:var(--text)}
+.explain table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.9rem}
+.explain th{background:var(--purple3);color:#fff;padding:8px 12px;text-align:right;border:1px solid rgba(124,58,237,.2)}
+.explain td{padding:8px 12px;border:1px solid rgba(124,58,237,.1);color:var(--text2)}
+
+.callout{border-radius:var(--radius);padding:14px 18px;margin:1.2rem 0;border:1px solid;border-inline-start-width:5px}
+.callout .t{display:block;font-size:.95rem;margin-bottom:.4rem}
+.callout p{margin:0;font-size:.95rem;line-height:1.7}
+.callout.concept{background:var(--cyan3);border-color:rgba(6,182,212,.3);border-inline-start-color:var(--cyan)}
+.callout.concept .t{color:var(--cyan2)}
+.callout.warn{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.3);border-inline-start-color:var(--amber)}
+.callout.warn .t{color:var(--amber)}
+.callout.analogy{background:var(--purple3);border-color:rgba(124,58,237,.3);border-inline-start-color:var(--purple)}
+.callout.analogy .t{color:var(--purple2)}
+.callout.tip{background:var(--green3);border-color:rgba(34,197,94,.3);border-inline-start-color:var(--green)}
+.callout.tip .t{color:var(--green2)}
+.callout.security{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.3);border-inline-start-color:var(--red)}
+.callout.security .t{color:var(--red)}
+
+.lx{color:var(--cyan2);cursor:pointer;border-bottom:1px dashed rgba(6,182,212,.4)}
+.lx:hover{border-bottom-style:solid}
+
+.mono{font-family:var(--mono);font-size:.88em}
+
+/* ═══════════════════ SECTION STYLES (Parts 2-4 format) ═══════════════════ */
+.section-card{padding-top:20px;margin-top:20px}
+.section-card .section-title{font-size:1.6rem;margin:0 0 1rem;color:#fff;display:flex;align-items:center;gap:.6rem}
+.section-card .section-icon{font-size:1.4rem}
+.section-card .file-path{direction:ltr;unicode-bidi:isolate;font-family:var(--mono);font-size:.92rem;color:var(--purple2);margin-bottom:1rem;background:var(--purple3);padding:6px 14px;border-radius:var(--radius-sm);display:inline-block}
+.section-card .file-path .line-count{color:var(--cyan2);font-size:.82rem;margin-inline-start:8px}
+.section-card h2{color:#fff;font-size:1.5rem;margin:0 0 1rem}
+.section-card h3{color:var(--text);font-size:1.2rem;margin:1.8rem 0 .6rem;border-bottom:1px solid rgba(124,58,237,.2);padding-bottom:.3rem}
+.section-card h4{color:var(--cyan2);font-size:1.02rem;margin:1.3rem 0 .4rem}
+.section-card p,.section-card li{color:var(--text2);line-height:1.85;font-size:1rem}
+.section-card ul,.section-card ol{padding-inline-start:1.4rem;margin:.5rem 0}
+.section-card strong{color:var(--text)}
+.section-card code{direction:ltr;unicode-bidi:isolate}
+
+pre.code-block,.code-block pre{
+  direction:ltr!important;text-align:left;
+  background:#0d0d1a;border:1px solid rgba(124,58,237,.2);
+  border-radius:var(--radius);padding:1.2rem;margin:1rem 0;
+  overflow-x:auto;font-family:var(--mono);font-size:.82rem;
+  line-height:1.6;color:var(--text);white-space:pre;tab-size:4;
+}
 pre.code-block code,.code-block pre code{background:none;padding:0;border-radius:0;font-size:inherit;color:inherit}
-.concept-box{border-radius:12px;padding:14px 18px;margin:1.2rem 0;background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.3);border-inline-start-width:5px;border-inline-start-color:#06b6d4}
-.concept-box h4{color:#67e8f9;margin:0 0 .5rem;font-size:1rem}
-.concept-box p,.concept-box li{color:#94a3b8}
-.tip-box{border-radius:12px;padding:14px 18px;margin:1.2rem 0;background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.3);border-inline-start-width:5px;border-inline-start-color:#7c3aed}
-.tip-box h4,.tip-box strong:first-child{color:var(--purple-2,#a78bfa);margin:0 0 .5rem;display:block;font-size:1rem}
-.tip-box p,.tip-box li{color:#94a3b8}
-.compare-table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.92rem}
-.compare-table th{background:rgba(124,58,237,.15);color:#e2e8f0;padding:8px 12px;text-align:right;border:1px solid rgba(124,58,237,.25)}
-.compare-table td{padding:8px 12px;border:1px solid rgba(124,58,237,.15);color:#cbd5e1}
-.compare-table tr:nth-child(even) td{background:rgba(255,255,255,.02)}
-section.section-card{scroll-margin-top:40px}
 
+.concept-box{border-radius:var(--radius);padding:14px 18px;margin:1.2rem 0;background:var(--cyan3);border:1px solid rgba(6,182,212,.3);border-inline-start-width:5px;border-inline-start-color:var(--cyan)}
+.concept-box h4{color:var(--cyan2);margin:0 0 .5rem;font-size:1rem}
+.concept-box p,.concept-box li{color:var(--text2)}
+
+.tip-box{border-radius:var(--radius);padding:14px 18px;margin:1.2rem 0;background:var(--purple3);border:1px solid rgba(124,58,237,.3);border-inline-start-width:5px;border-inline-start-color:var(--purple)}
+.tip-box h4,.tip-box strong:first-child{color:var(--purple2);margin:0 0 .5rem;display:block;font-size:1rem}
+.tip-box p,.tip-box li{color:var(--text2)}
+
+.compare-table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.9rem}
+.compare-table th{background:var(--purple3);color:#fff;padding:8px 12px;text-align:right;border:1px solid rgba(124,58,237,.2)}
+.compare-table td{padding:8px 12px;border:1px solid rgba(124,58,237,.1);color:var(--text2)}
+
+/* code blocks from Part 1 (script-based) */
+.code-wrap{direction:ltr;text-align:left;background:#0d0d1a;border:1px solid rgba(124,58,237,.2);border-radius:var(--radius);margin:1rem 0;overflow:hidden;position:relative}
+.code-wrap .fname{font-family:var(--mono);font-size:.78rem;padding:6px 14px;background:rgba(124,58,237,.1);color:var(--purple2);border-bottom:1px solid rgba(124,58,237,.15)}
+.code-wrap pre{padding:1rem 1rem 1rem 3.5rem;overflow-x:auto;font-family:var(--mono);font-size:.82rem;line-height:1.6;white-space:pre;tab-size:4;margin:0;counter-reset:ln}
+.code-wrap pre .ln{counter-increment:ln;display:inline-block;width:2.5rem;margin-left:-3.5rem;padding-right:.8rem;text-align:right;color:rgba(255,255,255,.2);user-select:none;pointer-events:none}
+.code-wrap .copy-btn{position:absolute;top:6px;left:6px;background:rgba(124,58,237,.3);border:none;color:var(--text2);font-size:.72rem;padding:3px 8px;border-radius:4px;cursor:pointer;font-family:var(--mono)}
+.code-wrap .copy-btn:hover{background:rgba(124,58,237,.5);color:#fff}
+.code-wrap.mini pre{max-height:200px}
+.code-wrap.tall pre{max-height:none}
+
+/* ═══════════════════ QUIZ ═══════════════════ */
+.quiz-section{
+  margin-top:3rem;padding-top:2rem;
+  border-top:2px solid rgba(124,58,237,.2);
+}
+.quiz-title{
+  font-size:1.5rem;color:#fff;margin-bottom:1.5rem;
+  display:flex;align-items:center;gap:.6rem;
+}
+.quiz-title::before{content:'📝';font-size:1.3rem}
+
+.quiz-q{
+  background:var(--card);border:1px solid rgba(124,58,237,.15);
+  border-radius:var(--radius);padding:1.2rem 1.5rem;margin-bottom:1rem;
+}
+.quiz-q .q-text{font-size:1rem;color:var(--text);margin-bottom:1rem;font-weight:500}
+.quiz-q .q-num{color:var(--purple2);font-weight:700;margin-left:.4rem}
+
+.quiz-option{
+  display:flex;align-items:center;gap:.8rem;
+  padding:10px 14px;border-radius:var(--radius-sm);margin-bottom:6px;
+  border:1px solid rgba(255,255,255,.08);cursor:pointer;
+  transition:all .2s;font-size:.95rem;color:var(--text2);
+}
+.quiz-option:hover{border-color:rgba(124,58,237,.3);background:var(--purple3)}
+.quiz-option.selected{border-color:var(--purple);background:rgba(124,58,237,.1);color:var(--text)}
+.quiz-option.correct{border-color:var(--green);background:var(--green3);color:var(--green2)}
+.quiz-option.wrong{border-color:var(--red);background:rgba(239,68,68,.1);color:var(--red)}
+.quiz-option .opt-letter{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:.85rem;flex-shrink:0;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+}
+.quiz-option.selected .opt-letter{background:var(--purple3);border-color:var(--purple)}
+.quiz-option.correct .opt-letter{background:var(--green3);border-color:var(--green)}
+.quiz-option.wrong .opt-letter{background:rgba(239,68,68,.1);border-color:var(--red)}
+
+.quiz-explanation{
+  margin-top:.6rem;padding:10px 14px;
+  background:var(--green3);border-radius:var(--radius-sm);
+  color:var(--green2);font-size:.9rem;display:none;line-height:1.6;
+}
+.quiz-explanation.show{display:block}
+
+.quiz-check-btn{
+  display:inline-flex;align-items:center;gap:.5rem;
+  margin-top:1rem;padding:10px 24px;
+  background:linear-gradient(135deg,var(--purple),rgba(124,58,237,.7));
+  color:#fff;border:none;border-radius:var(--radius-sm);
+  font-size:.95rem;font-weight:600;cursor:pointer;
+  font-family:var(--font);transition:all .2s;
+}
+.quiz-check-btn:hover{box-shadow:0 4px 20px rgba(124,58,237,.3)}
+.quiz-check-btn:disabled{opacity:.5;cursor:not-allowed}
+
+.quiz-result{
+  margin-top:1.5rem;padding:1.5rem;
+  background:var(--card);border-radius:var(--radius);
+  text-align:center;border:1px solid rgba(124,58,237,.15);
+}
+.quiz-score{font-size:1.8rem;font-weight:700;color:#fff}
+.quiz-score .score-label{font-size:.95rem;color:var(--text2);font-weight:400;display:block;margin-top:.3rem}
+
+/* ═══════════════════ COMPLETE BUTTON ═══════════════════ */
+.page-actions{margin-top:2rem;text-align:center}
+.complete-btn{
+  display:inline-flex;align-items:center;gap:.6rem;
+  padding:12px 32px;border-radius:999px;
+  font-size:1rem;font-weight:600;cursor:pointer;
+  border:2px solid var(--green);background:transparent;
+  color:var(--green2);font-family:var(--font);transition:all .3s;
+}
+.complete-btn:hover{background:var(--green3)}
+.complete-btn.completed{background:var(--green);color:#fff;border-color:var(--green)}
+.complete-icon{font-size:1.1rem}
+
+/* ═══════════════════ PAGE NAV ═══════════════════ */
+.page-nav{display:flex;justify-content:space-between;align-items:center;margin-top:2rem;padding-top:1.5rem;border-top:1px solid rgba(124,58,237,.1)}
+.nav-btn{
+  padding:10px 20px;border-radius:var(--radius-sm);
+  background:var(--card);border:1px solid rgba(124,58,237,.15);
+  color:var(--text);font-size:.9rem;cursor:pointer;
+  font-family:var(--font);transition:all .2s;
+}
+.nav-btn:hover{border-color:var(--purple);background:var(--purple3)}
+
+/* ═══════════════════ TECH MODAL ═══════════════════ */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);
+  z-index:200;display:none;align-items:center;justify-content:center;padding:2rem;
+}
+.modal-overlay.open{display:flex}
+.modal-box{
+  background:var(--bg2);border:1px solid rgba(124,58,237,.25);
+  border-radius:16px;max-width:700px;width:100%;max-height:85vh;
+  overflow-y:auto;padding:2rem;position:relative;
+}
+.modal-close{
+  position:sticky;top:0;float:left;background:rgba(255,255,255,.1);
+  border:none;color:var(--text);font-size:1.2rem;width:32px;height:32px;
+  border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  z-index:5;
+}
+.modal-close:hover{background:rgba(239,68,68,.3)}
+.modal-box h3{font-size:1.4rem;color:#fff;margin-bottom:.3rem}
+.modal-box .modal-sub{color:var(--text3);font-size:.88rem;margin-bottom:1.2rem}
+.modal-box h4{color:var(--cyan2);margin:1.2rem 0 .4rem;font-size:1.05rem}
+.modal-box p,.modal-box li{color:var(--text2);line-height:1.75;font-size:.95rem}
+.modal-box dl{margin:.8rem 0}
+.modal-box dt{color:var(--purple2);font-weight:600;margin-top:.8rem}
+.modal-box dd{color:var(--text2);margin:.2rem 0 0 0;padding-inline-start:1rem}
+.modal-box pre{direction:ltr;text-align:left;background:var(--bg);padding:1rem;border-radius:var(--radius-sm);overflow-x:auto;font-family:var(--mono);font-size:.82rem;line-height:1.6;margin:.8rem 0}
+.modal-box code{font-family:var(--mono);font-size:.88em}
+
+/* ═══════════════════ TECH BADGES (home page) ═══════════════════ */
+.tech-grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:1.5rem 0}
+.tech-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 14px;border-radius:999px;font-size:.82rem;font-weight:500;
+  background:var(--purple3);border:1px solid rgba(124,58,237,.3);
+  color:var(--purple2);cursor:pointer;transition:all .2s;
+}
+.tech-badge:hover{background:rgba(124,58,237,.25);border-color:var(--purple);transform:translateY(-1px)}
+.tech-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--cyan)}
+
+/* ═══════════════════ MOBILE MENU ═══════════════════ */
+.mobile-toggle{
+  display:none;position:fixed;top:12px;right:12px;z-index:150;
+  background:var(--card);border:1px solid rgba(124,58,237,.2);
+  color:#fff;width:44px;height:44px;border-radius:var(--radius-sm);
+  cursor:pointer;font-size:1.3rem;align-items:center;justify-content:center;
+}
+.mobile-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:90}
+
+@media(max-width:768px){
+  .sidebar{transform:translateX(100%)}
+  .sidebar.open{transform:translateX(0)}
+  .mobile-toggle{display:flex}
+  .mobile-overlay.open{display:block}
+  .main{margin-right:0}
+  .main-inner{padding:1rem 1rem 3rem}
+  .home-hero h1{font-size:2rem}
+  .chapters-grid{grid-template-columns:1fr}
+  .page-header{flex-direction:column;text-align:center}
+  .page-title{font-size:1.5rem}
+  .modal-box{padding:1.2rem;margin:1rem}
+}
+
+/* ═══════════════════ SCROLLBAR ═══════════════════ */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(124,58,237,.3);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(124,58,237,.5)}
 </style>
 </head>
 <body>
-<div id="progress"><i></i></div>
 
-<header class="topbar">
-  <button class="burger" id="burger" aria-label="פתיחת תפריט" aria-expanded="false">&#9776;</button>
-  <b>VocalSplit Academy</b>
-</header>
-<div class="overlay-nav" id="overlayNav"></div>
+<!-- Mobile toggle -->
+<button class="mobile-toggle" id="mobile-toggle" onclick="toggleSidebar()">☰</button>
+<div class="mobile-overlay" id="mobile-overlay" onclick="toggleSidebar()"></div>
 
-<aside class="sidebar" id="sidebar" aria-label="ניווט באתר">
-  <a class="brand" href="#top">
-    <div class="logo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M3 12v0M7 8v8M11 4v16M15 7v10M19 10v4M22 12v0"/></svg>
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <h2>VocalSplit Academy</h2>
+    <div class="progress-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+    <div class="progress-text" id="progress-text">0 / 9 הושלמו</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-chapter">
+      <a href="#home" class="nav-chapter-link active" onclick="navigateTo('home')">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-title">דף הבית</span>
+      </a>
     </div>
-    <span>VocalSplit<small>ACADEMY</small></span>
-  </a>
-  <nav class="nav" id="nav">
-    <div class="nav-title">התחלה</div>
-    <a href="#top"><span class="n">&#9679;</span>פתיחה וטכנולוגיות</a>
-    <a href="#primer"><span class="n">0</span>יסודות פייתון</a>
+    
+    <div class="nav-chapter" data-chapter="chapter-1">
+      <a href="#chapter-1" class="nav-chapter-link" onclick="navigateTo('chapter-1')">
+        <span class="nav-icon">🏗️</span>
+        <span class="nav-title">ארכיטקטורה ו-Docker</span>
+        <span class="nav-check" id="check-chapter-1"></span>
+      </a>
+    </div>
 
-    <div class="nav-title">המערכת</div>
-    <a href="#architecture"><span class="n">1</span>ארכיטקטורה</a>
-    <a href="#docker"><span class="n">2</span>Docker לעומק</a>
+    <div class="nav-chapter" data-chapter="chapter-2">
+      <a href="#chapter-2" class="nav-chapter-link" onclick="navigateTo('chapter-2')">
+        <span class="nav-icon">🗄️</span>
+        <span class="nav-title">הגדרות ומסד נתונים</span>
+        <span class="nav-check" id="check-chapter-2"></span>
+      </a>
+    </div>
 
-    <div class="nav-title">הקוד</div>
-    <a href="#config"><span class="n">3</span>קבצי הגדרה</a>
-    <div class="sub">
-      <a href="#f-config"><span class="mono">config.py</span></a>
-      <a href="#f-constants"><span class="mono">constants.py</span></a>
-      <a href="#f-main"><span class="mono">main.py</span></a>
-      <a href="#f-helpers"><span class="mono">helpers.py</span></a>
-      <a href="#f-email"><span class="mono">email_service.py</span></a>
+    <div class="nav-chapter" data-chapter="chapter-3">
+      <a href="#chapter-3" class="nav-chapter-link" onclick="navigateTo('chapter-3')">
+        <span class="nav-icon">🔐</span>
+        <span class="nav-title">מערכת אימות</span>
+        <span class="nav-check" id="check-chapter-3"></span>
+      </a>
     </div>
-    <a href="#database"><span class="n">4</span>שכבת הנתונים</a>
-    <div class="sub">
-      <a href="#f-base"><span class="mono">db/base.py</span></a>
-      <a href="#f-session"><span class="mono">db/session.py</span></a>
-      <a href="#f-mixins"><span class="mono">models/mixins.py</span></a>
-      <a href="#f-user"><span class="mono">models/user.py</span></a>
-      <a href="#f-song"><span class="mono">models/song.py</span></a>
-      <a href="#f-social"><span class="mono">models/social.py</span></a>
-      <a href="#f-billing"><span class="mono">models/billing.py</span></a>
-      <a href="#f-admin"><span class="mono">models/admin.py</span></a>
-      <a href="#f-reset"><span class="mono">models/password_reset.py</span></a>
-      <a href="#f-init"><span class="mono">models/__init__.py</span></a>
-      <a href="#f-alembic"><span class="mono">alembic/env.py</span></a>
+
+    <div class="nav-chapter" data-chapter="chapter-4">
+      <a href="#chapter-4" class="nav-chapter-link" onclick="navigateTo('chapter-4')">
+        <span class="nav-icon">📤</span>
+        <span class="nav-title">העלאה ועיבוד</span>
+        <span class="nav-check" id="check-chapter-4"></span>
+      </a>
     </div>
-    <a href="#auth"><span class="n">5</span>מערכת האימות</a>
-    <div class="sub">
-      <a href="#f-password"><span class="mono">auth/password.py</span></a>
-      <a href="#f-authsession"><span class="mono">auth/session.py</span></a>
-      <a href="#f-schemas"><span class="mono">auth/schemas.py</span></a>
-      <a href="#f-routes"><span class="mono">auth/routes.py</span></a>
+
+    <div class="nav-chapter" data-chapter="chapter-5">
+      <a href="#chapter-5" class="nav-chapter-link" onclick="navigateTo('chapter-5')">
+        <span class="nav-icon">🛤️</span>
+        <span class="nav-title">נתיבי API</span>
+        <span class="nav-check" id="check-chapter-5"></span>
+      </a>
     </div>
-    <a href="#upload"><span class="n">6</span>Backend Routes</a>
-    <div class="sub">
-      <a href="#upload"><span class="mono">📤</span></a>
-      <a href="#tasks"><span class="mono">⚙️</span></a>
-      <a href="#songs"><span class="mono">🎵</span></a>
-      <a href="#library"><span class="mono">📚</span></a>
-      <a href="#public"><span class="mono">🌍</span></a>
-      <a href="#quotas"><span class="mono">📊</span></a>
-      <a href="#admin"><span class="mono">🛡️</span></a>
-      <a href="#billing"><span class="mono">🎟️</span></a>
-      <a href="#settings-routes"><span class="mono">⚙️</span></a>
-      <a href="#demo"><span class="mono">🧪</span></a>
-      <a href="#storage"><span class="mono">🗄️</span></a>
-      <a href="#helpers"><span class="mono">🧰</span></a>
-      <a href="#email"><span class="mono">✉️</span></a>
-      <a href="#celery-config"><span class="mono">🔧</span></a>
-      <a href="#worker"><span class="mono">🏭</span></a>
+
+    <div class="nav-chapter" data-chapter="chapter-6">
+      <a href="#chapter-6" class="nav-chapter-link" onclick="navigateTo('chapter-6')">
+        <span class="nav-icon">⚛️</span>
+        <span class="nav-title">Frontend - ליבה</span>
+        <span class="nav-check" id="check-chapter-6"></span>
+      </a>
     </div>
-    <a href="#frontend-entry"><span class="n">7</span>Frontend</a>
-    <div class="sub">
-      <a href="#frontend-entry"><span class="mono">נקודת הכניסה של הפרונטאנד</span></a>
-      <a href="#app-component"><span class="mono">הרכיב App וניתוב (Routing)</span></a>
-      <a href="#i18n"><span class="mono">i18n: תמיכה בכמה שפות</span></a>
-      <a href="#frontend-helpers"><span class="mono">עזרים ואייקונים</span></a>
-      <a href="#auth-api"><span class="mono">לקוח ה-API של ההתחברות</span></a>
-      <a href="#songs-api"><span class="mono">לקוח ה-API של השירים</span></a>
-      <a href="#demo-api"><span class="mono">לקוח ה-API של הדמו</span></a>
-      <a href="#auth-modal"><span class="mono">רכיב AuthModal: חלון ההתחברות</span></a>
-      <a href="#components"><span class="mono">רכיבים נוספים</span></a>
-      <a href="#home-page"><span class="mono">דף הבית (Landing Page)</span></a>
-      <a href="#upload-page"><span class="mono">דף ההעלאה (UploadPage)</span></a>
-      <a href="#song-page"><span class="mono">דף השיר (SongPage)</span></a>
-      <a href="#library-explore"><span class="mono">דפי הספרייה וגילוי</span></a>
-      <a href="#settings-page"><span class="mono">דף ההגדרות (SettingsPage)</span></a>
-      <a href="#admin-page"><span class="mono">דף הניהול (AdminPage)</span></a>
-      <a href="#other-pages"><span class="mono">דפי שדרוג ואיפוס סיסמה</span></a>
+
+    <div class="nav-chapter" data-chapter="chapter-7">
+      <a href="#chapter-7" class="nav-chapter-link" onclick="navigateTo('chapter-7')">
+        <span class="nav-icon">📱</span>
+        <span class="nav-title">Frontend - דפים</span>
+        <span class="nav-check" id="check-chapter-7"></span>
+      </a>
     </div>
-    <a href="#ai-overview"><span class="n">8</span>AI Module</a>
-    <div class="sub">
-      <a href="#ai-overview"><span class="mono">מודול הבינה המלאכותית: סקירה כללית</span></a>
-      <a href="#ai-model"><span class="mono">הגדרת המודל: model.py, local_model.py ו-__ini</span></a>
-      <a href="#ai-audio"><span class="mono">קלט ופלט של קול: audio_io.py</span></a>
-      <a href="#ai-stft"><span class="mono">STFT: הדרך להפוך קול לתמונה</span></a>
-      <a href="#ai-local"><span class="mono">הרצה מקומית של המודל הבסיסי: local_inference.</span></a>
-      <a href="#ai-demucs"><span class="mono">המודל המקצועי: demucs_inference.py</span></a>
-      <a href="#ai-router"><span class="mono">נתב ההסקה: מי מחליט איזה מודל ירוץ</span></a>
-      <a href="#ai-checkpoint"><span class="mono">ניהול משקולות (Checkpoints)</span></a>
-      <a href="#ai-metrics"><span class="mono">מדידת הרצות: metrics.py</span></a>
-      <a href="#schemas"><span class="mono">סכמות Pydantic: backend/app/schemas/core.py</span></a>
-      <a href="#alembic"><span class="mono">מיגרציות מסד נתונים: backend/alembic/env.py</span></a>
+
+    <div class="nav-chapter" data-chapter="chapter-8">
+      <a href="#chapter-8" class="nav-chapter-link" onclick="navigateTo('chapter-8')">
+        <span class="nav-icon">🧠</span>
+        <span class="nav-title">בינה מלאכותית</span>
+        <span class="nav-check" id="check-chapter-8"></span>
+      </a>
     </div>
-    <a href="#css-design"><span class="n">9</span>CSS Design</a>
-    <div class="sub">
-      <a href="#css-design"><span class="mono">מערכת העיצוב: תיקיית frontend/src/styles</span></a>
-      <a href="#vite-config"><span class="mono">הגדרת Vite: frontend/vite.config.js</span></a>
-      <a href="#frontend-docker"><span class="mono">Docker לפרונטאנד: frontend/Dockerfile</span></a>
+
+    <div class="nav-chapter" data-chapter="chapter-9">
+      <a href="#chapter-9" class="nav-chapter-link" onclick="navigateTo('chapter-9')">
+        <span class="nav-icon">🎨</span>
+        <span class="nav-title">CSS, סכמות ובנייה</span>
+        <span class="nav-check" id="check-chapter-9"></span>
+      </a>
     </div>
   </nav>
 </aside>
 
-<main id="top">
+<!-- Main -->
+<div class="main">
+<div class="main-inner">
 
-<!-- ====================== HERO ====================== -->
-<section class="hero" aria-labelledby="h1">
-  <div class="eyebrow">אתר לימוד אינטראקטיבי</div>
-  <h1 id="h1"><span class="grad">VocalSplit</span> Academy</h1>
-  <div class="wave" id="wave" aria-hidden="true"></div>
-  <p class="lead">
-    VocalSplit היא אפליקציית אינטרנט שמקבלת שיר, ומפרידה אותו בעזרת בינה מלאכותית לשתי רצועות נפרדות:
-    <strong>ווקאל</strong> (הקול של הזמר) ו<strong>רקע</strong> (כל הכלים). משם אפשר להאזין לכל רצועה לחוד,
-    להוריד אותה, לשתף אותה ולדרג שירים של אחרים. באתר הזה נפרק את הפרויקט לגורמים, קובץ אחרי קובץ, בשפה
-    של מי שרק התחיל ללמוד פייתון.
-  </p>
-  <div class="chips">
-    <span class="chip"><b>7</b> קונטיינרים</span>
-    <span class="chip"><b>2</b> מודלי בינה מלאכותית</span>
-    <span class="chip"><b>10</b> ראוטרים ב-API</span>
-    <span class="chip"><b>16</b> טבלאות במסד הנתונים</span>
-    <span class="chip"><b>20</b> טכנולוגיות להכיר</span>
+<!-- ════════ HOME PAGE ════════ -->
+<div class="page" id="page-home" dir="rtl">
+  <div class="home-hero">
+    <h1><span class="grad">VocalSplit</span> Academy</h1>
+    <p class="lead">
+      VocalSplit היא אפליקציית אינטרנט שמפרידה שירים לרצועות נפרדות בעזרת בינה מלאכותית.
+      כאן תלמדו את הפרויקט מאפס, קובץ אחרי קובץ, בשפה של מי שרק התחיל.
+    </p>
+    <div class="tech-grid" id="tech-grid"></div>
   </div>
 
-  <h3 id="tech" style="margin-top:2.2rem">ארגז הכלים של הפרויקט</h3>
-  <p>כל כרטיס כאן הוא <strong>כפתור</strong>. לחץ על טכנולוגיה כדי לפתוח הסבר מלא: מה זה, איך זה עובד, ולמה בחרו בזה דווקא בפרויקט הזה. גם בהמשך האתר, כל מילה מסומנת בקו מקווקו בצבע תכלת (למשל <a class="tl" data-tech="fastapi">FastAPI</a>) פותחת את אותו הסבר.</p>
-  <div class="badge-grid" id="badgeGrid"></div>
-  <p class="hint">טיפ: אפשר לסגור את החלון עם המקש Esc או בלחיצה מחוץ לחלון.</p>
+  <div class="chapters-grid" id="chapters-grid"></div>
+</div>
 
-  <div class="callout analogy">
-    <b class="t">איך לקרוא את האתר</b>
-    <p>בכל קובץ תראה קודם את <strong>הקוד המלא</strong> (תמיד משמאל לימין, כי קוד נכתב באנגלית), ואחריו
-    <strong>הסבר שורה אחרי שורה</strong> בעברית. מספרי השורות בקוד תואמים לטווחים שמופיעים בהסבר.
-    אם משהו לא ברור, חפש את המילה בצבע תכלת: היא כנראה מוסברת לעומק בחלון קופץ.</p>
-  </div>
-  <div class="callout warn">
-    <b class="t">הערה על הקוד שמוצג</b>
-    <p>הקוד באתר הוא העתק של הקוד האמיתי בפרויקט. החלפנו רק מקפים ארוכים בהערות באנגלית במקף רגיל, כדי להישאר עקביים. הפרטים (למשל שם עוגיית הסשן ומשך תוקפה) נלקחו מהקוד בפועל.</p>
-  </div>
-</section>
 
-<!-- ====================== PRIMER ====================== -->
-<section class="sec" id="primer">
+<div class="page" id="page-chapter-1" style="display:none" dir="rtl">
+  <div class="page-header">
+    <span class="page-icon">🏗️</span>
+    <div>
+      <h1 class="page-title">ארכיטקטורה ו-Docker</h1>
+      <p class="page-desc">סקירה כללית של המערכת, 7 הקונטיינרים ואיך הם מתקשרים</p>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <section class="sec" id="primer">
   <div class="sec-head"><div class="sec-num">0</div><h2>יסודות פייתון שתראה בכל קובץ</h2></div>
   <p class="lead">לפני שנצלול, כמה כלים של פייתון חוזרים שוב ושוב בקוד. אם אתה מכיר אותם, דלג. אם לא, זה החלק הכי חשוב באתר.</p>
 
@@ -510,6 +559,7 @@ section.section-card{scroll-margin-top:40px}
 </section>
 
 <!-- ====================== ARCHITECTURE ====================== -->
+
 <section class="sec" id="architecture">
   <div class="sec-head"><div class="sec-num">1</div><h2>ארכיטקטורה: איך כל החלקים מדברים</h2></div>
   <p class="lead">לפני שנקרא שורת קוד אחת, צריך תמונה גדולה. VocalSplit היא לא תוכנית אחת, אלא <strong>שבעה תהליכים נפרדים</strong> שכל אחד רץ בקופסה משלו (<a class="tl" data-tech="docker">קונטיינר</a>) ומדבר עם האחרים דרך הרשת.</p>
@@ -676,6 +726,7 @@ section.section-card{scroll-margin-top:40px}
 </section>
 
 <!-- ====================== DOCKER ====================== -->
+
 <section class="sec" id="docker">
   <div class="sec-head"><div class="sec-num">2</div><h2>Docker לעומק</h2></div>
   <p class="lead">קובץ אחד, <code>docker-compose.yml</code>, מגדיר את כל שבעת הקונטיינרים. נעבור עליו שירות אחרי שירות. אם המילים "<a class="tl" data-tech="docker">image</a>", "volume" או "container" זרות לך, פתח קודם את ההסבר על Docker.</p>
@@ -1025,7 +1076,40 @@ docker compose down -v
 </section>
 
 <!-- ====================== BACKEND CONFIG ====================== -->
-<section class="sec" id="config">
+  </div>
+
+  <div class="quiz-section" id="quiz-chapter-1">
+    <h2 class="quiz-title">בחן את עצמך</h2>
+    <div class="quiz-container" id="quiz-container-chapter-1"></div>
+    <div class="quiz-result" id="quiz-result-chapter-1" style="display:none">
+      <div class="quiz-score" id="quiz-score-chapter-1"></div>
+    </div>
+  </div>
+
+  <div class="page-actions">
+    <button class="complete-btn" id="complete-btn-chapter-1" onclick="toggleComplete('chapter-1')">
+      <span class="complete-icon">&#10003;</span>
+      סמן כהושלם
+    </button>
+  </div>
+
+  <div class="page-nav">
+    <div></div>
+    <button class="nav-btn next-btn" onclick="navigateTo('chapter-2')">הגדרות ומסד נתונים &#8592;</button>
+  </div>
+</div>
+
+<div class="page" id="page-chapter-2" style="display:none" dir="rtl">
+  <div class="page-header">
+    <span class="page-icon">🗄️</span>
+    <div>
+      <h1 class="page-title">הגדרות ומסד נתונים</h1>
+      <p class="page-desc">Settings, קבועים, SQLAlchemy ו-Alembic</p>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <section class="sec" id="config">
   <div class="sec-head"><div class="sec-num">3</div><h2>קבצי ההגדרה של ה-Backend</h2></div>
   <p class="lead">חמישה קבצים קטנים יחסית שהם <strong>היסודות</strong> של כל השרת: מאיפה נקראות הגדרות, אילו ערכים חוקיים קיימים, איך האפליקציה נבנית, איזה כלי עזר משותפים, ואיך שולחים מייל. כל קובץ אחר בפרויקט נשען עליהם.</p>
 
@@ -1499,6 +1583,7 @@ def send_email(to_email: str, subject: str, html_body: str) -> bool:
 </section>
 
 <!-- ====================== DATABASE ====================== -->
+
 <section class="sec" id="database">
   <div class="sec-head"><div class="sec-num">4</div><h2>שכבת הנתונים</h2></div>
   <p class="lead">מסד הנתונים הוא הזיכרון ארוך הטווח של המערכת: מי המשתמשים, איזה שירים העלו, מה סטטוס כל משימה, מי דירג מה. הוא <a class="tl" data-tech="postgresql">PostgreSQL</a>, ובקוד פייתון מדברים איתו בעזרת <a class="tl" data-tech="sqlalchemy">SQLAlchemy</a>: כל <strong>טבלה</strong> היא <strong>מחלקה</strong>, וכל <strong>שורה</strong> היא <strong>אובייקט</strong>.</p>
@@ -2443,7 +2528,40 @@ docker compose exec backend alembic current
 </section>
 
 <!-- ====================== AUTH ====================== -->
-<section class="sec" id="auth">
+  </div>
+
+  <div class="quiz-section" id="quiz-chapter-2">
+    <h2 class="quiz-title">בחן את עצמך</h2>
+    <div class="quiz-container" id="quiz-container-chapter-2"></div>
+    <div class="quiz-result" id="quiz-result-chapter-2" style="display:none">
+      <div class="quiz-score" id="quiz-score-chapter-2"></div>
+    </div>
+  </div>
+
+  <div class="page-actions">
+    <button class="complete-btn" id="complete-btn-chapter-2" onclick="toggleComplete('chapter-2')">
+      <span class="complete-icon">&#10003;</span>
+      סמן כהושלם
+    </button>
+  </div>
+
+  <div class="page-nav">
+    <button class="nav-btn prev-btn" onclick="navigateTo('chapter-1')">&#8594; ארכיטקטורה ו-Docker</button>
+    <button class="nav-btn next-btn" onclick="navigateTo('chapter-3')">מערכת אימות &#8592;</button>
+  </div>
+</div>
+
+<div class="page" id="page-chapter-3" style="display:none" dir="rtl">
+  <div class="page-header">
+    <span class="page-icon">🔐</span>
+    <div>
+      <h1 class="page-title">מערכת אימות</h1>
+      <p class="page-desc">סיסמאות, סשנים, Google OAuth ואיפוס סיסמה</p>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <section class="sec" id="auth">
   <div class="sec-head"><div class="sec-num">5</div><h2>מערכת האימות</h2></div>
   <p class="lead">אימות (Authentication) עונה על השאלה "מי אתה?". הרשאה (Authorization) עונה על "מה מותר לך?". בפרק הזה נעבור על כל מה שמאפשר למשתמש להירשם, להתחבר, להישאר מחובר, ולשחזר סיסמה שנשכחה, בצורה שמגינה על המידע שלו גם אם מסד הנתונים נגנב.</p>
 
@@ -3361,7 +3479,40 @@ def reset_password(
 
 <!-- ==================== PART 2: BACKEND ROUTES ==================== -->
 <!-- ===================== UPLOAD ===================== -->
-<div class="section-card" id="upload" dir="rtl">
+  </div>
+
+  <div class="quiz-section" id="quiz-chapter-3">
+    <h2 class="quiz-title">בחן את עצמך</h2>
+    <div class="quiz-container" id="quiz-container-chapter-3"></div>
+    <div class="quiz-result" id="quiz-result-chapter-3" style="display:none">
+      <div class="quiz-score" id="quiz-score-chapter-3"></div>
+    </div>
+  </div>
+
+  <div class="page-actions">
+    <button class="complete-btn" id="complete-btn-chapter-3" onclick="toggleComplete('chapter-3')">
+      <span class="complete-icon">&#10003;</span>
+      סמן כהושלם
+    </button>
+  </div>
+
+  <div class="page-nav">
+    <button class="nav-btn prev-btn" onclick="navigateTo('chapter-2')">&#8594; הגדרות ומסד נתונים</button>
+    <button class="nav-btn next-btn" onclick="navigateTo('chapter-4')">העלאה ועיבוד &#8592;</button>
+  </div>
+</div>
+
+<div class="page" id="page-chapter-4" style="display:none" dir="rtl">
+  <div class="page-header">
+    <span class="page-icon">📤</span>
+    <div>
+      <h1 class="page-title">העלאה ועיבוד</h1>
+      <p class="page-desc">Upload, Celery, MinIO ותור המשימות</p>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <div class="section-card" id="upload" dir="rtl">
   <h2 class="section-title"><span class="section-icon">📤</span> העלאה ועיבוד קבצים (Upload)</h2>
   <div class="file-path" dir="ltr">backend/app/upload.py <span class="line-count">(122 lines)</span></div>
 
@@ -3614,6 +3765,7 @@ checksum = sha.hexdigest()</code></pre>
 </div>
 
 <!-- ===================== TASKS ===================== -->
+
 <div class="section-card" id="tasks" dir="rtl">
   <h2 class="section-title"><span class="section-icon">⚙️</span> משימות רקע (Celery Tasks)</h2>
   <div class="file-path" dir="ltr">backend/app/tasks.py <span class="line-count">(197 lines)</span></div>
@@ -3913,7 +4065,389 @@ def run_separation(self, job_id, song_id, user_id, storage_key, model_tier):</co
 </div>
 
 <!-- ===================== SONGS ===================== -->
-<div class="section-card" id="songs" dir="rtl">
+
+<div class="section-card" id="celery-config" dir="rtl">
+  <h2 class="section-title"><span class="section-icon">🔧</span> הגדרת Celery (Celery Configuration)</h2>
+  <div class="file-path" dir="ltr">backend/app/celery_app.py <span class="line-count">(26 lines)</span></div>
+
+  <p>קובץ קצר שיוצר את אובייקט ה-Celery שכל המערכת משתמשת בו, ומגדיר איך הוא מתנהג. גם השרת (כדי לשלוח משימות עם <code dir="ltr">.delay</code>) וגם ה-worker (כדי לקבל אותן) טוענים אותו.</p>
+
+  <h3>הקוד המלא</h3>
+  <pre class="code-block" dir="ltr"><code>"""Celery application (Phase 5)."""
+
+from celery import Celery
+
+from app.config import load_settings
+
+settings = load_settings()
+
+celery = Celery(
+    "stemspace",
+    broker=settings.celery_broker_url,
+    backend=settings.celery_result_backend,
+)
+
+celery.conf.update(
+    task_serializer="json",
+    accept_content=["json"],
+    result_serializer="json",
+    timezone="UTC",
+    task_acks_late=True,
+    worker_prefetch_multiplier=1,
+    task_track_started=True,
+    task_default_queue="separation",
+)
+
+celery.autodiscover_tasks(["app"])</code></pre>
+
+  <h3>הסבר שלב אחרי שלב</h3>
+
+  <h4>1. יצירת האפליקציה (שורות 9-13)</h4>
+  <ul>
+    <li><code dir="ltr">"stemspace"</code> - שם האפליקציה.</li>
+    <li><code dir="ltr">broker=</code> - ה"מתווך": המקום שבו המשימות ממתינות. כאן Redis (ברירת המחדל ב-<code dir="ltr">config.py</code> היא <code dir="ltr">redis://redis:6379/0</code>). Redis הוא מסד נתונים מהיר בזיכרון, ומתאים מאוד לתור הודעות.</li>
+    <li><code dir="ltr">backend=</code> - המקום שבו נשמרות <em>תוצאות</em> המשימות. גם כן Redis, אבל במסד מספר 1 (שימו לב ל-<code dir="ltr">/1</code> במקום <code dir="ltr">/0</code>), כדי להפריד בין תור לתוצאות.</li>
+  </ul>
+
+  <h4>2. הגדרות (שורות 15-24)</h4>
+  <ul>
+    <li>
+      <strong><code dir="ltr">task_serializer="json"</code>, <code dir="ltr">accept_content=["json"]</code>, <code dir="ltr">result_serializer="json"</code></strong> - איך ממירים נתונים לבייטים כדי להעביר ב-Redis.
+      <div class="concept-box">
+        <h4>למה JSON ולא pickle?</h4>
+        <p>Celery יכולה להשתמש גם ב-<code dir="ltr">pickle</code>, פורמט פייתוני שמסוגל לסדר כמעט כל אובייקט. אבל pickle מסוכן: פתיחת נתונים זדוניים שהוכנסו לתור יכולה להריץ <strong>קוד שרירותי</strong> בשרת. JSON הוא טקסט פשוט, בטוח, וגם קריא לבני אדם ולשפות אחרות. המגבלה: אפשר להעביר רק טיפוסים פשוטים (מחרוזות, מספרים, רשימות, מילונים). לכן <code dir="ltr">run_separation</code> מקבלת <code dir="ltr">str(job.id)</code> ולא את אובייקט ה-UUID. השורה <code dir="ltr">accept_content=["json"]</code> גם דוחה כל פורמט אחר שיגיע.</p>
+      </div>
+    </li>
+    <li><strong><code dir="ltr">timezone="UTC"</code></strong> - כל הזמנים של Celery בזמן אוניברסלי, בלי תלות באזור הזמן של השרת. מונע בלבול סביב שעון קיץ.</li>
+    <li>
+      <strong><code dir="ltr">task_acks_late=True</code></strong>
+      <div class="concept-box">
+        <h4>מה זה acks_late ולמה זה משפר אמינות?</h4>
+        <p>"ack" = acknowledge, אישור קבלה. ברירת המחדל של Celery: העובד מאשר למתווך "קיבלתי את המשימה" ברגע שהוא <em>מתחיל</em> לעבוד, והמתווך מוחק אותה מהתור. אם העובד קורס באמצע ההפרדה, המשימה אבדה לנצח.</p>
+        <p>עם <code dir="ltr">acks_late=True</code> העובד מאשר רק <em>אחרי שסיים</em>. אם הוא נופל באמצע (חשמל, זיכרון, הפעלה מחדש), המשימה לא אושרה, ולכן המתווך מחזיר אותה לתור ועובד אחר ייקח אותה. זה "לפחות פעם אחת" (at-least-once). המחיר: ייתכן שהמשימה תרוץ פעמיים, ולכן הקוד חייב להיות אידמפוטנטי (ראו <code dir="ltr">_finalize_usage</code> בסעיף המשימות).</p>
+      </div>
+    </li>
+    <li>
+      <strong><code dir="ltr">worker_prefetch_multiplier=1</code></strong>
+      <div class="concept-box">
+        <h4>מה זה prefetch multiplier?</h4>
+        <p>כדי להיות יעיל, עובד Celery "שולף מראש" כמה משימות מהתור לזיכרון שלו. כמה? ככל שה-multiplier גדול יותר, הוא שולף יותר (ברירת מחדל 4 לכל תהליך). זה מצוין למשימות קצרות. אבל הפרדת שמע לוקחת דקות. אם עובד אחד שלף 4 משימות, והוא עסוק בראשונה, שלוש האחרות <strong>ממתינות אצלו</strong> בזמן שעובד אחר ריק ובטל. עם <code dir="ltr">1</code>, כל עובד לוקח רק משימה אחת בכל פעם, והעבודה מתחלקת הוגן. זה בנוסף משלים את <code dir="ltr">acks_late</code>: משימות שנשלפו אך לא הוחלו נחשבות לא מאושרות.</p>
+      </div>
+    </li>
+    <li><strong><code dir="ltr">task_track_started=True</code></strong> - Celery מדווחת מצב "STARTED" כשמשימה מתחילה (ולא רק "PENDING" ו"SUCCESS"), כך אפשר לדעת שהיא באמת רצה.</li>
+    <li><strong><code dir="ltr">task_default_queue="separation"</code></strong> - שם התור. כל המשימות נכנסות לתור בשם "separation", וה-worker מאזין לו (<code dir="ltr">-Q separation</code>). אפשר בעתיד להוסיף תור נפרד לאימיילים כדי שהם לא יתחרו עם ההפרדות על משאבים.</li>
+  </ul>
+
+  <h4>3. autodiscover_tasks (שורה 26)</h4>
+  <p><code dir="ltr">celery.autodiscover_tasks(["app"])</code> אומרת ל-Celery לחפש בחבילה <code dir="ltr">app</code> קבצים בשם <code dir="ltr">tasks.py</code> ולטעון אותם, כך שכל פונקציה עם <code dir="ltr">@celery.task</code> תירשם אוטומטית. בלי זה, העובד היה יודע על התור אבל לא יכיר את הפונקציות.</p>
+</div>
+
+<!-- ===================== WORKER ===================== -->
+
+<div class="section-card" id="worker" dir="rtl">
+  <h2 class="section-title"><span class="section-icon">🏭</span> נקודת הכניסה של ה-Worker</h2>
+  <div class="file-path" dir="ltr">backend/app/worker.py <span class="line-count">(45 lines)</span></div>
+
+  <p>זה "כפתור ההפעלה" של העובד. הוא התוכנית שמריצים בטרמינל (או בקונטיינר Docker נפרד) כדי שהעיבוד ברקע יתחיל לעבוד.</p>
+
+  <h3>הקוד המלא</h3>
+  <pre class="code-block" dir="ltr"><code>"""StemSpace worker - Celery-based async separation (Phase 5).
+
+Usage:
+- ``celery -A app.celery_app worker --loglevel=info -Q separation``
+- ``python -m app.worker --check`` -&gt; startup smoke check
+- ``python -m app.worker`` -&gt; starts the Celery worker
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+
+WORKER_NAME = "stemspace-worker"
+STARTUP_MESSAGE = f"[{WORKER_NAME}] Worker starting - Celery separation queue."
+
+
+def run_check() -&gt; int:
+    print(STARTUP_MESSAGE, flush=True)
+    from app.celery_app import celery  # noqa: F401
+    print(f"[{WORKER_NAME}] Celery app loaded OK.", flush=True)
+    return 0
+
+
+def run_worker() -&gt; None:
+    print(STARTUP_MESSAGE, flush=True)
+    from app.celery_app import celery
+    import app.tasks  # noqa: F401
+    celery.worker_main(["worker", "--loglevel=info", "-Q", "separation", "--concurrency=2"])
+
+
+def main(argv: list[str] | None = None) -&gt; int:
+    parser = argparse.ArgumentParser(prog="app.worker", description="StemSpace worker.")
+    parser.add_argument("--check", action="store_true", help="Smoke check and exit.")
+    args = parser.parse_args(argv)
+
+    if args.check:
+        return run_check()
+
+    run_worker()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())</code></pre>
+
+  <h3>הסבר שלב אחרי שלב</h3>
+
+  <div class="concept-box">
+    <h4>מה זה Entry Point (נקודת כניסה)?</h4>
+    <p>נקודת כניסה היא המקום שבו תוכנית מתחילה לרוץ. בפייתון, הבלוק <code dir="ltr">if __name__ == "__main__":</code> רץ <strong>רק</strong> כשמריצים את הקובץ ישירות (<code dir="ltr">python -m app.worker</code>), ולא כשמישהו מייבא אותו. השורה <code dir="ltr">sys.exit(main())</code> מעבירה את קוד היציאה של <code dir="ltr">main</code> למערכת ההפעלה (0 = הצלחה, כל דבר אחר = שגיאה), וכך כלים חיצוניים כמו Docker או סקריפטים יודעים אם ההרצה הצליחה.</p>
+  </div>
+
+  <h4>1. הדוקסטרינג (שורות 1-7)</h4>
+  <p>מסביר שלוש דרכי הפעלה: הפקודה הישירה של Celery, הרצה עם <code dir="ltr">--check</code> לבדיקה, והרצה רגילה.</p>
+
+  <h4>2. main ו-argparse (שורות 32-41)</h4>
+  <p><code dir="ltr">argparse</code> היא ספרייה מובנית שקוראת "דגלים" משורת הפקודה. <code dir="ltr">parser.add_argument("--check", action="store_true")</code> אומר: אם נכתב <code dir="ltr">--check</code>, המשתנה <code dir="ltr">args.check</code> יהיה <code dir="ltr">True</code>, אחרת <code dir="ltr">False</code>. לפי זה בוחרים בין בדיקה לבין הפעלה אמיתית.</p>
+
+  <h4>3. run_check (שורות 18-22)</h4>
+  <div class="concept-box">
+    <h4>מה זה Smoke Test?</h4>
+    <p>המונח מעולם האלקטרוניקה: מחברים מכשיר חדש לחשמל ובודקים אם יוצא עשן. בתוכנה: בדיקה מהירה ושטחית ש"הדבר בכלל עולה". היא לא בודקת את כל הפונקציונליות, רק שאין קריסה מיידית.</p>
+    <p>כאן, <code dir="ltr">--check</code> טוענת את אפליקציית Celery (שמוודא שהקוד נטען, ההגדרות קיימות, והייבואים עובדים), מדפיסה הודעה, ויוצאת עם קוד 0 בלי להתחיל לעבוד על משימות. אפשר להריץ אותה אוטומטית ב-CI או בבניית ה-Docker כדי לגלות מוקדם שהקונטיינר שבור, לפני שהוא נכנס לייצור (health check).</p>
+  </div>
+
+  <h4>4. run_worker (שורות 25-29)</h4>
+  <pre class="code-block" dir="ltr"><code>celery.worker_main(["worker", "--loglevel=info", "-Q", "separation", "--concurrency=2"])</code></pre>
+  <ul>
+    <li><code dir="ltr">import app.tasks</code> - מבטיח שהמשימות נטענות לפני שהעובד מתחיל להאזין.</li>
+    <li><code dir="ltr">--loglevel=info</code> - רמת פירוט ביומן.</li>
+    <li><code dir="ltr">-Q separation</code> - מאזין רק לתור "separation" (השם שהוגדר ב-<code dir="ltr">celery_app.py</code>).</li>
+    <li><code dir="ltr">--concurrency=2</code> - מריץ שני תהליכים במקביל.</li>
+  </ul>
+
+  <div class="concept-box">
+    <h4>מה זה Concurrency (מקביליות) של Worker?</h4>
+    <p>זה מספר התהליכים שהעובד מריץ ביחד, כלומר כמה משימות יכולות להתבצע <em>בו-זמנית</em> בעובד אחד. עם 2: שתי הפרדות במקביל, והשלישית ממתינה בתור. למה דווקא 2 ולא 20? כי הפרדת שמע צורכת הרבה זיכרון ומעבד (המודלים של בינה מלאכותית כבדים). יותר מדי תהליכים היו מאטים את כולם או קורסים מחוסר זיכרון. כשצריך לטפל ביותר עומס, מוסיפים עובדים נוספים (מחשבים או קונטיינרים), לא מגדילים את המקביליות.</p>
+    <p>שימו לב שזה משתלב עם <code dir="ltr">worker_prefetch_multiplier=1</code>: מתוך 2 תהליכים כל אחד לוקח משימה אחת בכל פעם.</p>
+  </div>
+
+  <div class="tip-box">
+    <strong>סיכום הזרימה המלאה:</strong> המשתמש מעלה קובץ (<code dir="ltr">upload.py</code>) &larr; <code dir="ltr">run_separation.delay()</code> מכניסה פתק לתור Redis (<code dir="ltr">celery_app.py</code>) &larr; ה-worker (<code dir="ltr">worker.py</code>) מושך אותו &larr; <code dir="ltr">tasks.py</code> מפעילה את המודל, שומרת תוצאות ב-MinIO (<code dir="ltr">storage.py</code>) &larr; הסטטוס מתעדכן ל-READY &larr; המשתמש מאזין דרך <code dir="ltr">songs.py</code>.
+  </div>
+</div>
+
+
+<!-- ==================== PART 3: FRONTEND ==================== -->
+
+<div class="section-card" id="storage" dir="rtl">
+  <h2 class="section-title"><span class="section-icon">🗄️</span> שכבת האחסון (Storage Layer)</h2>
+  <div class="file-path" dir="ltr">backend/app/storage.py <span class="line-count">(110 lines)</span></div>
+
+  <p>כל פעם שמקובץ אחר צריך לשמור או לקרוא קובץ שמע, הוא פונה לקובץ הזה ורק לו. זו שכבת "מתאם" (adapter): היתר לא יודעים איך האחסון בנוי, הם רק קוראים לפונקציות כמו <code dir="ltr">upload_bytes</code>. אם מחר נעבור מ-MinIO לשירות אחר, נשנה רק את הקובץ הזה.</p>
+
+  <div class="concept-box">
+    <h4>מה זה S3 ופרוטוקול S3?</h4>
+    <p><strong>S3</strong> (Simple Storage Service) הוא שירות האחסון של אמזון. מעבר לשירות עצמו, הוא הגדיר <strong>פרוטוקול</strong>: סט פקודות HTTP סטנדרטי להעלאת קובץ, הורדה, מחיקה ויצירת "דליים". כל כך הרבה כלים אימצו את הפרוטוקול הזה, שהוא הפך לשפה משותפת. <strong>MinIO</strong> הוא שרת קוד פתוח שמדבר "S3" ושאפשר להריץ במחשב שלכם. הספרייה <code dir="ltr">boto3</code> (של אמזון) יודעת לדבר עם כל שרת S3, ולכן אותו קוד עובד גם מול MinIO המקומי וגם מול AWS האמיתי, ברגע שמשנים רק את ה-<code dir="ltr">endpoint_url</code>.</p>
+  </div>
+
+  <div class="concept-box">
+    <h4>אחסון אובייקטים מול מערכת קבצים</h4>
+    <ul>
+      <li><strong>מערכת קבצים</strong> (כמו בכונן C): היררכיה של תיקיות, אפשר לערוך חלק מקובץ, מוגבלת למחשב אחד.</li>
+      <li><strong>אחסון אובייקטים</strong>: מרחב שטוח של "אובייקטים" שכל אחד הוא קובץ שלם ומפתח. אי אפשר לערוך מהאמצע (מעלים מחדש את כולו), אבל אפשר לאחסן כמעט בלי הגבלה, לשכפל בין שרתים, ולגשת דרך HTTP מכל מקום.</li>
+    </ul>
+    <p>האחסון הזה מתאים לקבצי שמע: נכתבים פעם אחת ונקראים הרבה פעמים. והוא קריטי לארכיטקטורה שלנו כי <strong>שרת ה-API והעובד הם תהליכים נפרדים</strong> (ואולי גם מחשבים נפרדים), ושניהם צריכים גישה לאותם קבצים.</p>
+  </div>
+
+  <div class="concept-box">
+    <h4>דליים ומפתחות (Buckets &amp; Keys)</h4>
+    <p><strong>Bucket</strong> (דלי) הוא מכל ברמה העליונה, כמו "כונן". <strong>Key</strong> (מפתח) הוא השם המלא של אובייקט בתוך הדלי. אין באמת תיקיות, אבל אפשר לדמות אותן: המפתח <code dir="ltr">user-123/song-456/vocals.wav</code> הוא מחרוזת אחת, והלוכסנים הם רק חלק מהשם. ככה בנויה הפונקציה <code dir="ltr">generate_storage_key</code>: <code dir="ltr">f"{user_id}/{song_id}/{purpose}{ext}"</code>.</p>
+  </div>
+
+  <h3>הקוד המלא</h3>
+  <pre class="code-block" dir="ltr"><code>"""S3/MinIO storage adapter (Phase 4).
+
+All private storage access goes through this module. No public URLs, no permanent
+URLs. Signed URLs are generated with a short TTL for listen/download.
+"""
+
+from __future__ import annotations
+
+import uuid
+from functools import lru_cache
+
+import boto3
+from botocore.config import Config as BotoConfig
+
+from app.config import load_settings
+
+
+@lru_cache(maxsize=1)
+def _s3_client():
+    settings = load_settings()
+    return boto3.client(
+        "s3",
+        endpoint_url=settings.s3_endpoint_url or None,
+        aws_access_key_id=settings.s3_access_key_id,
+        aws_secret_access_key=settings.s3_secret_access_key,
+        region_name=settings.s3_region,
+        config=BotoConfig(signature_version="s3v4"),
+    )
+
+
+@lru_cache(maxsize=1)
+def _s3_public_client():
+    settings = load_settings()
+    public_url = settings.s3_public_endpoint_url or settings.s3_endpoint_url
+    return boto3.client(
+        "s3",
+        endpoint_url=public_url or None,
+        aws_access_key_id=settings.s3_access_key_id,
+        aws_secret_access_key=settings.s3_secret_access_key,
+        region_name=settings.s3_region,
+        config=BotoConfig(signature_version="s3v4"),
+    )
+
+
+def _bucket() -&gt; str:
+    return load_settings().s3_bucket
+
+
+def generate_storage_key(user_id: uuid.UUID, song_id: uuid.UUID, purpose: str, ext: str) -&gt; str:
+    return f"{user_id}/{song_id}/{purpose}{ext}"
+
+
+def ensure_bucket() -&gt; None:
+    client = _s3_client()
+    bucket = _bucket()
+    try:
+        client.head_bucket(Bucket=bucket)
+    except client.exceptions.ClientError:
+        client.create_bucket(Bucket=bucket)
+
+
+def upload_fileobj(fileobj, storage_key: str, content_type: str) -&gt; None:
+    _s3_client().upload_fileobj(
+        fileobj, _bucket(), storage_key,
+        ExtraArgs={"ContentType": content_type},
+    )
+
+
+def upload_bytes(data: bytes, storage_key: str, content_type: str) -&gt; None:
+    from io import BytesIO
+    upload_fileobj(BytesIO(data), storage_key, content_type)
+
+
+def download_bytes(storage_key: str) -&gt; bytes:
+    from io import BytesIO
+    buf = BytesIO()
+    _s3_client().download_fileobj(_bucket(), storage_key, buf)
+    buf.seek(0)
+    return buf.read()
+
+
+def download_to_file(storage_key: str, local_path: str) -&gt; None:
+    _s3_client().download_file(_bucket(), storage_key, local_path)
+
+
+def upload_from_file(local_path: str, storage_key: str, content_type: str) -&gt; None:
+    _s3_client().upload_file(local_path, _bucket(), storage_key, ExtraArgs={"ContentType": content_type})
+
+
+def delete_object(storage_key: str) -&gt; None:
+    _s3_client().delete_object(Bucket=_bucket(), Key=storage_key)
+
+
+def generate_signed_url(storage_key: str, ttl_seconds: int, *, download_filename: str | None = None) -&gt; str:
+    params: dict = {"Bucket": _bucket(), "Key": storage_key}
+    if download_filename:
+        params["ResponseContentDisposition"] = f'attachment; filename="{download_filename}"'
+    return _s3_public_client().generate_presigned_url(
+        "get_object",
+        Params=params,
+        ExpiresIn=ttl_seconds,
+    )
+
+
+def object_exists(storage_key: str) -&gt; bool:
+    try:
+        _s3_client().head_object(Bucket=_bucket(), Key=storage_key)
+        return True
+    except _s3_client().exceptions.ClientError:
+        return False</code></pre>
+
+  <h3>הסבר שלב אחרי שלב</h3>
+
+  <h4>1. לקוחות boto3 (שורות 18-42)</h4>
+  <p>יש כאן שתי פונקציות כמעט זהות: <code dir="ltr">_s3_client</code> ו-<code dir="ltr">_s3_public_client</code>. למה שניים? כשהשרת רץ ב-Docker, הוא פונה ל-MinIO בכתובת פנימית (למשל <code dir="ltr">http://minio:9000</code>). אבל כתובת חתומה (presigned) שנשלחת לדפדפן של המשתמש צריכה להיות כתובת שה<strong>דפדפן</strong> יכול להגיע אליה (למשל <code dir="ltr">http://localhost:9000</code>). הכתובת נכנסת בתוך החתימה, ולכן החתימה חייבת להיווצר עם הכתובת הציבורית. הלקוח "הציבורי" משמש רק להפקת כתובות חתומות, וה"רגיל" לכל השאר.</p>
+  <p>הדקורטור <code dir="ltr">@lru_cache(maxsize=1)</code> גורם לפונקציה לרוץ פעם אחת בלבד ולזכור את התוצאה. כך יוצרים לקוח אחד ולא חדש בכל קריאה (חיבור ללקוח הוא פעולה יקרה). זה סוג של "סינגלטון". הפרמטר <code dir="ltr">signature_version="s3v4"</code> בוחר את גרסת החתימה הקריפטוגרפית של הבקשות.</p>
+
+  <h4>2. ensure_bucket (שורות 53-59)</h4>
+  <p>"וודא שהדלי קיים". <code dir="ltr">head_bucket</code> שואלת את השרת "האם הדלי קיים?" בלי להוריד כלום. אם השרת עונה בשגיאה (<code dir="ltr">ClientError</code>), הקוד יוצר את הדלי. כך לא צריך ליצור דלי ידנית בעת התקנה חדשה. הקריאה נעשית בכל העלאה ב-<code dir="ltr">upload.py</code>, זול ובטוח.</p>
+
+  <h4>3. פונקציות העלאה והורדה (שורות 62-91)</h4>
+  <p>שמות הפונקציות בקובץ בפועל (שימו לב, אלה לא <code dir="ltr">upload_file</code> / <code dir="ltr">download_file</code> סתם):</p>
+  <ul>
+    <li><code dir="ltr">upload_fileobj(fileobj, key, content_type)</code> - העלאה מאובייקט פתוח (כמו קובץ בזיכרון). ה-<code dir="ltr">ExtraArgs</code> מוסיפים <code dir="ltr">ContentType</code> כדי שהשרת ידע איזה סוג קובץ זה.</li>
+    <li><code dir="ltr">upload_bytes(data, key, content_type)</code> - עוטפת את <code dir="ltr">bytes</code> ב-<code dir="ltr">BytesIO</code> (קובץ מזויף בזיכרון) וקוראת ל-<code dir="ltr">upload_fileobj</code>. משמשת את ה-API.</li>
+    <li><code dir="ltr">download_bytes(key)</code> - מוריד לזיכרון ומחזיר <code dir="ltr">bytes</code>. משמשת את נתיבי ה-stream.</li>
+    <li><code dir="ltr">download_to_file(key, local_path)</code> - מוריד ישירות לקובץ בדיסק. משמשת את ה-worker.</li>
+    <li><code dir="ltr">upload_from_file(local_path, key, content_type)</code> - מעלה קובץ מהדיסק. משמשת את ה-worker להעלאת הרצועות.</li>
+    <li><code dir="ltr">delete_object(key)</code> - מוחקת אובייקט.</li>
+    <li><code dir="ltr">object_exists(key)</code> - בודקת האם אובייקט קיים באמצעות <code dir="ltr">head_object</code>.</li>
+  </ul>
+  <p>המטרה בפיצול הזה: כל מי שקורא לאחסון בוחר את הפונקציה המתאימה לצורה שבה הנתונים שלו נמצאים (בזיכרון או בדיסק).</p>
+
+  <h4>4. generate_signed_url (שורות 94-102)</h4>
+  <pre class="code-block" dir="ltr"><code>return _s3_public_client().generate_presigned_url(
+    "get_object",
+    Params=params,
+    ExpiresIn=ttl_seconds,
+)</code></pre>
+  <p>הפקת כתובת חתומה. <code dir="ltr">get_object</code> היא הפעולה שנחתום עליה (קריאה), <code dir="ltr">ExpiresIn</code> הוא ה-TTL (Time To Live) בשניות, כלומר כמה זמן הכתובת תקפה. אם ניתנה <code dir="ltr">download_filename</code>, מוסיפים <code dir="ltr">ResponseContentDisposition</code> כדי שהדפדפן יוריד את הקובץ בשם הזה. הפעולה נעשית <strong>מקומית</strong>: boto3 מחשבת חתימה עם המפתח הסודי, בלי לפנות לשרת. לכן היא מהירה מאוד.</p>
+  <p>הערה: הפרמטר <code dir="ltr">*</code> בחתימה (<code dir="ltr">*, download_filename</code>) אומר ש-<code dir="ltr">download_filename</code> חייב להיות מועבר בשמו (<code dir="ltr">download_filename="x"</code>) ולא כארגומנט לפי מיקום. זה מונע בלבול.</p>
+
+  <div class="tip-box">
+    <strong>למה כל הגישה דרך המודול הזה?</strong> בתחילת הקובץ נכתב: "No public URLs, no permanent URLs". כלומר אין קישורים קבועים לקבצים, ואין דלי פתוח לכולם. כל גישה מבוקרת: או דרך ה-API (עם התחברות), או דרך כתובת חתומה עם תוקף קצר. זה דפוס אבטחה קלאסי.
+  </div>
+</div>
+
+<!-- ===================== HELPERS ===================== -->
+  </div>
+
+  <div class="quiz-section" id="quiz-chapter-4">
+    <h2 class="quiz-title">בחן את עצמך</h2>
+    <div class="quiz-container" id="quiz-container-chapter-4"></div>
+    <div class="quiz-result" id="quiz-result-chapter-4" style="display:none">
+      <div class="quiz-score" id="quiz-score-chapter-4"></div>
+    </div>
+  </div>
+
+  <div class="page-actions">
+    <button class="complete-btn" id="complete-btn-chapter-4" onclick="toggleComplete('chapter-4')">
+      <span class="complete-icon">&#10003;</span>
+      סמן כהושלם
+    </button>
+  </div>
+
+  <div class="page-nav">
+    <button class="nav-btn prev-btn" onclick="navigateTo('chapter-3')">&#8594; מערכת אימות</button>
+    <button class="nav-btn next-btn" onclick="navigateTo('chapter-5')">נתיבי API &#8592;</button>
+  </div>
+</div>
+
+<div class="page" id="page-chapter-5" style="display:none" dir="rtl">
+  <div class="page-header">
+    <span class="page-icon">🛤️</span>
+    <div>
+      <h1 class="page-title">נתיבי API</h1>
+      <p class="page-desc">כל ה-endpoints של השרת</p>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <div class="section-card" id="songs" dir="rtl">
   <h2 class="section-title"><span class="section-icon">🎵</span> נתיבי שירים (Song Routes)</h2>
   <div class="file-path" dir="ltr">backend/app/songs.py <span class="line-count">(234 lines)</span></div>
 
@@ -4222,6 +4756,7 @@ def rename_song(
 </div>
 
 <!-- ===================== LIBRARY ===================== -->
+
 <div class="section-card" id="library" dir="rtl">
   <h2 class="section-title"><span class="section-icon">📚</span> הספרייה האישית (Library)</h2>
   <div class="file-path" dir="ltr">backend/app/library.py <span class="line-count">(107 lines)</span></div>
@@ -4401,6 +4936,7 @@ db.commit()</code></pre>
 </div>
 
 <!-- ===================== PUBLIC ===================== -->
+
 <div class="section-card" id="public" dir="rtl">
   <h2 class="section-title"><span class="section-icon">🌍</span> הספרייה הציבורית (Public Library)</h2>
   <div class="file-path" dir="ltr">backend/app/public.py <span class="line-count">(223 lines)</span></div>
@@ -4704,6 +5240,7 @@ else:
 </div>
 
 <!-- ===================== QUOTAS ===================== -->
+
 <div class="section-card" id="quotas" dir="rtl">
   <h2 class="section-title"><span class="section-icon">📊</span> מכסות שימוש (Quotas)</h2>
   <div class="file-path" dir="ltr">backend/app/quotas.py <span class="line-count">(106 lines)</span></div>
@@ -4873,6 +5410,7 @@ def get_usage_info(db: DbSession, user: User) -&gt; dict:
 </div>
 
 <!-- ===================== ADMIN ===================== -->
+
 <div class="section-card" id="admin" dir="rtl">
   <h2 class="section-title"><span class="section-icon">🛡️</span> פאנל ניהול (Admin)</h2>
   <div class="file-path" dir="ltr">backend/app/admin.py <span class="line-count">(308 lines)</span></div>
@@ -5270,6 +5808,7 @@ def get_audit_log(
 </div>
 
 <!-- ===================== BILLING ===================== -->
+
 <div class="section-card" id="billing" dir="rtl">
   <h2 class="section-title"><span class="section-icon">🎟️</span> קופונים ומנויים (Coupons &amp; Subscriptions)</h2>
   <div class="file-path" dir="ltr">backend/app/coupons.py <span class="line-count">(61 lines)</span></div>
@@ -5493,6 +6032,7 @@ def get_plans() -&gt; dict:
 </div>
 
 <!-- ===================== SETTINGS ROUTES ===================== -->
+
 <div class="section-card" id="settings-routes" dir="rtl">
   <h2 class="section-title"><span class="section-icon">⚙️</span> הגדרות וחשבון (Settings &amp; Account)</h2>
   <div class="file-path" dir="ltr">backend/app/settings_routes.py <span class="line-count">(137 lines)</span></div>
@@ -5682,6 +6222,7 @@ def delete_account(
 </div>
 
 <!-- ===================== DEMO ===================== -->
+
 <div class="section-card" id="demo" dir="rtl">
   <h2 class="section-title"><span class="section-icon">🧪</span> מצב דמו (Demo Mode)</h2>
   <div class="file-path" dir="ltr">backend/app/demo.py <span class="line-count">(181 lines)</span></div>
@@ -5958,180 +6499,7 @@ def stem_file(job_id: uuid.UUID, stem: Stem) -&gt; Response:</code></pre>
 </div>
 
 <!-- ===================== STORAGE ===================== -->
-<div class="section-card" id="storage" dir="rtl">
-  <h2 class="section-title"><span class="section-icon">🗄️</span> שכבת האחסון (Storage Layer)</h2>
-  <div class="file-path" dir="ltr">backend/app/storage.py <span class="line-count">(110 lines)</span></div>
 
-  <p>כל פעם שמקובץ אחר צריך לשמור או לקרוא קובץ שמע, הוא פונה לקובץ הזה ורק לו. זו שכבת "מתאם" (adapter): היתר לא יודעים איך האחסון בנוי, הם רק קוראים לפונקציות כמו <code dir="ltr">upload_bytes</code>. אם מחר נעבור מ-MinIO לשירות אחר, נשנה רק את הקובץ הזה.</p>
-
-  <div class="concept-box">
-    <h4>מה זה S3 ופרוטוקול S3?</h4>
-    <p><strong>S3</strong> (Simple Storage Service) הוא שירות האחסון של אמזון. מעבר לשירות עצמו, הוא הגדיר <strong>פרוטוקול</strong>: סט פקודות HTTP סטנדרטי להעלאת קובץ, הורדה, מחיקה ויצירת "דליים". כל כך הרבה כלים אימצו את הפרוטוקול הזה, שהוא הפך לשפה משותפת. <strong>MinIO</strong> הוא שרת קוד פתוח שמדבר "S3" ושאפשר להריץ במחשב שלכם. הספרייה <code dir="ltr">boto3</code> (של אמזון) יודעת לדבר עם כל שרת S3, ולכן אותו קוד עובד גם מול MinIO המקומי וגם מול AWS האמיתי, ברגע שמשנים רק את ה-<code dir="ltr">endpoint_url</code>.</p>
-  </div>
-
-  <div class="concept-box">
-    <h4>אחסון אובייקטים מול מערכת קבצים</h4>
-    <ul>
-      <li><strong>מערכת קבצים</strong> (כמו בכונן C): היררכיה של תיקיות, אפשר לערוך חלק מקובץ, מוגבלת למחשב אחד.</li>
-      <li><strong>אחסון אובייקטים</strong>: מרחב שטוח של "אובייקטים" שכל אחד הוא קובץ שלם ומפתח. אי אפשר לערוך מהאמצע (מעלים מחדש את כולו), אבל אפשר לאחסן כמעט בלי הגבלה, לשכפל בין שרתים, ולגשת דרך HTTP מכל מקום.</li>
-    </ul>
-    <p>האחסון הזה מתאים לקבצי שמע: נכתבים פעם אחת ונקראים הרבה פעמים. והוא קריטי לארכיטקטורה שלנו כי <strong>שרת ה-API והעובד הם תהליכים נפרדים</strong> (ואולי גם מחשבים נפרדים), ושניהם צריכים גישה לאותם קבצים.</p>
-  </div>
-
-  <div class="concept-box">
-    <h4>דליים ומפתחות (Buckets &amp; Keys)</h4>
-    <p><strong>Bucket</strong> (דלי) הוא מכל ברמה העליונה, כמו "כונן". <strong>Key</strong> (מפתח) הוא השם המלא של אובייקט בתוך הדלי. אין באמת תיקיות, אבל אפשר לדמות אותן: המפתח <code dir="ltr">user-123/song-456/vocals.wav</code> הוא מחרוזת אחת, והלוכסנים הם רק חלק מהשם. ככה בנויה הפונקציה <code dir="ltr">generate_storage_key</code>: <code dir="ltr">f"{user_id}/{song_id}/{purpose}{ext}"</code>.</p>
-  </div>
-
-  <h3>הקוד המלא</h3>
-  <pre class="code-block" dir="ltr"><code>"""S3/MinIO storage adapter (Phase 4).
-
-All private storage access goes through this module. No public URLs, no permanent
-URLs. Signed URLs are generated with a short TTL for listen/download.
-"""
-
-from __future__ import annotations
-
-import uuid
-from functools import lru_cache
-
-import boto3
-from botocore.config import Config as BotoConfig
-
-from app.config import load_settings
-
-
-@lru_cache(maxsize=1)
-def _s3_client():
-    settings = load_settings()
-    return boto3.client(
-        "s3",
-        endpoint_url=settings.s3_endpoint_url or None,
-        aws_access_key_id=settings.s3_access_key_id,
-        aws_secret_access_key=settings.s3_secret_access_key,
-        region_name=settings.s3_region,
-        config=BotoConfig(signature_version="s3v4"),
-    )
-
-
-@lru_cache(maxsize=1)
-def _s3_public_client():
-    settings = load_settings()
-    public_url = settings.s3_public_endpoint_url or settings.s3_endpoint_url
-    return boto3.client(
-        "s3",
-        endpoint_url=public_url or None,
-        aws_access_key_id=settings.s3_access_key_id,
-        aws_secret_access_key=settings.s3_secret_access_key,
-        region_name=settings.s3_region,
-        config=BotoConfig(signature_version="s3v4"),
-    )
-
-
-def _bucket() -&gt; str:
-    return load_settings().s3_bucket
-
-
-def generate_storage_key(user_id: uuid.UUID, song_id: uuid.UUID, purpose: str, ext: str) -&gt; str:
-    return f"{user_id}/{song_id}/{purpose}{ext}"
-
-
-def ensure_bucket() -&gt; None:
-    client = _s3_client()
-    bucket = _bucket()
-    try:
-        client.head_bucket(Bucket=bucket)
-    except client.exceptions.ClientError:
-        client.create_bucket(Bucket=bucket)
-
-
-def upload_fileobj(fileobj, storage_key: str, content_type: str) -&gt; None:
-    _s3_client().upload_fileobj(
-        fileobj, _bucket(), storage_key,
-        ExtraArgs={"ContentType": content_type},
-    )
-
-
-def upload_bytes(data: bytes, storage_key: str, content_type: str) -&gt; None:
-    from io import BytesIO
-    upload_fileobj(BytesIO(data), storage_key, content_type)
-
-
-def download_bytes(storage_key: str) -&gt; bytes:
-    from io import BytesIO
-    buf = BytesIO()
-    _s3_client().download_fileobj(_bucket(), storage_key, buf)
-    buf.seek(0)
-    return buf.read()
-
-
-def download_to_file(storage_key: str, local_path: str) -&gt; None:
-    _s3_client().download_file(_bucket(), storage_key, local_path)
-
-
-def upload_from_file(local_path: str, storage_key: str, content_type: str) -&gt; None:
-    _s3_client().upload_file(local_path, _bucket(), storage_key, ExtraArgs={"ContentType": content_type})
-
-
-def delete_object(storage_key: str) -&gt; None:
-    _s3_client().delete_object(Bucket=_bucket(), Key=storage_key)
-
-
-def generate_signed_url(storage_key: str, ttl_seconds: int, *, download_filename: str | None = None) -&gt; str:
-    params: dict = {"Bucket": _bucket(), "Key": storage_key}
-    if download_filename:
-        params["ResponseContentDisposition"] = f'attachment; filename="{download_filename}"'
-    return _s3_public_client().generate_presigned_url(
-        "get_object",
-        Params=params,
-        ExpiresIn=ttl_seconds,
-    )
-
-
-def object_exists(storage_key: str) -&gt; bool:
-    try:
-        _s3_client().head_object(Bucket=_bucket(), Key=storage_key)
-        return True
-    except _s3_client().exceptions.ClientError:
-        return False</code></pre>
-
-  <h3>הסבר שלב אחרי שלב</h3>
-
-  <h4>1. לקוחות boto3 (שורות 18-42)</h4>
-  <p>יש כאן שתי פונקציות כמעט זהות: <code dir="ltr">_s3_client</code> ו-<code dir="ltr">_s3_public_client</code>. למה שניים? כשהשרת רץ ב-Docker, הוא פונה ל-MinIO בכתובת פנימית (למשל <code dir="ltr">http://minio:9000</code>). אבל כתובת חתומה (presigned) שנשלחת לדפדפן של המשתמש צריכה להיות כתובת שה<strong>דפדפן</strong> יכול להגיע אליה (למשל <code dir="ltr">http://localhost:9000</code>). הכתובת נכנסת בתוך החתימה, ולכן החתימה חייבת להיווצר עם הכתובת הציבורית. הלקוח "הציבורי" משמש רק להפקת כתובות חתומות, וה"רגיל" לכל השאר.</p>
-  <p>הדקורטור <code dir="ltr">@lru_cache(maxsize=1)</code> גורם לפונקציה לרוץ פעם אחת בלבד ולזכור את התוצאה. כך יוצרים לקוח אחד ולא חדש בכל קריאה (חיבור ללקוח הוא פעולה יקרה). זה סוג של "סינגלטון". הפרמטר <code dir="ltr">signature_version="s3v4"</code> בוחר את גרסת החתימה הקריפטוגרפית של הבקשות.</p>
-
-  <h4>2. ensure_bucket (שורות 53-59)</h4>
-  <p>"וודא שהדלי קיים". <code dir="ltr">head_bucket</code> שואלת את השרת "האם הדלי קיים?" בלי להוריד כלום. אם השרת עונה בשגיאה (<code dir="ltr">ClientError</code>), הקוד יוצר את הדלי. כך לא צריך ליצור דלי ידנית בעת התקנה חדשה. הקריאה נעשית בכל העלאה ב-<code dir="ltr">upload.py</code>, זול ובטוח.</p>
-
-  <h4>3. פונקציות העלאה והורדה (שורות 62-91)</h4>
-  <p>שמות הפונקציות בקובץ בפועל (שימו לב, אלה לא <code dir="ltr">upload_file</code> / <code dir="ltr">download_file</code> סתם):</p>
-  <ul>
-    <li><code dir="ltr">upload_fileobj(fileobj, key, content_type)</code> - העלאה מאובייקט פתוח (כמו קובץ בזיכרון). ה-<code dir="ltr">ExtraArgs</code> מוסיפים <code dir="ltr">ContentType</code> כדי שהשרת ידע איזה סוג קובץ זה.</li>
-    <li><code dir="ltr">upload_bytes(data, key, content_type)</code> - עוטפת את <code dir="ltr">bytes</code> ב-<code dir="ltr">BytesIO</code> (קובץ מזויף בזיכרון) וקוראת ל-<code dir="ltr">upload_fileobj</code>. משמשת את ה-API.</li>
-    <li><code dir="ltr">download_bytes(key)</code> - מוריד לזיכרון ומחזיר <code dir="ltr">bytes</code>. משמשת את נתיבי ה-stream.</li>
-    <li><code dir="ltr">download_to_file(key, local_path)</code> - מוריד ישירות לקובץ בדיסק. משמשת את ה-worker.</li>
-    <li><code dir="ltr">upload_from_file(local_path, key, content_type)</code> - מעלה קובץ מהדיסק. משמשת את ה-worker להעלאת הרצועות.</li>
-    <li><code dir="ltr">delete_object(key)</code> - מוחקת אובייקט.</li>
-    <li><code dir="ltr">object_exists(key)</code> - בודקת האם אובייקט קיים באמצעות <code dir="ltr">head_object</code>.</li>
-  </ul>
-  <p>המטרה בפיצול הזה: כל מי שקורא לאחסון בוחר את הפונקציה המתאימה לצורה שבה הנתונים שלו נמצאים (בזיכרון או בדיסק).</p>
-
-  <h4>4. generate_signed_url (שורות 94-102)</h4>
-  <pre class="code-block" dir="ltr"><code>return _s3_public_client().generate_presigned_url(
-    "get_object",
-    Params=params,
-    ExpiresIn=ttl_seconds,
-)</code></pre>
-  <p>הפקת כתובת חתומה. <code dir="ltr">get_object</code> היא הפעולה שנחתום עליה (קריאה), <code dir="ltr">ExpiresIn</code> הוא ה-TTL (Time To Live) בשניות, כלומר כמה זמן הכתובת תקפה. אם ניתנה <code dir="ltr">download_filename</code>, מוסיפים <code dir="ltr">ResponseContentDisposition</code> כדי שהדפדפן יוריד את הקובץ בשם הזה. הפעולה נעשית <strong>מקומית</strong>: boto3 מחשבת חתימה עם המפתח הסודי, בלי לפנות לשרת. לכן היא מהירה מאוד.</p>
-  <p>הערה: הפרמטר <code dir="ltr">*</code> בחתימה (<code dir="ltr">*, download_filename</code>) אומר ש-<code dir="ltr">download_filename</code> חייב להיות מועבר בשמו (<code dir="ltr">download_filename="x"</code>) ולא כארגומנט לפי מיקום. זה מונע בלבול.</p>
-
-  <div class="tip-box">
-    <strong>למה כל הגישה דרך המודול הזה?</strong> בתחילת הקובץ נכתב: "No public URLs, no permanent URLs". כלומר אין קישורים קבועים לקבצים, ואין דלי פתוח לכולם. כל גישה מבוקרת: או דרך ה-API (עם התחברות), או דרך כתובת חתומה עם תוקף קצר. זה דפוס אבטחה קלאסי.
-  </div>
-</div>
-
-<!-- ===================== HELPERS ===================== -->
 <div class="section-card" id="helpers" dir="rtl">
   <h2 class="section-title"><span class="section-icon">🧰</span> פונקציות עזר (Helpers)</h2>
   <div class="file-path" dir="ltr">backend/app/helpers.py <span class="line-count">(38 lines)</span></div>
@@ -6204,6 +6572,7 @@ def get_public_song_or_404(db: DbSession, song_id) -&gt; Song:
 </div>
 
 <!-- ===================== EMAIL ===================== -->
+
 <div class="section-card" id="email" dir="rtl">
   <h2 class="section-title"><span class="section-icon">✉️</span> שירות אימייל (Email Service)</h2>
   <div class="file-path" dir="ltr">backend/app/email_service.py <span class="line-count">(34 lines)</span></div>
@@ -6277,179 +6646,40 @@ def send_email(to_email: str, subject: str, html_body: str) -&gt; bool:
 </div>
 
 <!-- ===================== CELERY CONFIG ===================== -->
-<div class="section-card" id="celery-config" dir="rtl">
-  <h2 class="section-title"><span class="section-icon">🔧</span> הגדרת Celery (Celery Configuration)</h2>
-  <div class="file-path" dir="ltr">backend/app/celery_app.py <span class="line-count">(26 lines)</span></div>
-
-  <p>קובץ קצר שיוצר את אובייקט ה-Celery שכל המערכת משתמשת בו, ומגדיר איך הוא מתנהג. גם השרת (כדי לשלוח משימות עם <code dir="ltr">.delay</code>) וגם ה-worker (כדי לקבל אותן) טוענים אותו.</p>
-
-  <h3>הקוד המלא</h3>
-  <pre class="code-block" dir="ltr"><code>"""Celery application (Phase 5)."""
-
-from celery import Celery
-
-from app.config import load_settings
-
-settings = load_settings()
-
-celery = Celery(
-    "stemspace",
-    broker=settings.celery_broker_url,
-    backend=settings.celery_result_backend,
-)
-
-celery.conf.update(
-    task_serializer="json",
-    accept_content=["json"],
-    result_serializer="json",
-    timezone="UTC",
-    task_acks_late=True,
-    worker_prefetch_multiplier=1,
-    task_track_started=True,
-    task_default_queue="separation",
-)
-
-celery.autodiscover_tasks(["app"])</code></pre>
-
-  <h3>הסבר שלב אחרי שלב</h3>
-
-  <h4>1. יצירת האפליקציה (שורות 9-13)</h4>
-  <ul>
-    <li><code dir="ltr">"stemspace"</code> - שם האפליקציה.</li>
-    <li><code dir="ltr">broker=</code> - ה"מתווך": המקום שבו המשימות ממתינות. כאן Redis (ברירת המחדל ב-<code dir="ltr">config.py</code> היא <code dir="ltr">redis://redis:6379/0</code>). Redis הוא מסד נתונים מהיר בזיכרון, ומתאים מאוד לתור הודעות.</li>
-    <li><code dir="ltr">backend=</code> - המקום שבו נשמרות <em>תוצאות</em> המשימות. גם כן Redis, אבל במסד מספר 1 (שימו לב ל-<code dir="ltr">/1</code> במקום <code dir="ltr">/0</code>), כדי להפריד בין תור לתוצאות.</li>
-  </ul>
-
-  <h4>2. הגדרות (שורות 15-24)</h4>
-  <ul>
-    <li>
-      <strong><code dir="ltr">task_serializer="json"</code>, <code dir="ltr">accept_content=["json"]</code>, <code dir="ltr">result_serializer="json"</code></strong> - איך ממירים נתונים לבייטים כדי להעביר ב-Redis.
-      <div class="concept-box">
-        <h4>למה JSON ולא pickle?</h4>
-        <p>Celery יכולה להשתמש גם ב-<code dir="ltr">pickle</code>, פורמט פייתוני שמסוגל לסדר כמעט כל אובייקט. אבל pickle מסוכן: פתיחת נתונים זדוניים שהוכנסו לתור יכולה להריץ <strong>קוד שרירותי</strong> בשרת. JSON הוא טקסט פשוט, בטוח, וגם קריא לבני אדם ולשפות אחרות. המגבלה: אפשר להעביר רק טיפוסים פשוטים (מחרוזות, מספרים, רשימות, מילונים). לכן <code dir="ltr">run_separation</code> מקבלת <code dir="ltr">str(job.id)</code> ולא את אובייקט ה-UUID. השורה <code dir="ltr">accept_content=["json"]</code> גם דוחה כל פורמט אחר שיגיע.</p>
-      </div>
-    </li>
-    <li><strong><code dir="ltr">timezone="UTC"</code></strong> - כל הזמנים של Celery בזמן אוניברסלי, בלי תלות באזור הזמן של השרת. מונע בלבול סביב שעון קיץ.</li>
-    <li>
-      <strong><code dir="ltr">task_acks_late=True</code></strong>
-      <div class="concept-box">
-        <h4>מה זה acks_late ולמה זה משפר אמינות?</h4>
-        <p>"ack" = acknowledge, אישור קבלה. ברירת המחדל של Celery: העובד מאשר למתווך "קיבלתי את המשימה" ברגע שהוא <em>מתחיל</em> לעבוד, והמתווך מוחק אותה מהתור. אם העובד קורס באמצע ההפרדה, המשימה אבדה לנצח.</p>
-        <p>עם <code dir="ltr">acks_late=True</code> העובד מאשר רק <em>אחרי שסיים</em>. אם הוא נופל באמצע (חשמל, זיכרון, הפעלה מחדש), המשימה לא אושרה, ולכן המתווך מחזיר אותה לתור ועובד אחר ייקח אותה. זה "לפחות פעם אחת" (at-least-once). המחיר: ייתכן שהמשימה תרוץ פעמיים, ולכן הקוד חייב להיות אידמפוטנטי (ראו <code dir="ltr">_finalize_usage</code> בסעיף המשימות).</p>
-      </div>
-    </li>
-    <li>
-      <strong><code dir="ltr">worker_prefetch_multiplier=1</code></strong>
-      <div class="concept-box">
-        <h4>מה זה prefetch multiplier?</h4>
-        <p>כדי להיות יעיל, עובד Celery "שולף מראש" כמה משימות מהתור לזיכרון שלו. כמה? ככל שה-multiplier גדול יותר, הוא שולף יותר (ברירת מחדל 4 לכל תהליך). זה מצוין למשימות קצרות. אבל הפרדת שמע לוקחת דקות. אם עובד אחד שלף 4 משימות, והוא עסוק בראשונה, שלוש האחרות <strong>ממתינות אצלו</strong> בזמן שעובד אחר ריק ובטל. עם <code dir="ltr">1</code>, כל עובד לוקח רק משימה אחת בכל פעם, והעבודה מתחלקת הוגן. זה בנוסף משלים את <code dir="ltr">acks_late</code>: משימות שנשלפו אך לא הוחלו נחשבות לא מאושרות.</p>
-      </div>
-    </li>
-    <li><strong><code dir="ltr">task_track_started=True</code></strong> - Celery מדווחת מצב "STARTED" כשמשימה מתחילה (ולא רק "PENDING" ו"SUCCESS"), כך אפשר לדעת שהיא באמת רצה.</li>
-    <li><strong><code dir="ltr">task_default_queue="separation"</code></strong> - שם התור. כל המשימות נכנסות לתור בשם "separation", וה-worker מאזין לו (<code dir="ltr">-Q separation</code>). אפשר בעתיד להוסיף תור נפרד לאימיילים כדי שהם לא יתחרו עם ההפרדות על משאבים.</li>
-  </ul>
-
-  <h4>3. autodiscover_tasks (שורה 26)</h4>
-  <p><code dir="ltr">celery.autodiscover_tasks(["app"])</code> אומרת ל-Celery לחפש בחבילה <code dir="ltr">app</code> קבצים בשם <code dir="ltr">tasks.py</code> ולטעון אותם, כך שכל פונקציה עם <code dir="ltr">@celery.task</code> תירשם אוטומטית. בלי זה, העובד היה יודע על התור אבל לא יכיר את הפונקציות.</p>
-</div>
-
-<!-- ===================== WORKER ===================== -->
-<div class="section-card" id="worker" dir="rtl">
-  <h2 class="section-title"><span class="section-icon">🏭</span> נקודת הכניסה של ה-Worker</h2>
-  <div class="file-path" dir="ltr">backend/app/worker.py <span class="line-count">(45 lines)</span></div>
-
-  <p>זה "כפתור ההפעלה" של העובד. הוא התוכנית שמריצים בטרמינל (או בקונטיינר Docker נפרד) כדי שהעיבוד ברקע יתחיל לעבוד.</p>
-
-  <h3>הקוד המלא</h3>
-  <pre class="code-block" dir="ltr"><code>"""StemSpace worker - Celery-based async separation (Phase 5).
-
-Usage:
-- ``celery -A app.celery_app worker --loglevel=info -Q separation``
-- ``python -m app.worker --check`` -&gt; startup smoke check
-- ``python -m app.worker`` -&gt; starts the Celery worker
-"""
-
-from __future__ import annotations
-
-import argparse
-import sys
-
-WORKER_NAME = "stemspace-worker"
-STARTUP_MESSAGE = f"[{WORKER_NAME}] Worker starting - Celery separation queue."
-
-
-def run_check() -&gt; int:
-    print(STARTUP_MESSAGE, flush=True)
-    from app.celery_app import celery  # noqa: F401
-    print(f"[{WORKER_NAME}] Celery app loaded OK.", flush=True)
-    return 0
-
-
-def run_worker() -&gt; None:
-    print(STARTUP_MESSAGE, flush=True)
-    from app.celery_app import celery
-    import app.tasks  # noqa: F401
-    celery.worker_main(["worker", "--loglevel=info", "-Q", "separation", "--concurrency=2"])
-
-
-def main(argv: list[str] | None = None) -&gt; int:
-    parser = argparse.ArgumentParser(prog="app.worker", description="StemSpace worker.")
-    parser.add_argument("--check", action="store_true", help="Smoke check and exit.")
-    args = parser.parse_args(argv)
-
-    if args.check:
-        return run_check()
-
-    run_worker()
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())</code></pre>
-
-  <h3>הסבר שלב אחרי שלב</h3>
-
-  <div class="concept-box">
-    <h4>מה זה Entry Point (נקודת כניסה)?</h4>
-    <p>נקודת כניסה היא המקום שבו תוכנית מתחילה לרוץ. בפייתון, הבלוק <code dir="ltr">if __name__ == "__main__":</code> רץ <strong>רק</strong> כשמריצים את הקובץ ישירות (<code dir="ltr">python -m app.worker</code>), ולא כשמישהו מייבא אותו. השורה <code dir="ltr">sys.exit(main())</code> מעבירה את קוד היציאה של <code dir="ltr">main</code> למערכת ההפעלה (0 = הצלחה, כל דבר אחר = שגיאה), וכך כלים חיצוניים כמו Docker או סקריפטים יודעים אם ההרצה הצליחה.</p>
   </div>
 
-  <h4>1. הדוקסטרינג (שורות 1-7)</h4>
-  <p>מסביר שלוש דרכי הפעלה: הפקודה הישירה של Celery, הרצה עם <code dir="ltr">--check</code> לבדיקה, והרצה רגילה.</p>
-
-  <h4>2. main ו-argparse (שורות 32-41)</h4>
-  <p><code dir="ltr">argparse</code> היא ספרייה מובנית שקוראת "דגלים" משורת הפקודה. <code dir="ltr">parser.add_argument("--check", action="store_true")</code> אומר: אם נכתב <code dir="ltr">--check</code>, המשתנה <code dir="ltr">args.check</code> יהיה <code dir="ltr">True</code>, אחרת <code dir="ltr">False</code>. לפי זה בוחרים בין בדיקה לבין הפעלה אמיתית.</p>
-
-  <h4>3. run_check (שורות 18-22)</h4>
-  <div class="concept-box">
-    <h4>מה זה Smoke Test?</h4>
-    <p>המונח מעולם האלקטרוניקה: מחברים מכשיר חדש לחשמל ובודקים אם יוצא עשן. בתוכנה: בדיקה מהירה ושטחית ש"הדבר בכלל עולה". היא לא בודקת את כל הפונקציונליות, רק שאין קריסה מיידית.</p>
-    <p>כאן, <code dir="ltr">--check</code> טוענת את אפליקציית Celery (שמוודא שהקוד נטען, ההגדרות קיימות, והייבואים עובדים), מדפיסה הודעה, ויוצאת עם קוד 0 בלי להתחיל לעבוד על משימות. אפשר להריץ אותה אוטומטית ב-CI או בבניית ה-Docker כדי לגלות מוקדם שהקונטיינר שבור, לפני שהוא נכנס לייצור (health check).</p>
+  <div class="quiz-section" id="quiz-chapter-5">
+    <h2 class="quiz-title">בחן את עצמך</h2>
+    <div class="quiz-container" id="quiz-container-chapter-5"></div>
+    <div class="quiz-result" id="quiz-result-chapter-5" style="display:none">
+      <div class="quiz-score" id="quiz-score-chapter-5"></div>
+    </div>
   </div>
 
-  <h4>4. run_worker (שורות 25-29)</h4>
-  <pre class="code-block" dir="ltr"><code>celery.worker_main(["worker", "--loglevel=info", "-Q", "separation", "--concurrency=2"])</code></pre>
-  <ul>
-    <li><code dir="ltr">import app.tasks</code> - מבטיח שהמשימות נטענות לפני שהעובד מתחיל להאזין.</li>
-    <li><code dir="ltr">--loglevel=info</code> - רמת פירוט ביומן.</li>
-    <li><code dir="ltr">-Q separation</code> - מאזין רק לתור "separation" (השם שהוגדר ב-<code dir="ltr">celery_app.py</code>).</li>
-    <li><code dir="ltr">--concurrency=2</code> - מריץ שני תהליכים במקביל.</li>
-  </ul>
-
-  <div class="concept-box">
-    <h4>מה זה Concurrency (מקביליות) של Worker?</h4>
-    <p>זה מספר התהליכים שהעובד מריץ ביחד, כלומר כמה משימות יכולות להתבצע <em>בו-זמנית</em> בעובד אחד. עם 2: שתי הפרדות במקביל, והשלישית ממתינה בתור. למה דווקא 2 ולא 20? כי הפרדת שמע צורכת הרבה זיכרון ומעבד (המודלים של בינה מלאכותית כבדים). יותר מדי תהליכים היו מאטים את כולם או קורסים מחוסר זיכרון. כשצריך לטפל ביותר עומס, מוסיפים עובדים נוספים (מחשבים או קונטיינרים), לא מגדילים את המקביליות.</p>
-    <p>שימו לב שזה משתלב עם <code dir="ltr">worker_prefetch_multiplier=1</code>: מתוך 2 תהליכים כל אחד לוקח משימה אחת בכל פעם.</p>
+  <div class="page-actions">
+    <button class="complete-btn" id="complete-btn-chapter-5" onclick="toggleComplete('chapter-5')">
+      <span class="complete-icon">&#10003;</span>
+      סמן כהושלם
+    </button>
   </div>
 
-  <div class="tip-box">
-    <strong>סיכום הזרימה המלאה:</strong> המשתמש מעלה קובץ (<code dir="ltr">upload.py</code>) &larr; <code dir="ltr">run_separation.delay()</code> מכניסה פתק לתור Redis (<code dir="ltr">celery_app.py</code>) &larr; ה-worker (<code dir="ltr">worker.py</code>) מושך אותו &larr; <code dir="ltr">tasks.py</code> מפעילה את המודל, שומרת תוצאות ב-MinIO (<code dir="ltr">storage.py</code>) &larr; הסטטוס מתעדכן ל-READY &larr; המשתמש מאזין דרך <code dir="ltr">songs.py</code>.
+  <div class="page-nav">
+    <button class="nav-btn prev-btn" onclick="navigateTo('chapter-4')">&#8594; העלאה ועיבוד</button>
+    <button class="nav-btn next-btn" onclick="navigateTo('chapter-6')">Frontend - ליבה &#8592;</button>
   </div>
 </div>
 
+<div class="page" id="page-chapter-6" style="display:none" dir="rtl">
+  <div class="page-header">
+    <span class="page-icon">⚛️</span>
+    <div>
+      <h1 class="page-title">Frontend - ליבה</h1>
+      <p class="page-desc">React, ניתוב, i18n ולקוחות API</p>
+    </div>
+  </div>
 
-<!-- ==================== PART 3: FRONTEND ==================== -->
-<div class="section-card" id="frontend-entry" dir="rtl">
+  <div class="page-content">
+    <div class="section-card" id="frontend-entry" dir="rtl">
   <h2>נקודת הכניסה של הפרונטאנד</h2>
   <p>הפרונטאנד (Frontend) הוא החלק של האתר שהמשתמש רואה ולוחץ עליו בדפדפן. בפרויקט VocalSplit הוא כתוב ב-React ונבנה עם כלי בשם Vite. הקבצים הראשונים שנפגוש הם שני "שערי הכניסה": <code dir="ltr">frontend/index.html</code> ו-<code dir="ltr">frontend/src/main.jsx</code>. כל מה שיקרה באתר מתחיל משם.</p>
 
@@ -7184,8 +7414,40 @@ export function validateFile(file) {
 
   <p>בסוף, הפונקציה מוודאת שהתשובה בנויה כמצופה (<code dir="ltr">Array.isArray(body?.stems)</code>) לפני שהיא מחזירה אותה. זו "תכנות הגנתי": לא סומכים על כך שהשרת תמיד יחזיר מה שהבטיח. התוצאה היא רשימת <code dir="ltr">{ stem, url }</code>, והממשק משתמש בכתובות כפי שהן, בלי לבנות כתובות בעצמו.</p>
 </div>
+  </div>
 
-<div class="section-card" id="auth-modal" dir="rtl">
+  <div class="quiz-section" id="quiz-chapter-6">
+    <h2 class="quiz-title">בחן את עצמך</h2>
+    <div class="quiz-container" id="quiz-container-chapter-6"></div>
+    <div class="quiz-result" id="quiz-result-chapter-6" style="display:none">
+      <div class="quiz-score" id="quiz-score-chapter-6"></div>
+    </div>
+  </div>
+
+  <div class="page-actions">
+    <button class="complete-btn" id="complete-btn-chapter-6" onclick="toggleComplete('chapter-6')">
+      <span class="complete-icon">&#10003;</span>
+      סמן כהושלם
+    </button>
+  </div>
+
+  <div class="page-nav">
+    <button class="nav-btn prev-btn" onclick="navigateTo('chapter-5')">&#8594; נתיבי API</button>
+    <button class="nav-btn next-btn" onclick="navigateTo('chapter-7')">Frontend - דפים &#8592;</button>
+  </div>
+</div>
+
+<div class="page" id="page-chapter-7" style="display:none" dir="rtl">
+  <div class="page-header">
+    <span class="page-icon">📱</span>
+    <div>
+      <h1 class="page-title">Frontend - דפים</h1>
+      <p class="page-desc">כל הדפים והרכיבים של הממשק</p>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <div class="section-card" id="auth-modal" dir="rtl">
   <h2>רכיב AuthModal: חלון ההתחברות</h2>
   <p>הקובץ <code dir="ltr">frontend/src/components/AuthModal.jsx</code> (כ-85 שורות) הוא החלון הצף שנפתח כשלוחצים "התחבר" או "צור חשבון". הוא מטפל בשלושה דברים: התחברות באימייל וסיסמה, הרשמה, והתחברות עם Google.</p>
 
@@ -8260,7 +8522,40 @@ async function onSubmit(e) {
 <!-- ===================================================================== -->
 
 <!-- ===================== AI OVERVIEW ===================== -->
-<section class="section-card" id="ai-overview" dir="rtl">
+  </div>
+
+  <div class="quiz-section" id="quiz-chapter-7">
+    <h2 class="quiz-title">בחן את עצמך</h2>
+    <div class="quiz-container" id="quiz-container-chapter-7"></div>
+    <div class="quiz-result" id="quiz-result-chapter-7" style="display:none">
+      <div class="quiz-score" id="quiz-score-chapter-7"></div>
+    </div>
+  </div>
+
+  <div class="page-actions">
+    <button class="complete-btn" id="complete-btn-chapter-7" onclick="toggleComplete('chapter-7')">
+      <span class="complete-icon">&#10003;</span>
+      סמן כהושלם
+    </button>
+  </div>
+
+  <div class="page-nav">
+    <button class="nav-btn prev-btn" onclick="navigateTo('chapter-6')">&#8594; Frontend - ליבה</button>
+    <button class="nav-btn next-btn" onclick="navigateTo('chapter-8')">בינה מלאכותית &#8592;</button>
+  </div>
+</div>
+
+<div class="page" id="page-chapter-8" style="display:none" dir="rtl">
+  <div class="page-header">
+    <span class="page-icon">🧠</span>
+    <div>
+      <h1 class="page-title">בינה מלאכותית</h1>
+      <p class="page-desc">UNet, Demucs, STFT והפרדת שמע</p>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <section class="section-card" id="ai-overview" dir="rtl">
   <h2>מודול הבינה המלאכותית: סקירה כללית</h2>
 
   <p>
@@ -8372,6 +8667,7 @@ async function onSubmit(e) {
 
 
 <!-- ===================== AI MODEL ===================== -->
+
 <section class="section-card" id="ai-model" dir="rtl">
   <h2>הגדרת המודל: model.py, local_model.py ו-__init__.py</h2>
 
@@ -8615,6 +8911,7 @@ out_conv + sigmoid  (1 ch, 513 x T)   = the mask
 
 
 <!-- ===================== AI AUDIO ===================== -->
+
 <section class="section-card" id="ai-audio" dir="rtl">
   <h2>קלט ופלט של קול: audio_io.py</h2>
 
@@ -8746,6 +9043,7 @@ def save_wav(destination: str, waveform, sample_rate: int = SAMPLE_RATE) -&gt; N
 
 
 <!-- ===================== AI STFT ===================== -->
+
 <section class="section-card" id="ai-stft" dir="rtl">
   <h2>STFT: הדרך להפוך קול לתמונה</h2>
 
@@ -8889,6 +9187,7 @@ vocals_wave = librosa.istft(vocals_spec, hop_length=256, length=len(waveform))
 
 
 <!-- ===================== AI LOCAL ===================== -->
+
 <section class="section-card" id="ai-local" dir="rtl">
   <h2>הרצה מקומית של המודל הבסיסי: local_inference.py</h2>
 
@@ -9072,6 +9371,7 @@ def run_local_separation(
 
 
 <!-- ===================== AI DEMUCS ===================== -->
+
 <section class="section-card" id="ai-demucs" dir="rtl">
   <h2>המודל המקצועי: demucs_inference.py</h2>
 
@@ -9277,6 +9577,7 @@ return outputs
 
 
 <!-- ===================== AI ROUTER ===================== -->
+
 <section class="section-card" id="ai-router" dir="rtl">
   <h2>נתב ההסקה: מי מחליט איזה מודל ירוץ</h2>
 
@@ -9362,6 +9663,7 @@ outputs = RUNNERS[model_tier](input_path, work_dir)
 
 
 <!-- ===================== AI CHECKPOINT ===================== -->
+
 <section class="section-card" id="ai-checkpoint" dir="rtl">
   <h2>ניהול משקולות (Checkpoints)</h2>
 
@@ -9497,6 +9799,7 @@ def public_checkpoint_response(model_tier):  # safe for clients
 
 
 <!-- ===================== AI METRICS ===================== -->
+
 <section class="section-card" id="ai-metrics" dir="rtl">
   <h2>מדידת הרצות: metrics.py</h2>
 
@@ -9590,7 +9893,40 @@ def sdr(reference: np.ndarray, estimate: np.ndarray) -&gt; float:
 
 
 <!-- ===================== SCHEMAS ===================== -->
-<section class="section-card" id="schemas" dir="rtl">
+  </div>
+
+  <div class="quiz-section" id="quiz-chapter-8">
+    <h2 class="quiz-title">בחן את עצמך</h2>
+    <div class="quiz-container" id="quiz-container-chapter-8"></div>
+    <div class="quiz-result" id="quiz-result-chapter-8" style="display:none">
+      <div class="quiz-score" id="quiz-score-chapter-8"></div>
+    </div>
+  </div>
+
+  <div class="page-actions">
+    <button class="complete-btn" id="complete-btn-chapter-8" onclick="toggleComplete('chapter-8')">
+      <span class="complete-icon">&#10003;</span>
+      סמן כהושלם
+    </button>
+  </div>
+
+  <div class="page-nav">
+    <button class="nav-btn prev-btn" onclick="navigateTo('chapter-7')">&#8594; Frontend - דפים</button>
+    <button class="nav-btn next-btn" onclick="navigateTo('chapter-9')">CSS, סכמות ובנייה &#8592;</button>
+  </div>
+</div>
+
+<div class="page" id="page-chapter-9" style="display:none" dir="rtl">
+  <div class="page-header">
+    <span class="page-icon">🎨</span>
+    <div>
+      <h1 class="page-title">CSS, סכמות ובנייה</h1>
+      <p class="page-desc">עיצוב, Pydantic, Vite ו-Dockerfile</p>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <section class="section-card" id="schemas" dir="rtl">
   <h2>סכמות Pydantic: backend/app/schemas/core.py</h2>
 
   <p>
@@ -9717,6 +10053,7 @@ def get_song(song_id: UUID, db: Session = Depends(get_db)):
 
 
 <!-- ===================== ALEMBIC ===================== -->
+
 <section class="section-card" id="alembic" dir="rtl">
   <h2>מיגרציות מסד נתונים: backend/alembic/env.py</h2>
 
@@ -9843,6 +10180,7 @@ alembic downgrade -1
 
 
 <!-- ===================== CSS DESIGN SYSTEM ===================== -->
+
 <section class="section-card" id="css-design" dir="rtl">
   <h2>מערכת העיצוב: תיקיית frontend/src/styles</h2>
 
@@ -10541,6 +10879,7 @@ audio {
 
 
 <!-- ===================== VITE CONFIG ===================== -->
+
 <section class="section-card" id="vite-config" dir="rtl">
   <h2>הגדרת Vite: frontend/vite.config.js</h2>
 
@@ -10651,6 +10990,7 @@ Browser  &lt;--  the response, as if it came from :5173
 
 
 <!-- ===================== FRONTEND DOCKER ===================== -->
+
 <section class="section-card" id="frontend-docker" dir="rtl">
   <h2>Docker לפרונטאנד: frontend/Dockerfile</h2>
 
@@ -10783,13 +11123,41 @@ EXPOSE 80
     </p>
   </div>
 </section>
+  </div>
 
+  <div class="quiz-section" id="quiz-chapter-9">
+    <h2 class="quiz-title">בחן את עצמך</h2>
+    <div class="quiz-container" id="quiz-container-chapter-9"></div>
+    <div class="quiz-result" id="quiz-result-chapter-9" style="display:none">
+      <div class="quiz-score" id="quiz-score-chapter-9"></div>
+    </div>
+  </div>
 
+  <div class="page-actions">
+    <button class="complete-btn" id="complete-btn-chapter-9" onclick="toggleComplete('chapter-9')">
+      <span class="complete-icon">&#10003;</span>
+      סמן כהושלם
+    </button>
+  </div>
 
-</main>
+  <div class="page-nav">
+    <button class="nav-btn prev-btn" onclick="navigateTo('chapter-8')">&#8594; בינה מלאכותית</button>
+    <div></div>
+  </div>
+</div>
 
+</div>
+</div>
 
-<!-- ====================== TECH MODAL CONTENT (TEMPLATES) ====================== -->
+<!-- Tech modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box" id="modal-box" dir="rtl">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- Tech modal templates -->
 <div id="tech-templates" hidden>
 
 <template id="t-python" data-title="Python" data-sub="שפת תכנות | ה-backend, ה-worker והבינה המלאכותית">
@@ -11362,316 +11730,867 @@ sf.write("out.wav", waveform, sr)
     </div>
     <div class="modal-body" id="modalBody"></div>
   </div>
-</div>
 
 <script>
 (function(){
 "use strict";
 
-/* ---------- technology catalogue (drives the hero badge grid) ---------- */
-var CATS = {
-  lang:{n:"שפה",c:"#a78bfa"}, back:{n:"BACKEND",c:"#06b6d4"}, front:{n:"FRONTEND",c:"#f472b6"},
-  data:{n:"נתונים",c:"#fbbf24"}, infra:{n:"תשתית",c:"#34d399"}, sec:{n:"אבטחה",c:"#f87171"}, ai:{n:"AI ושמע",c:"#fb923c"}
-};
-var TECH = [
-  ["python","Python","שפת התכנות של כל ה-backend","lang"],
-  ["fastapi","FastAPI","שרת ה-API המהיר","back"],
-  ["react","React","הממשק שהמשתמש רואה","front"],
-  ["vite","Vite","בנייה ושרת פיתוח","front"],
-  ["postgresql","PostgreSQL","מסד הנתונים","data"],
-  ["sqlalchemy","SQLAlchemy","מחלקות פייתון במקום SQL","data"],
-  ["redis","Redis","תור משימות בזיכרון","data"],
-  ["celery","Celery","עיבוד כבד ברקע","back"],
-  ["minio","MinIO / S3","אחסון קבצי השמע","infra"],
-  ["docker","Docker","7 קונטיינרים, פקודה אחת","infra"],
-  ["alembic","Alembic","מיגרציות של המסד","data"],
-  ["pydantic","Pydantic","אימות נתונים","back"],
-  ["scrypt","scrypt","גיבוב סיסמאות","sec"],
-  ["sessions","JWT / Sessions","עוגיות והתחברות","sec"],
-  ["google-oauth","Google OAuth","התחברות עם Google","sec"],
-  ["smtp","SMTP","שליחת מיילים","infra"],
-  ["demucs","Demucs","המודל המקצועי של Meta","ai"],
-  ["pytorch","PyTorch","הרצת רשתות עצביות","ai"],
-  ["stft","STFT","מצליל לספקטרוגרמה","ai"],
-  ["librosa","librosa","קריאת שמע ועיבוד","ai"]
-];
-var grid = document.getElementById("badgeGrid");
-TECH.forEach(function(t){
-  var b = document.createElement("button");
-  b.type = "button"; b.className = "tbadge"; b.setAttribute("data-tech", t[0]);
-  b.style.setProperty("--c", CATS[t[3]].c);
-  b.innerHTML = "<em>"+CATS[t[3]].n+"</em><strong></strong><span></span>";
-  b.querySelector("strong").textContent = t[1];
-  b.querySelector("span").textContent = t[2];
-  b.setAttribute("aria-haspopup","dialog");
-  grid.appendChild(b);
-});
+/* ── State ── */
+var CHAPTERS = [{"id": "chapter-1", "title": "ארכיטקטורה ו-Docker", "icon": "🏗️", "desc": "סקירה כללית של המערכת, 7 הקונטיינרים ואיך הם מתקשרים", "sections": ["primer", "architecture", "docker"]}, {"id": "chapter-2", "title": "הגדרות ומסד נתונים", "icon": "🗄️", "desc": "Settings, קבועים, SQLAlchemy ו-Alembic", "sections": ["config", "database"]}, {"id": "chapter-3", "title": "מערכת אימות", "icon": "🔐", "desc": "סיסמאות, סשנים, Google OAuth ואיפוס סיסמה", "sections": ["auth"]}, {"id": "chapter-4", "title": "העלאה ועיבוד", "icon": "📤", "desc": "Upload, Celery, MinIO ותור המשימות", "sections": ["upload", "tasks", "celery-config", "worker", "storage"]}, {"id": "chapter-5", "title": "נתיבי API", "icon": "🛤️", "desc": "כל ה-endpoints של השרת", "sections": ["songs", "library", "public", "quotas", "admin", "billing", "settings-routes", "demo", "helpers", "email"]}, {"id": "chapter-6", "title": "Frontend - ליבה", "icon": "⚛️", "desc": "React, ניתוב, i18n ולקוחות API", "sections": ["frontend-entry", "app-component", "i18n", "frontend-helpers", "auth-api", "songs-api", "demo-api"]}, {"id": "chapter-7", "title": "Frontend - דפים", "icon": "📱", "desc": "כל הדפים והרכיבים של הממשק", "sections": ["auth-modal", "components", "home-page", "upload-page", "song-page", "library-explore", "settings-page", "admin-page", "other-pages"]}, {"id": "chapter-8", "title": "בינה מלאכותית", "icon": "🧠", "desc": "UNet, Demucs, STFT והפרדת שמע", "sections": ["ai-overview", "ai-model", "ai-audio", "ai-stft", "ai-local", "ai-demucs", "ai-router", "ai-checkpoint", "ai-metrics"]}, {"id": "chapter-9", "title": "CSS, סכמות ובנייה", "icon": "🎨", "desc": "עיצוב, Pydantic, Vite ו-Dockerfile", "sections": ["schemas", "alembic", "css-design", "vite-config", "frontend-docker"]}];
+var completed = {};
+var currentPage = "home";
 
-/* ---------- decorative waveform ---------- */
-var wave = document.getElementById("wave");
-for (var i=0;i<56;i++){
-  var bar = document.createElement("i");
-  var h = 18 + 78*Math.abs(Math.sin(i*0.37)*Math.cos(i*0.11+1));
-  bar.style.height = h.toFixed(0)+"%";
-  bar.style.animationDelay = (i*0.05).toFixed(2)+"s";
-  wave.appendChild(bar);
+/* ── localStorage helpers ── */
+function loadProgress(){
+  try{var d=localStorage.getItem("vs_progress");if(d)completed=JSON.parse(d)}catch(e){}
 }
-
-/* ---------- tiny syntax highlighter ---------- */
-function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
-function set(str){var o={};str.split(" ").forEach(function(w){o[w]=1;});return o;}
-var PY_KW = set("and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield");
-var PY_CONST = set("True False None self cls");
-var PY_BUILTIN = set("print len str int float bool dict list set tuple frozenset bytes isinstance super range open type enumerate sorted zip map min max sum any all repr getattr hasattr");
-var JS_KW = set("import export default from const let var function return if else for while new class extends async await try catch finally throw typeof of in null undefined true false this");
-var SQL_KW = set("SELECT FROM WHERE JOIN ON AND OR NOT IN IS NULL ORDER BY GROUP LIMIT DESC ASC INSERT INTO VALUES UPDATE SET DELETE CREATE TABLE PRIMARY KEY FOREIGN REFERENCES UNIQUE CHECK DEFAULT AS LEFT INNER");
-var DF_KW = set("FROM RUN COPY CMD ENV WORKDIR EXPOSE ADD ENTRYPOINT ARG USER VOLUME");
-
-function emit(cls,text){
-  return text.split("\n").map(function(p){return p ? '<span class="'+cls+'">'+esc(p)+'</span>' : "";}).join("\n");
+function saveProgress(){
+  try{localStorage.setItem("vs_progress",JSON.stringify(completed))}catch(e){}
 }
+loadProgress();
 
-function hlPython(src){
-  var re = /("""[\s\S]*?"""|'''[\s\S]*?''')|(#[^\n]*)|((?:[fFrRbBuU]{1,2})?(?:"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'))|(@[A-Za-z_][\w.]*)|(\b\d[\d_]*(?:\.\d+)?\b)|([A-Za-z_]\w*)/g;
-  var out="", last=0, m, prev="";
-  while((m = re.exec(src))){
-    out += esc(src.slice(last, m.index));
-    var t = m[0];
-    if (m[1]) out += emit("tk-cm", t);
-    else if (m[2]) out += emit("tk-cm", t);
-    else if (m[3]) out += emit("tk-str", t);
-    else if (m[4]) out += emit("tk-dec", t);
-    else if (m[5]) out += emit("tk-num", t);
-    else {
-      var next = src.charAt(m.index + t.length);
-      if (PY_KW[t]) out += emit("tk-kw", t);
-      else if (PY_CONST[t]) out += emit("tk-const", t);
-      else if (prev === "class" || prev === "def") out += emit(prev === "class" ? "tk-cls" : "tk-fn", t);
-      else if (PY_BUILTIN[t] || next === "(") out += emit(/^[A-Z]/.test(t) ? "tk-cls" : "tk-fn", t);
-      else if (/^[A-Z][a-z]/.test(t)) out += emit("tk-cls", t);
-      else out += esc(t);
-      prev = t;
+/* ── Navigation ── */
+window.navigateTo = function(id){
+  // Hide all pages
+  var pages = document.querySelectorAll(".page");
+  for(var i=0;i<pages.length;i++) pages[i].style.display="none";
+
+  // Show target
+  var target = document.getElementById("page-"+id);
+  if(target){
+    target.style.display="block";
+    window.scrollTo(0,0);
+  }
+
+  // Update nav active state
+  var links = document.querySelectorAll(".nav-chapter-link");
+  for(var i=0;i<links.length;i++){
+    links[i].classList.remove("active");
+    if(links[i].getAttribute("onclick") && links[i].getAttribute("onclick").indexOf("'"+id+"'")>=0){
+      links[i].classList.add("active");
     }
-    if (!m[6]) prev = "";
-    last = m.index + t.length;
   }
-  return out + esc(src.slice(last));
+
+  currentPage = id;
+  window.location.hash = id;
+
+  // Close mobile sidebar
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("mobile-overlay").classList.remove("open");
+
+  // Update complete button state
+  updateCompleteBtn(id);
+
+  // Process code blocks in the page if needed
+  if(target) processPageCode(target);
+};
+
+/* ── Process code blocks (Part 1 script-based) ── */
+function processPageCode(page){
+  var scripts = page.querySelectorAll('script[type="text-x-code"],script[type="text/x-code"]');
+  for(var i=0;i<scripts.length;i++){
+    if(scripts[i].dataset.processed) continue;
+    scripts[i].dataset.processed = "1";
+    var lang = scripts[i].dataset.lang || "text";
+    var file = scripts[i].dataset.file || "";
+    var code = scripts[i].textContent;
+
+    var wrap = document.createElement("div");
+    wrap.className = "code-wrap";
+    if(scripts[i].dataset.mini) wrap.classList.add("mini");
+    if(scripts[i].dataset.tall) wrap.classList.add("tall");
+
+    var html = "";
+    if(file) html += '<div class="fname">'+file+'</div>';
+    html += '<button class="copy-btn" onclick="copyCode(this)">copy</button>';
+    html += '<pre>';
+    var lines = code.split('\n');
+    // Remove leading/trailing empty lines
+    while(lines.length && !lines[0].trim()) lines.shift();
+    while(lines.length && !lines[lines.length-1].trim()) lines.pop();
+    for(var j=0;j<lines.length;j++){
+      html += '<span class="ln"></span>' + escapeHtml(lines[j]) + '\n';
+    }
+    html += '</pre>';
+    wrap.innerHTML = html;
+    scripts[i].parentNode.insertBefore(wrap, scripts[i]);
+  }
 }
 
-function hlGeneric(src, lang){
-  var re, handler;
-  if (lang === "yaml") {
-    re = /(#[^\n]*)|("(?:\\.|[^"\\\n])*"|'[^'\n]*')|(\$\{[^}\n]*\})|(^[ \t]*-?[ \t]*)([A-Za-z_][\w.\-]*)(?=:)|(\b\d+\b)/gm;
-    handler = function(m){
-      if (m[1]) return emit("tk-cm", m[0]);
-      if (m[2]) return emit("tk-str", m[0]);
-      if (m[3]) return emit("tk-var", m[0]);
-      if (m[5]) return esc(m[4]) + emit("tk-key", m[5]);
-      return emit("tk-num", m[0]);
-    };
-  } else if (lang === "ini") {
-    re = /(#[^\n]*)|(\$\{[^}\n]*\})|(^[A-Za-z_]\w*)(?==)/gm;
-    handler = function(m){
-      if (m[1]) return emit("tk-cm", m[0]);
-      if (m[2]) return emit("tk-var", m[0]);
-      return emit("tk-key", m[0]);
-    };
-  } else if (lang === "bash") {
-    re = /(^[ \t]*#[^\n]*|[ \t]#[^\n]*)|("(?:\\.|[^"\\\n])*"|'[^'\n]*')|(\$\{?\w+\}?)|([ \t]--?[A-Za-z][\w-]*)|\b(docker|compose|pip|python|npm|alembic|uvicorn|curl|celery|redis-cli|git|source|exec|up|down|logs|ps|install|run)\b/gm;
-    handler = function(m){
-      if (m[1]) return emit("tk-cm", m[0]);
-      if (m[2]) return emit("tk-str", m[0]);
-      if (m[3]) return emit("tk-var", m[0]);
-      if (m[4]) return esc(m[4].charAt(0)) + emit("tk-flag", m[4].slice(1));
-      return emit("tk-fn", m[0]);
-    };
-  } else if (lang === "docker") {
-    re = /(#[^\n]*)|("(?:\\.|[^"\\\n])*")|(^[ \t]*)([A-Z]{3,10})\b/gm;
-    handler = function(m){
-      if (m[1]) return emit("tk-cm", m[0]);
-      if (m[2]) return emit("tk-str", m[0]);
-      return DF_KW[m[4]] ? esc(m[3]) + emit("tk-kw", m[4]) : esc(m[0]);
-    };
-  } else if (lang === "sql") {
-    re = /(--[^\n]*)|('(?:[^'\n]|'')*')|(\b\d+\b)|([A-Za-z_]+)/g;
-    handler = function(m){
-      if (m[1]) return emit("tk-cm", m[0]);
-      if (m[2]) return emit("tk-str", m[0]);
-      if (m[3]) return emit("tk-num", m[0]);
-      return SQL_KW[m[4].toUpperCase()] ? emit("tk-kw", m[4]) : esc(m[0]);
-    };
-  } else if (lang === "jsx" || lang === "js") {
-    re = /(\/\/[^\n]*)|(`(?:\\.|[^`\\])*`|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')|(<\/?[A-Za-z][\w.]*)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][\w$]*)/g;
-    handler = function(m){
-      if (m[1]) return emit("tk-cm", m[0]);
-      if (m[2]) return emit("tk-str", m[0]);
-      if (m[3]) return emit("tk-tag", m[0]);
-      if (m[4]) return emit("tk-num", m[0]);
-      if (JS_KW[m[5]]) return emit("tk-kw", m[5]);
-      return /^use[A-Z]/.test(m[5]) ? emit("tk-fn", m[5]) : esc(m[5]);
-    };
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+window.copyCode = function(btn){
+  var pre = btn.parentNode.querySelector("pre");
+  if(pre){
+    var text = pre.textContent;
+    try{navigator.clipboard.writeText(text);btn.textContent="copied!";setTimeout(function(){btn.textContent="copy"},1500)}
+    catch(e){btn.textContent="error"}
+  }
+};
+
+/* ── Progress ── */
+window.toggleComplete = function(id){
+  completed[id] = !completed[id];
+  saveProgress();
+  updateUI();
+};
+
+function updateCompleteBtn(id){
+  var btn = document.getElementById("complete-btn-"+id);
+  if(!btn) return;
+  if(completed[id]){
+    btn.classList.add("completed");
+    btn.innerHTML = '<span class="complete-icon">&#10003;</span> הושלם!';
   } else {
-    return esc(src);
-  }
-  var out="", last=0, m;
-  while((m = re.exec(src))){
-    if (m[0] === "") { re.lastIndex++; continue; }
-    out += esc(src.slice(last, m.index)) + handler(m);
-    last = m.index + m[0].length;
-  }
-  return out + esc(src.slice(last));
-}
-
-function highlight(src, lang){
-  var html = (lang === "python") ? hlPython(src) : hlGeneric(src, lang);
-  return html.split("\n").map(function(l){return '<span class="line">'+(l||" ")+'</span>';}).join("");
-}
-
-function copyText(text, btn){
-  var done = function(){ var o = btn.textContent; btn.textContent = "הועתק"; setTimeout(function(){btn.textContent = o;},1400); };
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(done, function(){ fallback(); });
-  } else fallback();
-  function fallback(){
-    var ta = document.createElement("textarea"); ta.value = text; ta.style.position="fixed"; ta.style.opacity="0";
-    document.body.appendChild(ta); ta.select();
-    try{ document.execCommand("copy"); done(); }catch(e){}
-    document.body.removeChild(ta);
+    btn.classList.remove("completed");
+    btn.innerHTML = '<span class="complete-icon">&#10003;</span> סמן כהושלם';
   }
 }
 
-function buildCode(el){
-  var lang = el.getAttribute("data-lang") || "text";
-  var src = el.textContent.replace(/^\n+/, "").replace(/\s+$/, "");
-  var wrap = document.createElement("div");
-  wrap.className = "codeblock" + (el.hasAttribute("data-tall") ? " tall" : "") + (el.hasAttribute("data-mini") ? " mini" : "");
-  wrap.setAttribute("dir","ltr");
-  wrap.innerHTML = '<div class="cb-head"><span class="file"></span><span class="meta"><span class="lang"></span><button class="copy" type="button">העתק</button></span></div><pre tabindex="0"><code></code></pre>';
-  wrap.querySelector(".file").textContent = el.getAttribute("data-file") || "";
-  wrap.querySelector(".lang").textContent = lang;
-  wrap.querySelector("code").innerHTML = highlight(src, lang);
-  wrap.querySelector(".copy").addEventListener("click", function(e){ copyText(src, e.currentTarget); });
-  el.parentNode.replaceChild(wrap, el);
+function updateUI(){
+  var done = 0;
+  for(var i=0;i<CHAPTERS.length;i++){
+    var ch = CHAPTERS[i];
+    var check = document.getElementById("check-"+ch.id);
+    var status = document.querySelector('#card-'+ch.id+' .card-status');
+    if(completed[ch.id]){
+      done++;
+      if(check) check.classList.add("done");
+      if(check) check.textContent = "✓";
+      if(status){status.classList.add("done");status.textContent="✓"}
+    } else {
+      if(check) check.classList.remove("done");
+      if(check) check.textContent = "";
+      if(status){status.classList.remove("done");status.textContent=""}
+    }
+    updateCompleteBtn(ch.id);
+  }
+  var pct = Math.round(done/CHAPTERS.length*100);
+  var bar = document.getElementById("progress-bar");
+  var txt = document.getElementById("progress-text");
+  if(bar) bar.style.width = pct+"%";
+  if(txt) txt.textContent = done+" / "+CHAPTERS.length+" הושלמו";
 }
-function processCode(root){
-  var list = root.querySelectorAll('script[type="text/x-code"]');
-  for (var i=0;i<list.length;i++) buildCode(list[i]);
+
+/* ── Build home page ── */
+function buildHome(){
+  var grid = document.getElementById("chapters-grid");
+  if(!grid) return;
+  var html = "";
+  for(var i=0;i<CHAPTERS.length;i++){
+    var ch = CHAPTERS[i];
+    var secCount = ch.sections ? ch.sections.length : 0;
+    html += '<div class="chapter-card" id="card-'+ch.id+'" onclick="navigateTo(\''+ch.id+'\')">';
+    html += '<div class="card-status"></div>';
+    html += '<div class="card-icon">'+ch.icon+'</div>';
+    html += '<h3>'+ch.title+'</h3>';
+    html += '<p>'+ch.desc+'</p>';
+    html += '<div class="card-badge">'+secCount+' sections</div>';
+    html += '</div>';
+  }
+  grid.innerHTML = html;
 }
-processCode(document.getElementById("top"));
 
-/* ---------- modal system ---------- */
-var bg = document.getElementById("modalBg");
-var mBody = document.getElementById("modalBody");
-var mTitle = document.getElementById("modalTitle");
-var mSub = document.getElementById("modalSub");
-var lastFocus = null;
+/* ── Build tech badges on home ── */
+function buildTechBadges(){
+  var techs = [
+    "Python","FastAPI","React","Vite","PostgreSQL","SQLAlchemy",
+    "Redis","Celery","MinIO","Docker","Alembic","Pydantic",
+    "scrypt","Sessions","Google OAuth","SMTP","Demucs","PyTorch","STFT","librosa"
+  ];
+  var ids = [
+    "python","fastapi","react","vite","postgresql","sqlalchemy",
+    "redis","celery","minio","docker","alembic","pydantic",
+    "scrypt","sessions","google-oauth","smtp","demucs","pytorch","stft","librosa"
+  ];
+  var grid = document.getElementById("tech-grid");
+  if(!grid) return;
+  var html = "";
+  for(var i=0;i<techs.length;i++){
+    html += '<span class="tech-badge" onclick="openTech(\''+ids[i]+'\')"><span class="dot"></span>'+techs[i]+'</span>';
+  }
+  grid.innerHTML = html;
+}
 
-function openTech(key){
-  var tpl = document.getElementById("t-"+key);
-  if (!tpl) return;
-  lastFocus = document.activeElement;
-  mTitle.textContent = tpl.getAttribute("data-title") || key;
-  mSub.textContent = tpl.getAttribute("data-sub") || "";
-  mBody.innerHTML = "";
-  mBody.appendChild(tpl.content.cloneNode(true));
-  processCode(mBody);
-  bg.classList.add("open");
-  bg.setAttribute("aria-hidden","false");
+/* ── Tech modals ── */
+window.openTech = function(id){
+  var tpl = document.getElementById("t-"+id);
+  var overlay = document.getElementById("modal-overlay");
+  var content = document.getElementById("modal-content");
+  var box = document.getElementById("modal-box");
+  if(!overlay) return;
+
+  if(tpl){
+    var title = tpl.dataset.title || id;
+    var sub = tpl.dataset.sub || "";
+    content.innerHTML = '<h3>'+title+'</h3><div class="modal-sub">'+sub+'</div>' + tpl.innerHTML;
+  } else {
+    content.innerHTML = '<h3>'+id+'</h3><p>תוכן בקרוב...</p>';
+  }
+  overlay.classList.add("open");
   document.body.style.overflow = "hidden";
-  bg.scrollTop = 0;
-  document.getElementById("modalClose").focus();
-}
-function closeModal(){
-  if (!bg.classList.contains("open")) return;
-  bg.classList.remove("open");
-  bg.setAttribute("aria-hidden","true");
+};
+
+window.closeModal = function(){
+  document.getElementById("modal-overlay").classList.remove("open");
   document.body.style.overflow = "";
-  if (lastFocus && lastFocus.focus) { try{ lastFocus.focus({preventScroll:true}); }catch(e){} }
-}
-document.addEventListener("click", function(e){
-  var t = e.target.closest("[data-tech]");
-  if (t) { e.preventDefault(); openTech(t.getAttribute("data-tech")); return; }
-  if (e.target === bg || e.target.closest("[data-close]")) { closeModal(); return; }
-  if (e.target.closest("[data-closemodal]")) { closeModal(); }
-});
+};
+
 document.addEventListener("keydown", function(e){
-  if (!bg.classList.contains("open")) return;
-  if (e.key === "Escape") { closeModal(); return; }
-  if (e.key === "Tab") {
-    var f = bg.querySelectorAll('button, a[href], [data-tech], pre[tabindex]');
-    if (!f.length) return;
-    var first = f[0], last = f[f.length-1];
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  if(e.key==="Escape") closeModal();
+});
+
+/* ── Mobile sidebar ── */
+window.toggleSidebar = function(){
+  document.getElementById("sidebar").classList.toggle("open");
+  document.getElementById("mobile-overlay").classList.toggle("open");
+};
+
+/* ── Quiz system ── */
+var quizState = {};
+
+window.renderQuiz = function(chapterId, questions){
+  var container = document.getElementById("quiz-container-"+chapterId);
+  if(!container || !questions || !questions.length) return;
+
+  quizState[chapterId] = {questions: questions, answers: {}, checked: false};
+
+  var html = '';
+  var letters = ['א','ב','ג','ד']; // א ב ג ד
+  for(var i=0;i<questions.length;i++){
+    var q = questions[i];
+    html += '<div class="quiz-q" data-qi="'+i+'">';
+    html += '<div class="q-text"><span class="q-num">'+(i+1)+'.</span> '+q.q+'</div>';
+    for(var j=0;j<q.options.length;j++){
+      html += '<div class="quiz-option" data-qi="'+i+'" data-oi="'+j+'" onclick="selectOption(\''+chapterId+'\','+i+','+j+')">';
+      html += '<span class="opt-letter">'+letters[j]+'</span>';
+      html += '<span>'+q.options[j]+'</span>';
+      html += '</div>';
+    }
+    html += '<div class="quiz-explanation" id="expl-'+chapterId+'-'+i+'">'+q.explanation+'</div>';
+    html += '</div>';
   }
-});
-document.addEventListener("keydown", function(e){
-  if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("tl")) {
-    e.preventDefault(); openTech(e.target.getAttribute("data-tech"));
+  html += '<button class="quiz-check-btn" id="check-quiz-'+chapterId+'" onclick="checkQuiz(\''+chapterId+'\')">בדוק תשובות</button>';
+  container.innerHTML = html;
+};
+
+window.selectOption = function(chapterId, qi, oi){
+  var state = quizState[chapterId];
+  if(!state || state.checked) return;
+  state.answers[qi] = oi;
+
+  // Update UI
+  var container = document.getElementById("quiz-container-"+chapterId);
+  var options = container.querySelectorAll('.quiz-option[data-qi="'+qi+'"]');
+  for(var i=0;i<options.length;i++){
+    options[i].classList.remove("selected");
+    if(parseInt(options[i].dataset.oi) === oi) options[i].classList.add("selected");
   }
-});
-/* make inline tech links keyboard reachable */
-Array.prototype.forEach.call(document.querySelectorAll("a.tl[data-tech]"), function(a){
-  a.setAttribute("role","button"); a.setAttribute("tabindex","0");
-});
-if (location.hash.indexOf("#tech-") === 0) openTech(location.hash.slice(6));
+};
 
-/* ---------- sidebar: mobile toggle, scroll-spy, progress ---------- */
-var sidebar = document.getElementById("sidebar");
-var overlay = document.getElementById("overlayNav");
-var burger = document.getElementById("burger");
-function setNav(open){
-  sidebar.classList.toggle("open", open);
-  overlay.classList.toggle("open", open);
-  burger.setAttribute("aria-expanded", open ? "true" : "false");
-}
-burger.addEventListener("click", function(){ setNav(!sidebar.classList.contains("open")); });
-overlay.addEventListener("click", function(){ setNav(false); });
-document.getElementById("nav").addEventListener("click", function(e){ if (e.target.closest("a")) setNav(false); });
+window.checkQuiz = function(chapterId){
+  var state = quizState[chapterId];
+  if(!state) return;
+  state.checked = true;
 
-var links = {};
-Array.prototype.forEach.call(document.querySelectorAll("#nav a[href^='#']"), function(a){ links[a.getAttribute("href").slice(1)] = a; });
+  var correct = 0;
+  var container = document.getElementById("quiz-container-"+chapterId);
 
-function markActive(id){
-  Object.keys(links).forEach(function(k){ links[k].classList.remove("active"); });
-  var a = links[id];
-  if (!a) return;
-  a.classList.add("active");
-  var top = a.offsetTop, st = sidebar.scrollTop, h = sidebar.clientHeight;
-  if (top < st + 60 || top > st + h - 80) sidebar.scrollTop = Math.max(0, top - h/3);
-}
-var targets = [];
-Object.keys(links).forEach(function(id){
-  var el = document.getElementById(id);
-  if (el) targets.push(el);
-});
-function spy(){
-  var y = window.scrollY + 120, cur = null;
-  for (var i=0;i<targets.length;i++){
-    if (targets[i].id === "top") continue;
-    var el = targets[i];
-    var pos = el.getBoundingClientRect().top + window.scrollY;
-    if (pos <= y) cur = el.id;
+  for(var i=0;i<state.questions.length;i++){
+    var q = state.questions[i];
+    var userAns = state.answers[i];
+    var options = container.querySelectorAll('.quiz-option[data-qi="'+i+'"]');
+
+    for(var j=0;j<options.length;j++){
+      options[j].style.cursor = "default";
+      if(j === q.correct) options[j].classList.add("correct");
+      if(userAns === j && j !== q.correct) options[j].classList.add("wrong");
+    }
+
+    if(userAns === q.correct) correct++;
+
+    // Show explanation
+    var expl = document.getElementById("expl-"+chapterId+"-"+i);
+    if(expl) expl.classList.add("show");
   }
-  markActive(cur || "top");
-}
-var bar = document.querySelector("#progress i");
-var ticking = false;
-function onScroll(){
-  if (ticking) return; ticking = true;
-  requestAnimationFrame(function(){
-    var h = document.documentElement.scrollHeight - window.innerHeight;
-    bar.style.width = (h > 0 ? (window.scrollY / h * 100) : 0) + "%";
-    spy(); ticking = false;
-  });
-}
-window.addEventListener("scroll", onScroll, {passive:true});
-window.addEventListener("resize", onScroll);
-onScroll();
 
-/* public hooks so later chapters can reuse the helpers */
-window.VocalSplitAcademy = { openTech: openTech, closeModal: closeModal, processCode: processCode, buildCode: buildCode };
+  // Show score
+  var resultDiv = document.getElementById("quiz-result-"+chapterId);
+  var scoreDiv = document.getElementById("quiz-score-"+chapterId);
+  if(resultDiv && scoreDiv){
+    resultDiv.style.display = "block";
+    var pct = Math.round(correct/state.questions.length*100);
+    var emoji = pct >= 80 ? "🎉" : pct >= 60 ? "👍" : "💪";
+    scoreDiv.innerHTML = emoji + ' ' + correct + ' / ' + state.questions.length + '<span class="score-label">'+pct+'% - '+(pct>=80?'מצוין!':pct>=60?'טוב! נסו שוב את מה שפספסתם':'כדאי לחזור על החומר')+'</span>';
+  }
+
+  // Disable check button
+  var btn = document.getElementById("check-quiz-"+chapterId);
+  if(btn) btn.disabled = true;
+};
+
+/* ── Init ── */
+buildHome();
+buildTechBadges();
+updateUI();
+
+// Handle hash routing
+function route(){
+  var hash = window.location.hash.replace("#","") || "home";
+  navigateTo(hash);
+}
+window.addEventListener("hashchange", route);
+
+// Show home on load
+var initHash = window.location.hash.replace("#","");
+if(initHash && document.getElementById("page-"+initHash)){
+  navigateTo(initHash);
+} else {
+  document.getElementById("page-home").style.display = "block";
+}
+
 })();
 </script>
+
+<script>
+const QUIZZES = {
+  "chapter-1": [
+    {
+      q: "ב-docker-compose.yml של הפרויקט מוגדרים 7 שירותים. איזה מהם הוא כלי עזר לפיתוח בלבד, ולא חלק מהזרימה של האפליקציה עצמה?",
+      options: [
+        "redis - הוא משמש רק לשמירת סשנים של משתמשים",
+        "adminer - ממשק ווב לצפייה ולעריכה של מסד הנתונים PostgreSQL",
+        "minio - הוא משמש רק לגיבוי לילי של הקוד",
+        "worker - הוא מריץ את שרת ה-API במקום ה-backend"
+      ],
+      correct: 1,
+      explanation: "adminer הוא ממשק ווב קטן (פורט 8080) שמאפשר להסתכל בטבלאות ב-postgres בזמן פיתוח. האפליקציה לא תלויה בו. redis הוא ה-broker של Celery, minio מאחסן את קבצי האודיו, וה-worker מריץ את משימות ההפרדה."
+    },
+    {
+      q: "הקונטיינר backend צריך להתחבר לבסיס הנתונים. באיזו כתובת מארח (host) הוא משתמש בתוך רשת Compose?",
+      options: [
+        "localhost, כי כל הקונטיינרים חולקים את אותה כתובת מקומית",
+        "כתובת ה-IP של מחשב המארח, שמוגדרת ידנית בכל הרצה",
+        "שם השירות `postgres`, כי Compose יוצר רשת פנימית עם DNS לפי שמות שירותים",
+        "שם התמונה `postgres:16-alpine`"
+      ],
+      correct: 2,
+      explanation: "כל קונטיינר מקבל כתובת משלו, ולכן `localhost` בתוך ה-backend מצביע על ה-backend עצמו. Compose מגדיר רשת ברירת מחדל שבה שם השירות (postgres, redis, minio) מתורגם אוטומטית לכתובת הקונטיינר. זה גם הסיבה שהקוד משתמש ב-`redis://redis:6379/0`."
+    },
+    {
+      q: "מה משמעות השורה `ports: - \"${BACKEND_PORT:-8000}:8000\"` בשירות backend?",
+      options: [
+        "פורט 8000 בקונטיינר יפתח על פורט המארח שנלקח מהמשתנה BACKEND_PORT, ואם הוא לא מוגדר ייעשה שימוש ב-8000",
+        "הקונטיינר יאזין לפורט BACKEND_PORT, ואם הוא חסר האפליקציה לא תעלה",
+        "הפורט בתוך הקונטיינר ישתנה לפי BACKEND_PORT, והפורט במארח קבוע על 8000",
+        "זה מגביל את מספר החיבורים המקסימלי לשרת ל-8000"
+      ],
+      correct: 0,
+      explanation: "המבנה הוא `host:container`. הצד השמאלי (המארח) נקבע מהמשתנה, והסינטקס `${VAR:-default}` נותן ערך ברירת מחדל כשהמשתנה חסר. הצד הימני (הקונטיינר) קבוע תמיד על 8000, ושם uvicorn מאזין לפי ה-CMD ב-Dockerfile."
+    },
+    {
+      q: "ל-postgres ול-minio מוגדרים volumes (`postgres_data`, `minio_data`), ול-redis לא. מה ההסבר הנכון?",
+      options: [
+        "redis לא תומך ב-volumes, זו מגבלה של התמונה שלו",
+        "נתוני redis נשמרים בתוך קוד ה-backend ולכן אין צורך בהם",
+        "אין בכך הבדל מעשי, ואפשר להוסיף volume לכל שירות בלי שום השפעה",
+        "ב-postgres וב-minio יש נתונים שחייבים לשרוד מחיקה של הקונטיינר, ו-redis משמש כ-broker זמני שאפשר לאבד"
+      ],
+      correct: 3,
+      explanation: "Volume שומר נתונים מחוץ למערכת הקבצים של הקונטיינר, כך שהם שורדים `docker compose down`. טבלאות המשתמשים והשירים ב-postgres וקבצי האודיו ב-minio חייבים להישמר. redis משמש כאן רק כתור משימות וכ-result backend זמני של Celery, ולכן בפיתוח אין סיבה לשמור את מצבו."
+    },
+    {
+      q: "למה ה-API של ההעלאה (`POST /upload`) מחזיר תשובה מיד עם סטטוס `processing` ולא ממתין לסיום ההפרדה?",
+      options: [
+        "כי הפרדת שיר היא פעולה ארוכה שחוסמת, ולכן היא עוברת לתור Celery ומתבצעת ב-worker נפרד בזמן שהדפדפן שואל את הסטטוס",
+        "כי FastAPI לא מסוגל לבצע חישובים, ולכן ה-API תמיד מחזיר תשובה ריקה",
+        "כי הפרדה מתבצעת בדפדפן של המשתמש ולא בשרת",
+        "כי הסטטוס `processing` נשמר רק בזיכרון, ולכן אין צורך להמתין"
+      ],
+      correct: 0,
+      explanation: "זה ההבדל בין עבודה סינכרונית לאסינכרונית. הרצת מודל AI אורכת עשרות שניות עד דקות, ובקשת HTTP שחוסמת כל כך הרבה זמן היא בעייתית. לכן ה-API שומר את הקובץ, יוצר שורת job, שולח `run_separation.delay(...)` ל-Redis וחוזר. ה-worker מבצע את העבודה, והדפדפן שואל את `/songs/{id}` כל 3 שניות."
+    }
+  ],
+
+  "chapter-2": [
+    {
+      q: "המחלקה `Settings` מוגדרת עם `@dataclass(frozen=True)`. מה זה מקנה לה?",
+      options: [
+        "היא נשמרת אוטומטית לקובץ בכל שינוי",
+        "היא הופכת לבלתי ניתנת לשינוי: ניסיון לשנות שדה אחרי היצירה יזרוק FrozenInstanceError",
+        "היא נטענת לזיכרון פעם אחת בלבד ולא ניתן ליצור ממנה מופע שני",
+        "כל השדות שלה מוצפנים בזיכרון"
+      ],
+      correct: 1,
+      explanation: "`frozen=True` הופך את המופע ל-immutable. זה מתאים להגדרות: תמונת מצב של הסביבה שנטענה פעם אחת ולא אמורה להשתנות באמצע ריצה. זה לא יוצר singleton, וגם לא מצפין כלום."
+    },
+    {
+      q: "מדוע שדות כמו `s3_secret_access_key` ו-`database_url` מוגדרים עם `field(repr=False)`?",
+      options: [
+        "כדי שהשדה לא יישמר בזיכרון בכלל",
+        "כדי להאיץ את יצירת המופע של Settings",
+        "כדי שפייתון לא יאפשר לקרוא אותם מהקוד",
+        "כדי שהערך לא יופיע בהדפסת האובייקט (`repr`), כך שסיסמאות לא ידלפו ללוגים או להודעות שגיאה"
+      ],
+      correct: 3,
+      explanation: "אם מישהו יעשה `print(settings)` או שחריגה תכלול את האובייקט בלוג, `repr` נכנס לפעולה. `repr=False` מוציא את השדה מהייצוג הטקסטואלי, אבל הקוד עדיין יכול לקרוא אותו (`settings.database_url`). זו הגנה מפני דליפה, לא הצפנה."
+    },
+    {
+      q: "הקוד כולל `class SongStatus(StrEnum): READY = \"ready\"`. מה היתרון של `StrEnum` על פני מחרוזות חשופות כמו `\"ready\"` בכל מקום?",
+      options: [
+        "`SongStatus.READY == \"ready\"` נותן True, כך שאפשר לשמור ולהשוות מול ה-DB כמחרוזת, ובמקביל יש מקור אמת יחיד וגם השלמה אוטומטית ומניעת שגיאות כתיב",
+        "StrEnum מצפין את הערכים לפני השמירה בבסיס הנתונים",
+        "StrEnum מונע לחלוטין שמירה של ערכים אחרים ב-DB ללא צורך ב-CheckConstraint",
+        "StrEnum הופך כל ערך למספר שלם כדי לחסוך מקום"
+      ],
+      correct: 0,
+      explanation: "`StrEnum` יורש מ-`str`, ולכן הוא מתנהג כמחרוזת רגילה ומשתלב עם SQLAlchemy ו-JSON. הוא מרכז את הערכים בקובץ `constants.py` ומונע טעויות כמו `\"raedy\"`. את האכיפה בבסיס הנתונים עושים ה-`CheckConstraint` שבמודלים, ולא ה-Enum."
+    },
+    {
+      q: "במודלים מופיע `id = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)` וגם `created_at = mapped_column(..., server_default=func.now())`. מה ההבדל בין `default` ל-`server_default`?",
+      options: [
+        "אין הבדל, אלו שני שמות לאותה הגדרה",
+        "`default` מחושב בצד פייתון לפני ה-INSERT, ו-`server_default` מוגדר בבסיס הנתונים עצמו ומחושב שם",
+        "`default` פועל רק ב-SQLite, ו-`server_default` רק ב-PostgreSQL",
+        "`server_default` מחושב בדפדפן ו-`default` בשרת"
+      ],
+      correct: 1,
+      explanation: "`default=uuid.uuid4` הוא פונקציית פייתון ש-SQLAlchemy קוראת לה לפני שליחת ה-INSERT. `server_default=func.now()` הופך לחלק מהגדרת העמודה ב-DDL, כך שגם INSERT ישיר ב-SQL (בלי ה-ORM) יקבל חותמת זמן. ב-`updated_at` יש גם `onupdate=func.now()` שמרענן את הזמן בכל עדכון."
+    },
+    {
+      q: "הפונקציה `get_engine()` ב-`db/session.py` יוצרת את ה-engine רק בקריאה הראשונה (`_engine is None`). למה זה חשוב לפרויקט?",
+      options: [
+        "כי SQLAlchemy מאפשרת רק engine אחד לכל מחשב",
+        "כי כך ה-engine נמחק אוטומטית בסוף כל בקשה",
+        "כי ייבוא המודול לא פותח חיבור ולא דורש `DATABASE_URL`, ולכן `/health` והבדיקות עובדים גם בלי בסיס נתונים",
+        "כי כך אפשר להחליף את בסיס הנתונים תוך כדי ריצה לפי המשתמש"
+      ],
+      correct: 2,
+      explanation: "זו אתחול עצל (lazy initialization). אם ה-engine נוצר בזמן ה-import, כל ייבוא של הקוד (כולל בדיקות ו-`/health`) היה דורש DATABASE_URL תקין. כך רק קוד שבאמת צריך DB קורא ל-`require_database_url()`, והשגיאה המפורשת `MissingDatabaseUrlError` לא חושפת את ערך ה-URL."
+    }
+  ],
+
+  "chapter-3": [
+    {
+      q: "הפונקציה `hash_password` יוצרת salt אקראי חדש (`secrets.token_bytes(16)`) בכל קריאה. מה קורה אם שני משתמשים בוחרים בדיוק את אותה סיסמה?",
+      options: [
+        "שני ה-hash-ים יהיו זהים, ולכן אפשר לזהות סיסמאות שחוזרות על עצמן",
+        "השרת ידחה את ההרשמה השנייה כי הסיסמה כבר קיימת",
+        "שני ה-hash-ים יהיו שונים, וגם מי שגנב את ה-DB לא יכול לפצח את כולם בחישוב אחד או להשתמש בטבלאות rainbow",
+        "ה-salt נשמר בנפרד בקובץ סודי, ולכן ה-hash זהה"
+      ],
+      correct: 2,
+      explanation: "ה-salt האקראי נכנס לחישוב ה-scrypt ונשמר בתוך מחרוזת ה-hash (`scrypt$n$r$p$salt$hash`). לכן אותה סיסמה נותנת מחרוזות שונות, ותוקף חייב לפצח כל חשבון בנפרד. בגלל שהפרמטרים נשמרים בתוך המחרוזת, אפשר להעלות את מחיר החישוב בעתיד בלי מיגרציה."
+    },
+    {
+      q: "טוקן הסשן נשמר ב-DB רק בצורת SHA-256 hash (`hash_session_token`). למה כאן מותר להשתמש ב-hash מהיר, בניגוד לסיסמאות שדורשות scrypt?",
+      options: [
+        "כי טוקן הסשן קצר יותר מסיסמה ולכן קל יותר לבדוק אותו",
+        "כי SHA-256 איטי יותר מ-scrypt וזה מספיק",
+        "כי הטוקן נשלח רק פעם אחת ולכן אין צורך להגן עליו",
+        "כי הטוקן הוא 256 ביט אקראיים, אין מה לנחש בכוח גס. ה-hash נועד רק שדליפת DB לא תחשוף טוקנים שמישים"
+      ],
+      correct: 3,
+      explanation: "סיסמאות נבחרות על ידי בני אדם ולכן ניתנות לניחוש, וצריך hash איטי. טוקן שנוצר ב-`secrets.token_urlsafe(32)` הוא אנטרופיה גבוהה, ולכן גם hash מהיר לא ניתן לפצח. מטרת ה-hash היא שמי שרואה את טבלת `user_sessions` לא יוכל להשתמש בערכים שבה כקוקי."
+    },
+    {
+      q: "הקוקי של הסשן מוגדר עם `httponly=True, samesite=\"lax\"`. מה ההגנה העיקרית ש-`httponly` נותן?",
+      options: [
+        "קוד JavaScript בדף (למשל מתקפת XSS) לא יכול לקרוא את הקוקי דרך `document.cookie`",
+        "הקוקי נשלח רק בבקשות HTTPS",
+        "הקוקי נמחק אוטומטית כשסוגרים את הלשונית",
+        "הקוקי מוצפן בעזרת מפתח שהדפדפן שומר"
+      ],
+      correct: 0,
+      explanation: "`HttpOnly` מונע גישה מ-JavaScript, כך שגם אם מישהו מזריק סקריפט לדף הוא לא יוכל לגנוב את הטוקן. את השליחה רק ב-HTTPS מבטיח הדגל `secure` (שבפיתוח מקומי כבוי לפי `APP_ENV`), ו-`SameSite=Lax` מצמצם בקשות cross-site (CSRF)."
+    },
+    {
+      q: "ב-`google_login` הקוד בודק `token_data.get(\"aud\") != settings.google_client_id`. מה מטרת הבדיקה?",
+      options: [
+        "לוודא שהמשתמש גדול מגיל מינימלי",
+        "לוודא שהטוקן הונפק עבור האפליקציה שלנו, ולא עבור אפליקציה אחרת שמשתמש יכול היה להתחבר אליה עם אותו חשבון Google",
+        "לוודא שהמייל של המשתמש מסתיים בדומיין gmail.com",
+        "לבדוק שהטוקן לא פג תוקף"
+      ],
+      correct: 1,
+      explanation: "השדה `aud` (audience) מציין למי הונפק ה-ID token. בלי הבדיקה, אפליקציה זדונית שקיבלה טוקן Google לגיטימי של משתמש יכולה להציג אותו אלינו ולהתחזות לו. הבדיקה הנפרדת `email_verified` מוודאת שהמייל אומת על ידי Google."
+    },
+    {
+      q: "ב-`login` נעשה `verify_password(payload.password, stored_hash)` גם כשהמייל לא קיים, מול `_DUMMY_PASSWORD_HASH`. מה הסיבה?",
+      options: [
+        "כדי לשמור לוג של ניסיונות כושלים לכל משתמש לא קיים",
+        "כדי ליצור משתמש חדש אוטומטית כשהמייל לא נמצא",
+        "כדי שזמן התגובה והודעת השגיאה (401 זהה) יהיו זהים בין מייל לא קיים לסיסמה שגויה, וכך לא ניתן לדעת אילו מיילים רשומים (account enumeration)",
+        "כדי להאט את כל המשתמשים באופן שווה ולמנוע עומס"
+      ],
+      correct: 2,
+      explanation: "אם מייל לא קיים היה חוזר מהר, או עם הודעה שונה, תוקף היה יכול לגלות מי רשום באתר. שימוש ב-hash פיקטיבי גורם לאותה עבודת scrypt ולאותה תשובה `invalid_credentials`. אותו עיקרון מופיע ב-`forgot-password`, שמחזיר תמיד אותה הודעה בלי קשר לקיום החשבון."
+    }
+  ],
+
+  "chapter-4": [
+    {
+      q: "בזמן ההעלאה נחשב `checksum = hashlib.sha256(data).hexdigest()` ונשמר ב-`AudioFile.checksum_sha256`. מה התועלת של השדה הזה?",
+      options: [
+        "הוא מצפין את הקובץ לפני אחסון ב-MinIO",
+        "הוא משמש כמפתח הגישה (token) להורדת הקובץ",
+        "הוא טביעת אצבע של תוכן הקובץ: אפשר לאמת שלמות ולזהות העלאות כפולות של אותו קובץ",
+        "הוא קובע את שם הקובץ ב-storage"
+      ],
+      correct: 2,
+      explanation: "SHA-256 הוא hash של התוכן. שני קבצים זהים יניבו אותו ערך, ושינוי של בית אחד ישנה אותו לחלוטין, ולכן אפשר לזהות שינוי או כפילות. הוא לא מצפין ולא משמש להרשאות. שם האובייקט ב-storage נקבע בפונקציה `generate_storage_key`."
+    },
+    {
+      q: "מפתח האחסון נבנה כ-`f\"{user_id}/{song_id}/{purpose}{ext}\"`. איזו הצהרה נכונה לגבי הבחירה הזו?",
+      options: [
+        "השם המקורי של הקובץ נשמר בנתיב כדי שהמשתמש יוכל לזהות אותו בהורדה",
+        "הנתיב מבוסס על מזהי UUID ועל purpose שנקבע בשרת, כך שאין התנגשויות בין משתמשים ואין סיכון ל-path traversal משם קובץ שהמשתמש שולח",
+        "הנתיב מחושב מה-checksum של הקובץ ולכן הוא נקבע מחדש בכל העלאה",
+        "הנתיב הוא תמיד באותו שם, והקובץ הקודם נדרס"
+      ],
+      correct: 1,
+      explanation: "כל החלקים נקבעים על ידי השרת: UUID-ים ו-purpose (`original`, `vocals`, `background`) והסיומת נגזרת מ-content type מורשה. שם הקובץ של המשתמש נשמר רק כמטא-דאטה ב-`original_filename`. כך אין התנגשויות, וגם אין אפשרות לשלוח שם כמו `../../x`."
+    },
+    {
+      q: "בהגדרת Celery יש `task_acks_late=True` ו-`worker_prefetch_multiplier=1`. מה השילוב הזה משיג עבור משימות הפרדה ארוכות?",
+      options: [
+        "המשימה מאושרת (ack) רק אחרי שהסתיימה, כך שאם ה-worker קורס היא תחזור לתור. וכל worker לוקח משימה אחת בכל פעם, ולכן העבודה מתחלקת הוגן",
+        "המשימות רצות במקביל ללא הגבלה כדי לקצר זמן המתנה",
+        "המשימה נמחקת מהתור מיד כשה-worker מקבל אותה, כדי למנוע ריצה כפולה",
+        "התוצאות נשמרות ב-redis לנצח"
+      ],
+      correct: 0,
+      explanation: "ברירת המחדל של Celery מאשרת הודעה כשהיא נמשכת מהתור. עם `acks_late` האישור נשלח רק אחרי סיום, ולכן קריסת worker באמצע לא מאבדת את העבודה. `prefetch_multiplier=1` מונע ממשימה קצרה להיתקע מאחורי משימה ארוכה שכבר נמשכה על ידי אותו worker."
+    },
+    {
+      q: "מה עושה הקריאה `run_separation.delay(str(job.id), ...)` בסוף `upload_song`?",
+      options: [
+        "מריצה את ההפרדה באותו תהליך של ה-API ומחכה לתוצאה",
+        "מעכבת את התגובה ללקוח במשך כמה שניות",
+        "יוצרת קונטיינר Docker חדש לכל שיר",
+        "שולחת הודעה ל-broker (Redis) עם שם המשימה והארגומנטים וחוזרת מיד. worker יקח אותה מהתור ויריץ"
+      ],
+      correct: 3,
+      explanation: "`.delay()` הוא קיצור של `.apply_async()`. הוא מסריאליז את הארגומנטים ל-JSON (לכן מעבירים `str(uuid)` ולא אובייקט UUID, בהתאם ל-`task_serializer=\"json\"`) ושולח אותם ל-Redis. הביצוע עצמו מתרחש בתהליך אחר."
+    },
+    {
+      q: "הפונקציה `generate_signed_url` משתמשת ב-`_s3_public_client()` עם `S3_PUBLIC_ENDPOINT_URL`, ולא ב-client הרגיל. למה?",
+      options: [
+        "כי ה-client הרגיל לא תומך בחתימת URL כלל",
+        "כי ה-URL החתום נפתח בדפדפן של המשתמש, והכתובת הפנימית `minio:9000` ידועה רק בתוך רשת Compose. חייבים כתובת שהדפדפן מגיע אליה",
+        "כי client ציבורי מצפין את הקובץ בזמן ההורדה",
+        "כי החתימה תלויה בכתובת הציבורית ולכן היא לא תקפה בכתובת אחרת, והשרת לא אמור להתחבר ל-MinIO בכלל"
+      ],
+      correct: 1,
+      explanation: "ה-backend מדבר עם MinIO בכתובת הפנימית, אבל הקישור החתום נשלח לדפדפן. חתימת S3v4 כוללת את ה-host, ולכן צריך לחתום מול הכתובת הציבורית (למשל `localhost:9000`). ל-URL יש תוקף קצר (`signed_url_listen_ttl=600` שניות, הורדה 300) והוא לא קבוע, ולכן קובץ פרטי לא נחשף לצמיתות."
+    }
+  ],
+
+  "chapter-5": [
+    {
+      q: "`delete_song` לא מוחק שורה מהטבלה, אלא קובע `song.deleted_at = now` ו-`visibility = private`. למה זה נקרא soft delete ומה היתרון שלו?",
+      options: [
+        "השיר נמחק מה-DB אחרי 30 יום, ובינתיים הוא מוסתר",
+        "השורה נשארת (נשמרים קשרי הגומלין, היסטוריית שימוש ואפשרות שחזור), וכל שאילתה מסננת `deleted_at IS NULL`. הפרטיות נשמרת כי השיר חוזר להיות פרטי",
+        "הקובץ נמחק מ-MinIO אך השורה נשארת ב-DB",
+        "זה רק מסתיר את השיר בדפדפן של המשתמש עצמו"
+      ],
+      correct: 1,
+      explanation: "במחיקה רכה מסמנים רשומה כמחוקה במקום להסיר אותה, כך שאין שבירה של מפתחות זרים (jobs, audio_files, usage events) ואפשר לשחזר או לבדוק. החיסרון: חייבים לזכור לסנן `deleted_at.is_(None)` בכל שאילתה, ולכן יש פונקציות עזר כמו `_get_song_or_404` ו-`get_public_song_or_404`."
+    },
+    {
+      q: "בנקודת הקצה של הספרייה מופיע `limit: int = Query(20, ge=1, le=100)`. מה קורה כשהלקוח שולח `?limit=500`?",
+      options: [
+        "FastAPI מחזיר 100 תוצאות בלבד, בלי הודעה",
+        "FastAPI מחזיר שגיאת ולידציה 422, כי הערך חורג מהגבול `le=100`",
+        "השרת מחזיר את כל 500 השירים",
+        "השרת קורס עם שגיאת 500"
+      ],
+      correct: 1,
+      explanation: "`ge` ו-`le` הם אילוצים (greater/less or equal) שמאומתים אוטומטית לפני הרצת הפונקציה. ערך מחוץ לטווח גורר 422 Unprocessable Entity. כך מונעים בקשת עמוד ענקי שתכביד על ה-DB. `offset` ו-`limit` ביחד הם דפדוף: `.offset(offset).limit(limit)`."
+    },
+    {
+      q: "הפונקציה `_require_admin(user, allowed_roles)` מוסיפה תנאי `and user.role != UserRole.SUPER_ADMIN`. מה זה אומר בפועל?",
+      options: [
+        "super_admin מוגבל ולא יכול לבצע פעולות רגישות",
+        "רק super_admin יכול לגשת לנתיבי `/admin`, ושאר התפקידים נחסמים",
+        "משתמש בתפקיד free יכול לגשת אם יש לו מנוי Pro",
+        "כל תפקיד ב-`ADMIN_ROLES` נבדק מול הרשאות הנתיב, אבל super_admin עובר תמיד גם אם הוא לא ברשימה המותרת"
+      ],
+      correct: 3,
+      explanation: "RBAC (בקרת גישה לפי תפקיד) כאן בשתי שכבות: קודם בודקים שהמשתמש בכלל אדמין (`ADMIN_ROLES`), ואז שהתפקיד שלו מורשה לנתיב הספציפי. תפקידי free ו-pro לא באדמין בכלל. super_admin הוא עקיפה כללית. כל פעולה ניהולית גם נרשמת ב-`_audit` לטבלת `AdminAuditEvent`."
+    },
+    {
+      q: "משתמש בחינם (free) מנסה להעלות שיר עם `model_choice=professional`. איזו תשובה יחזיר `check_quota`?",
+      options: [
+        "429 עם `quota_exceeded`, כי מכסת ה-professional שלו אפס",
+        "200, והשרת יעבד את השיר עם המודל הבסיסי בשקט",
+        "403 עם `pro_required`, כי הבדיקה של הרמה קודמת לבדיקת המכסה היומית",
+        "400 עם `invalid_model_choice`"
+      ],
+      correct: 2,
+      explanation: "בענף ה-professional הקוד בודק קודם `user.tier != UserTier.PRO` וזורק 403 `pro_required`. רק משתמש Pro ממשיך לבדיקת `daily.professional_count >= pro_daily_limit` ששם מוחזר 429 `quota_exceeded`. ההבחנה חשובה: 403 אומר אסור לך (הרשאה), ו-429 אומר הגעת למגבלת קצב או מכסה."
+    },
+    {
+      q: "ב-`redeem_coupon` יש גם `coupon.redemption_count` וגם טבלת `CouponRedemption`. למה צריך את שניהם?",
+      options: [
+        "הם כפולים ומיותרים, ואפשר להסיר אחד מהם בלי השפעה",
+        "הטבלה מחליפה את המונה כשקופון עובר 100 מימושים",
+        "המונה מגביל את סך המימושים (`max_redemptions`), והטבלה מתעדת מי מימש וכך מונעת מאותו משתמש לממש את אותו קופון פעמיים",
+        "המונה מגביל כל משתמש, והטבלה מגבילה את הקופון לפי תאריך"
+      ],
+      correct: 2,
+      explanation: "המונה עונה על השאלה כמה פעמים נוצל הקופון בסך הכול. טבלת הקישור עונה על השאלה האם המשתמש הספציפי הזה כבר מימש אותו (`already_redeemed`). שתי בדיקות נפרדות הן שתי מגבלות עסקיות שונות. תאריך התפוגה נבדק בנפרד דרך `expires_at`."
+    }
+  ],
+
+  "chapter-6": [
+    {
+      q: "ב-`main.jsx` הקוד הוא `ReactDOM.createRoot(document.getElementById('root')).render(<React.StrictMode><App /></React.StrictMode>)`. מה תפקיד כל חלק?",
+      options: [
+        "`createRoot` מגדיר את שרת ה-API שאליו נשלחות הבקשות, ו-StrictMode מצפין את ה-state",
+        "`createRoot` יוצר שורש React בתוך האלמנט עם id של root ב-index.html, ו-StrictMode מוסיף בדיקות ואזהרות בפיתוח (למשל הרצה כפולה של effects כדי לחשוף באגים)",
+        "`createRoot` מריץ את הבנייה של Vite, ו-StrictMode מבטל שגיאות בזמן ריצה",
+        "StrictMode גורם לאפליקציה לרוץ רק ב-HTTPS"
+      ],
+      correct: 1,
+      explanation: "React לא מחליפה את כל הדף אלא נתלית על אלמנט קיים (`#root`). `StrictMode` הוא כלי פיתוח בלבד: הוא מריץ ב-dev פעמיים רינדורים ו-effects כדי לחשוף תופעות לוואי לא נקיות, למשל חוסר ניקוי ב-`useEffect`. בפרודקשן אין לו השפעה."
+    },
+    {
+      q: "הניתוב באפליקציה מבוסס על `window.location.hash` (למשל `#/library`) והוק `useHash`. מה היתרון המרכזי של hash routing כאן?",
+      options: [
+        "הוא מאפשר SEO טוב יותר ממערכת ניתוב רגילה",
+        "שינוי החלק שאחרי ה-`#` לא גורם לטעינת דף חדשה מהשרת ולא דורש הגדרת fallback בשרת, והאירוע `hashchange` מעדכן את ה-state",
+        "הוא מצפין את כתובת העמוד כך שהמשתמש לא רואה אותה",
+        "הוא מונע מהדפדפן לשמור היסטוריה"
+      ],
+      correct: 1,
+      explanation: "החלק אחרי `#` לא נשלח לשרת, ולכן אין צורך להגדיר שרת שמחזיר `index.html` לכל נתיב. `useHash` מאזין ל-`hashchange` ומשתמש ב-`removeEventListener` בניקוי כדי לא להצטבר מאזינים. החיסרון: כתובות פחות נקיות ופחות ידידותיות למנועי חיפוש."
+    },
+    {
+      q: "בהוק `useLang` הפונקציה `t(key)` מחזירה `(T[lang] || T.he)[key] || (T.he)[key] || key`. מה קורה אם מפתח חסר בתרגום האנגלי?",
+      options: [
+        "האפליקציה תזרוק שגיאה ותקרוס",
+        "יוצג undefined בממשק",
+        "המערכת תחזור לתרגום העברי, ואם גם שם חסר, תציג את המפתח עצמו",
+        "המערכת תתרגם את המפתח אוטומטית בעזרת שירות חיצוני"
+      ],
+      correct: 2,
+      explanation: "זו שרשרת fallback: קודם השפה הנבחרת, אחר כך עברית כברירת מחדל, ובסוף שם המפתח עצמו, כך שגם מפתח חסר מציג משהו מובן ולא שובר את הדף. בנוסף, האפקט קובע `document.documentElement.dir = rtl` כשהשפה עברית, כדי שכל הפריסה תתהפך."
+    },
+    {
+      q: "פונקציית `request` ב-`api/songs.js` מבצעת `fetch(path, { credentials: 'same-origin', ...options })`. מה תפקיד `credentials`, ואיך זה קשור לקוקי הסשן?",
+      options: [
+        "הוא שולח את הסיסמה של המשתמש בכל בקשה",
+        "הוא מאפשר בקשות מכל דומיין בלי CORS",
+        "הוא מורה לדפדפן לצרף קוקיז (כולל קוקי הסשן httpOnly) לבקשות לאותו origin, וקוד ה-JS עצמו אף פעם לא רואה את הטוקן",
+        "הוא שומר את התשובה בזיכרון המטמון של הדפדפן"
+      ],
+      correct: 2,
+      explanation: "בדפדפן, `fetch` לא שולח קוקיז אלא אם מבקשים. הקוקי הוא httpOnly, ולכן ה-JS לא יכול לקרוא או לשים אותו ידנית, אבל הדפדפן מצרף אותו אוטומטית. זה עובד כי הבקשות הן same-origin (`/songs/...`) בזכות הפרוקסי של Vite. שימו לב גם ש-`request` מעבירה הודעת שגיאה בטוחה מ-`payload.detail.message`."
+    },
+    {
+      q: "פונקציית `uploadSong` משתמשת ב-`XMLHttpRequest` ולא ב-`fetch`. מה הסיבה?",
+      options: [
+        "כי fetch לא תומך בשליחת קבצים כלל",
+        "כי XHR מהיר יותר ב-3 מונים",
+        "כי XHR מצפין את הקובץ בזמן ההעלאה",
+        "כי אירוע `xhr.upload.onprogress` מדווח כמה בתים הועלו ומאפשר לצייר פס התקדמות, ו-fetch לא נתן דרך נוחה לכך"
+      ],
+      correct: 3,
+      explanation: "`xhr.upload.addEventListener('progress', e => ...)` מספק `e.loaded` ו-`e.total` (כשיש `e.lengthComputable`), והקוד מחשב `Math.round(loaded/total*100)` ומעביר ל-`onProgress`. ב-`fetch` אין אירוע התקדמות להעלאה. יש להגדיר גם `xhr.withCredentials = true` כדי שהקוקי יישלח."
+    }
+  ],
+
+  "chapter-7": [
+    {
+      q: "ב-`App.jsx` הדף `#/admin` מוצג רק אם `user.role === 'super_admin'`, אחרת מוצג `NeedAuth`. האם זה מספיק כדי להגן על פעולות הניהול?",
+      options: [
+        "כן, כי המשתמש לא יכול לשנות את הקוד של הדפדפן",
+        "כן, כי React מצפין את כל הקריאות לשרת",
+        "לא, כי הסתרת UI היא רק נוחות. ההגנה האמיתית חייבת להיות בשרת (`_require_admin`), כי כל אחד יכול לשלוח בקשות ישירות ל-API",
+        "לא, כי hash routing לא עובד עם הרשאות"
+      ],
+      correct: 2,
+      explanation: "קוד ה-frontend רץ אצל המשתמש וניתן לעקיפה (כלי פיתוח, curl). הבדיקה בממשק משפרת חוויה בלבד. כל נקודת קצה ב-`/admin` מוגנת ב-`current_user` ובבדיקת תפקיד בצד השרת, וזה מה שבאמת מונע גישה."
+    },
+    {
+      q: "ב-`SongPage` ה-`useEffect` קורא ל-`setTimeout(loadSong, 3000)` כל עוד הסטטוס הוא processing, ומשתמש במשתנה `live` שמתאפס בפונקציית הניקוי. למה?",
+      options: [
+        "כדי לדאוג שהמסך לא יתכבה בזמן ההמתנה",
+        "כדי להפעיל מחדש את ה-worker בכל 3 שניות",
+        "כדי לאפשר למשתמש לשנות שפה תוך כדי עיבוד",
+        "polling: הדפדפן שואל את השרת כל 3 שניות על הסטטוס, ו-`live=false` מונע עדכון state אחרי שהמשתמש עזב את הדף או שה-songId השתנה"
+      ],
+      correct: 3,
+      explanation: "אין push מהשרת, ולכן הלקוח מבצע polling עד שהסטטוס הופך ל-ready. בלי דגל `live`, תשובה מאוחרת של בקשה ישנה הייתה מנסה לעדכן state של רכיב שכבר לא קיים או של שיר אחר (race condition). הפונקציה שמוחזרת מה-`useEffect` רצה בניקוי ומאפסת את הדגל."
+    },
+    {
+      q: "בתוך `AuthModal` האלמנט `<form>` מכיל `onClick={e => e.stopPropagation()}` בעוד שהמעטפת החיצונית `<div className=\"modal\" onClick={onClose}>`. מה מטרת ה-`stopPropagation`?",
+      options: [
+        "למנוע שליחה כפולה של הטופס",
+        "כדי שלחיצה בתוך הטופס לא תיעלה (bubble) אל ה-div החיצוני ותסגור בטעות את החלון, בעוד שלחיצה על הרקע מחוץ לטופס כן סוגרת אותו",
+        "כדי להסתיר את הטופס מקוראי מסך",
+        "כדי שהמקלדת לא תפעיל אירועי Escape"
+      ],
+      correct: 1,
+      explanation: "אירועי DOM עולים במעלה העץ (bubbling). בלי עצירה, כל לחיצה על שדה סיסמה הייתה מגיעה ל-`onClose` של הרקע וסוגרת את המודל. התבנית הזו נפוצה בכל חלון קופץ. הסגירה ב-Escape נעשית ב-`App.jsx` דרך מאזין ל-`keydown` שמוסר בניקוי."
+    },
+    {
+      q: "ב-`SongPage` יש `useEffect` שמריץ `setInterval(() => setElapsed(s => s + 1), 1000)` ומחזיר `() => clearInterval(tick)`. מה היה קורה בלי ה-`clearInterval`?",
+      options: [
+        "הטיימר היה ממשיך לרוץ ברקע גם אחרי סיום העיבוד או עזיבת הדף, ומצטבר במקרים של כמה הרצות",
+        "הטיימר היה עוצר מעצמו אחרי דקה",
+        "הדף היה נטען מחדש בכל שנייה",
+        "לא היה שום הבדל, כי React מנקה intervals אוטומטית"
+      ],
+      correct: 0,
+      explanation: "React לא יודעת על intervals שיצרתם. פונקציית הניקוי של ה-effect רצה כש-`isProcessing` משתנה או כשהרכיב יוצא, ועוצרת את הטיימר. בלי זה נוצר דליפת משאבים, ועדכוני state לרכיב שכבר הוסר. השימוש ב-`setElapsed(s => s + 1)` (עדכון פונקציונלי) מבטיח שימוש בערך העדכני."
+    },
+    {
+      q: "ב-`AdminPage` נטענים הנתונים בעזרת `Promise.all([getAdminStats(), getAdminUsers(0, 100), getAdminSongs(0, 100)])`. מה היתרון והחיסרון של הגישה?",
+      options: [
+        "שלוש הבקשות רצות במקביל (מהיר יותר מרצף), אבל אם אחת נכשלת כל ה-Promise.all נדחה וה-catch מציג שגיאה אחת לכולן",
+        "הבקשות רצות אחת אחרי השנייה ולכן הסדר מובטח, ואין שום חיסרון",
+        "היתרון שהקריאות נשמרות במטמון של השרת, והחיסרון שאי אפשר להציג שגיאות",
+        "Promise.all מריץ את הבקשות בשרת ולא בדפדפן"
+      ],
+      correct: 0,
+      explanation: "`Promise.all` מתחיל את כל ההבטחות יחד וממתין לכולן, כך שהזמן הכולל הוא של הבקשה האיטית ביותר. אם אחת נדחית, התוצאה מיד נדחית. אם רוצים שהדף יציג חלקי נתונים, משתמשים ב-`Promise.allSettled`."
+    }
+  ],
+
+  "chapter-8": [
+    {
+      q: "הקבועים הם `SAMPLE_RATE=22050`, `N_FFT=1024`, `HOP_LENGTH=256`. כמה תדרים (bins) יש בכל עמודה של ספקטרוגרמת ה-STFT שמחזיר `librosa.stft`?",
+      options: [
+        "256, כמו ה-hop length",
+        "1024, כמו גודל ה-FFT",
+        "22050, כמו קצב הדגימה",
+        "513, כלומר N_FFT/2 + 1, כי האות ממשי ולכן החצי השני של הספקטרום הוא מראה"
+      ],
+      correct: 3,
+      explanation: "ל-FFT של אות ממשי בגודל 1024 יש 513 תדרים ייחודיים (מ-0 עד נייקוויסט). `hop_length` קובע כמה דגימות מתקדמים בין חלונות עוקבים, כלומר מספר הפריימים בזמן הוא בערך מספר הדגימות חלקי 256. הצורה היא (513, T), והמודל מקבל אותה כתמונה בערוץ אחד."
+    },
+    {
+      q: "ב-`separate_waveform` נעשה `vocals_spec = mask * spectrogram` ו-`background_spec = (1.0 - mask) * spectrogram`. מה קורה בנקודה (תדר, זמן) שבה המודל מוציא mask = 1.0?",
+      options: [
+        "כל האנרגיה של אותה נקודה משויכת לשירה, ואפס לרקע",
+        "האנרגיה מתחלקת שווה בשווה בין השירה לרקע",
+        "הנקודה מושמטת משני הערוצים",
+        "הרקע מקבל את כל האנרגיה והשירה מושתקת"
+      ],
+      correct: 0,
+      explanation: "המודל לומד מסכה ברכיב `sigmoid` שערכיה בין 0 ל-1. הכפלה איבר-איבר במסכה היא סינון רך. ערך 1 אומר שכל מה שיש שם הוא שירה, ו-0 אומר שהכול רקע. מכיוון ש-vocals + background = ספקטרוגרמה מקורית, שני הערוצים מתחברים חזרה לשיר המלא. אחר כך `istft` מחזיר לצורת גל באורך המקורי."
+    },
+    {
+      q: "ברשת `SmallUNet` ב-`forward` מבצעים `d2 = self.dec2(self._up_to(b, e2))`, כאשר `_up_to` עושה interpolate ואז `torch.cat([x, skip], dim=1)`. מה תפקיד חיבור ה-skip הזה?",
+      options: [
+        "להקטין את מספר הפרמטרים של הרשת",
+        "להעביר ישירות מהמקודד (encoder) למפענח (decoder) פרטים בתדר וזמן שהלכו לאיבוד בהקטנה (pooling), כך שהמסכה מדויקת יותר. הצירוף נעשה על ציר הערוצים",
+        "להפעיל dropout אוטומטי באימון",
+        "לבדוק שהקלט הוא סטריאו"
+      ],
+      correct: 1,
+      explanation: "ב-U-Net המקודד מקטין את הרזולוציה (MaxPool) כדי ללמוד הקשר רחב, והמפענח מגדיל אותה בחזרה. חיבורי skip מחזירים מידע רזולוציה גבוהה מהשלב המקביל. ה-`interpolate` מתאים את הגודל לגודל ה-skip, כי ספקטרוגרמות לעיתים בעלות ממדים אי-זוגיים. `dim=1` הוא ציר הערוצים ולכן מספר הערוצים של הבלוק הבא הוא `64 + 32`."
+    },
+    {
+      q: "מודל Demucs `htdemucs_ft` מחזיר 4 ערוצים (vocals, drums, bass, other). איך הפרויקט מגיע לחוזה של שני ערוצים בלבד?",
+      options: [
+        "מוחק את drums, bass, other ושומר רק שירה, ואז מחשב רקע בנפרד מהקלט",
+        "מריץ את המודל פעמיים, פעם לשירה ופעם לרקע",
+        "משמיע ללקוח את ארבעת הערוצים וממזג בדפדפן",
+        "שומר את vocals, ומסכם את כל השאר (`sum(...)` על כל מה ששמו אינו vocals) לערוץ background"
+      ],
+      correct: 3,
+      explanation: "בקוד נבנית רשימת אינדקסים `bg_indices` של כל מקור שאינו vocals, וסוכמים אותם לערוץ אחד. כך שני המודלים (Basic ו-Demucs) מחזירים את אותו מבנה `{Stem.VOCALS, Stem.BACKGROUND}` ושאר המערכת (storage, DB, UI) לא צריכה לדעת איזה מודל רץ."
+    },
+    {
+      q: "ב-`local_checkpoint.checkpoint_filename(use_best_model)` נדחה כל ערך שאינו `bool` (`TypeError`), וה-checkpoint נטען עם `weights_only=True`. מה העיקרון המשותף?",
+      options: [
+        "ביצועים: טעינה מהירה ככל האפשר של המודל",
+        "תאימות לאחור לגרסאות ישנות של PyTorch",
+        "אבטחה: הלקוח לעולם לא קובע נתיב או שם קובץ של מודל (אין path traversal), וטעינה בטוחה ממזערת הרצת קוד זדוני מתוך קובץ pickle",
+        "חיסכון בזיכרון בקונטיינר ה-worker"
+      ],
+      correct: 2,
+      explanation: "בחירת ה-checkpoint היא החלטה של השרת בלבד. ללקוח יש רק ערכים לוגיים (`basic`/`professional`), וה-registry דוחה מחרוזות שנראות כמו נתיב. קובצי `.pt` מבוססי pickle, ולכן `weights_only=True` מגביל את הטעינה למשקלים בלבד. העיקרון הוא לא לחשוף נתיבים ולא לסמוך על קלט חיצוני."
+    }
+  ],
+
+  "chapter-9": [
+    {
+      q: "הסכמות ב-`schemas/core.py` ובנתיבי ה-API משתמשות ב-`model_config = ConfigDict(extra=\"forbid\")` ומונות שדות במפורש. מה העיקרון שמאחורי זה?",
+      options: [
+        "מודל ה-DB שונה מסכמת ה-API: מחזירים ללקוח רק שדות שנבחרו מראש, ושדה לא צפוי (כמו `storage_key`) יגרום לשגיאה במקום לדלוף בשקט",
+        "הוא מאיץ את הסריאליזציה פי עשרה",
+        "הוא מחליף את הצורך באימות סיסמאות",
+        "הוא מוחק אוטומטית שדות ריקים מהתשובה"
+      ],
+      correct: 0,
+      explanation: "Pydantic משמש כאן כחוזה בין ה-backend ללקוח. `extra=\"forbid\"` דוחה שדות שלא הוגדרו, ו-`response_model` מסנן את התשובה. כך סודות כמו `password_hash`, `storage_key` או נתיבי מודל לא יכולים לצאת בטעות. זה גם הרעיון ב-`_safe_user` ב-auth."
+    },
+    {
+      q: "בקובץ מיגרציה של Alembic מופיע `revision = \"p13_pw_reset\"` ו-`down_revision = \"p12_quota_split\"`. מה המשמעות?",
+      options: [
+        "המיגרציה הזו מבטלת את p12 ומוחקת אותה",
+        "המיגרציה הזו תרוץ רק אם p12 נכשלה",
+        "שני הקבצים רצים במקביל ולא משנה הסדר ביניהם",
+        "המיגרציות יוצרות שרשרת: p13 באה אחרי p12, ו-`alembic upgrade head` מריץ אותן לפי הסדר ושומר ב-DB איזו גרסה הותקנה"
+      ],
+      correct: 3,
+      explanation: "`down_revision` מצביע על המיגרציה הקודמת, וכך Alembic יודע את סדר הריצה ואת ה-`head`. `upgrade()` יוצרת את הטבלה (`password_reset_tokens`) ו-`downgrade()` מבטלת אותה, כדי שאפשר יהיה לחזור אחורה. בפרויקט המיגרציות רצות במכוון ידנית, ולא אוטומטית בעליית האפליקציה."
+    },
+    {
+      q: "בקובץ `tokens.css` מוגדרים משתנים כמו `--primary: #7c3aed` תחת `:root`, ובשאר הקבצים משתמשים ב-`var(--primary)`. מה היתרון העיקרי של design tokens?",
+      options: [
+        "הדפדפן טוען את הצבעים מהר יותר",
+        "המשתנים מאפשרים שימוש בצבעים שלא קיימים ב-CSS רגיל",
+        "מקור אמת יחיד לצבעים, רדיוסים ומרווחים: שינוי ערך אחד במקום אחד מעדכן את כל הממשק, ומבטיח עקביות",
+        "הם נחשבים כתגובה אוטומטית לגודל המסך"
+      ],
+      correct: 2,
+      explanation: "Custom properties הם משתני CSS שעוברים בירושה, ו-`:root` הופך אותם לגלובליים. במקום 80 מופעים של `#7c3aed` יש הפניה אחת. אפשר גם להחליף ערכים בתוך סלקטור אחר (למשל ערכת נושא בהירה) והכול ישתנה. הם לא תלויים בגודל המסך, זה תפקידם של media queries."
+    },
+    {
+      q: "ב-`responsive.css` יש `@media (max-width: 768px) { .sidebar { display: none; } ... .mobile-nav { display: flex; position: fixed; bottom: 0; } }`. מה יראה משתמש בחלון ברוחב 600px?",
+      options: [
+        "תפריט צד (sidebar) כרגיל, וגם סרגל תחתון",
+        "אין ניווט בכלל, כי שני האלמנטים מוסתרים",
+        "סרגל ניווט תחתון קבוע (`mobile-nav`) במקום תפריט הצד, כי 600 קטן מ-768",
+        "תפריט צד בלבד, כי `max-width` חל רק על מסכי מחשב"
+      ],
+      correct: 2,
+      explanation: "`max-width: 768px` מתקיים בכל רוחב עד 768 כולל. בטווח זה ה-sidebar מוסתר וה-mobile-nav מופיע. יש גם כלל משלים `@media (min-width: 769px)` לדסקטופ. גישה זו היא responsive design עם נקודת שבירה אחת. הגדרת `safe-area-inset-bottom` מוסיפה ריווח למכשירים עם חריץ תחתון."
+    },
+    {
+      q: "ב-`vite.config.js` מוגדר `proxy: { '/auth': 'http://backend:8000', ... }`. למה משתמשים בפרוקסי הזה ולא בקריאה ישירה מהדפדפן ל-`localhost:8000`?",
+      options: [
+        "כי הדפדפן לא יכול לשלוח בקשות ל-localhost",
+        "כדי להצפין את התעבורה בין הדפדפן לשרת",
+        "כדי שהקוד של ה-frontend יפנה לנתיבים יחסיים ב-same-origin. כך קוקי הסשן עובד בלי CORS, והשם `backend` מתורגם על ידי Compose רק בתוך רשת הקונטיינרים",
+        "כי uvicorn לא תומך ב-CORS בכלל"
+      ],
+      correct: 2,
+      explanation: "הדפדפן פונה אל Vite בפורט 5173 בנתיב כמו `/auth/login`, ושרת Vite (שרץ בקונטיינר ה-frontend) מעביר את הבקשה ל-`http://backend:8000`. מבחינת הדפדפן הכול אותו origin, ולכן קוקי `SameSite=Lax` נשלח. בנוסף אין צורך לחשוף כתובת backend לקוד הלקוח. ה-CORS ב-`main.py` קיים בכל זאת כרשת ביטחון ל-`http://localhost:5173`."
+    }
+  ]
+};
+
+
+// Render quizzes for each chapter
+if(typeof QUIZZES !== "undefined" && QUIZZES["chapter-1"]) renderQuiz("chapter-1", QUIZZES["chapter-1"]);
+if(typeof QUIZZES !== "undefined" && QUIZZES["chapter-2"]) renderQuiz("chapter-2", QUIZZES["chapter-2"]);
+if(typeof QUIZZES !== "undefined" && QUIZZES["chapter-3"]) renderQuiz("chapter-3", QUIZZES["chapter-3"]);
+if(typeof QUIZZES !== "undefined" && QUIZZES["chapter-4"]) renderQuiz("chapter-4", QUIZZES["chapter-4"]);
+if(typeof QUIZZES !== "undefined" && QUIZZES["chapter-5"]) renderQuiz("chapter-5", QUIZZES["chapter-5"]);
+if(typeof QUIZZES !== "undefined" && QUIZZES["chapter-6"]) renderQuiz("chapter-6", QUIZZES["chapter-6"]);
+if(typeof QUIZZES !== "undefined" && QUIZZES["chapter-7"]) renderQuiz("chapter-7", QUIZZES["chapter-7"]);
+if(typeof QUIZZES !== "undefined" && QUIZZES["chapter-8"]) renderQuiz("chapter-8", QUIZZES["chapter-8"]);
+if(typeof QUIZZES !== "undefined" && QUIZZES["chapter-9"]) renderQuiz("chapter-9", QUIZZES["chapter-9"]);
+</script>
+
 </body>
 </html>
