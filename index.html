@@ -379,6 +379,23 @@ pre.code-block code,.code-block pre code{background:none;padding:0;border-radius
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(124,58,237,.3);border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:rgba(124,58,237,.5)}
+
+/* ═══════════════════ SYNTAX HIGHLIGHTING ═══════════════════ */
+.hl-kw{color:#c792ea}
+.hl-bi{color:#82aaff}
+.hl-fn{color:#82aaff}
+.hl-str{color:#c3e88d}
+.hl-num{color:#f78c6c}
+.hl-cm{color:#546e7a;font-style:italic}
+.hl-dc{color:#ffcb6b}
+.hl-op{color:#89ddff}
+.hl-tag{color:#f07178}
+.hl-attr{color:#c792ea}
+.hl-val{color:#c3e88d}
+.hl-cls{color:#ffcb6b}
+.hl-self{color:#f07178}
+.hl-bool{color:#ff5370}
+.hl-imp{color:#89ddff;font-style:italic}
 </style>
 </head>
 <body>
@@ -1190,7 +1207,6 @@ class Settings:
     celery_broker_url: str = field(repr=False)
     celery_result_backend: str = field(repr=False)
     max_upload_bytes: int = 100 * 1024 * 1024
-    max_duration_seconds: float = 330.0
     free_daily_limit: int = 3
     pro_daily_limit: int = 10
     signed_url_listen_ttl: int = 600
@@ -1219,7 +1235,6 @@ def load_settings() -> Settings:
         celery_broker_url=os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0"),
         celery_result_backend=os.getenv("CELERY_RESULT_BACKEND", "redis://redis:6379/1"),
         max_upload_bytes=int(os.getenv("MAX_UPLOAD_BYTES", str(100 * 1024 * 1024))),
-        max_duration_seconds=float(os.getenv("MAX_DURATION_SECONDS", "330")),
         free_daily_limit=int(os.getenv("FREE_DAILY_LIMIT", "3")),
         pro_daily_limit=int(os.getenv("PRO_DAILY_LIMIT", "10")),
         signed_url_listen_ttl=int(os.getenv("SIGNED_URL_LISTEN_TTL", "600")),
@@ -1259,7 +1274,7 @@ def require_database_url(settings: Settings | None = None) -> str:
     <div class="lx"><span class="lr">36-37</span><div><p><code>@dataclass(frozen=True)</code> הופך את המחלקה לאובייקט נתונים <strong>קפוא</strong>. אחרי <code>settings = load_settings()</code> אי אפשר לעשות <code>settings.s3_bucket = "x"</code>: פייתון יזרוק שגיאה. כך אף חלק בתוכנה לא יכול לשנות הגדרה באמצע ריצה ולגרום לבאג שקשה לאתר.</p></div></div>
     <div class="lx"><span class="lr">40-51</span><div><p>השדות הראשונים <strong>בלי ערך ברירת מחדל</strong> (<code>app_env: str</code>). אלה חייבים להיות מועברים בעת היצירה. כלל של dataclass: שדות בלי ברירת מחדל חייבים לבוא <em>לפני</em> שדות עם ברירת מחדל. לכן <code>max_upload_bytes: int = 100 * 1024 * 1024</code> (100MB) מגיע אחריהם.</p></div></div>
     <div class="lx"><span class="lr">47-51</span><div><p><code>field(repr=False)</code> הוא הלב של ההגנה. השדות <code>s3_access_key_id</code>, <code>s3_secret_access_key</code>, <code>database_url</code> וכו' לא יופיעו כשמדפיסים את האובייקט. נסה: <code>print(settings)</code> יציג רק שדות לא סודיים.</p><div class="callout tip"><p>דרך אחרת להשיג את אותה מטרה (ופשוטה יותר להבנה): לדרוס את <code>__repr__</code> כך שיחזיר תמיד <code>"Settings(***)"</code>. הפרויקט בחר ב-<code>repr=False</code> כי הוא מראה את השדות הלא-סודיים ועדיין מסתיר את הסודיים.</p></div></div></div>
-    <div class="lx"><span class="lr">52-64</span><div><p>הגבלות עסקיות עם ברירות מחדל: <code>max_duration_seconds=330</code> (5.5 דקות מקסימום לשיר), <code>free_daily_limit=3</code> ו-<code>pro_daily_limit=10</code> (כמה הפרדות ביום), <code>signed_url_listen_ttl=600</code> (קישור האזנה בתוקף 10 דקות), <code>signed_url_download_ttl=300</code> (קישור הורדה 5 דקות). ה-TTL הוא <em>Time To Live</em>: כמה שניות הקישור חי.</p><p>והגדרות <a class="tl" data-tech="smtp">SMTP</a> (שרת מייל) ו-<a class="tl" data-tech="google-oauth">Google</a> (מזהה לקוח). ערך ריק פירושו "הפיצ'ר כבוי".</p></div></div>
+    <div class="lx"><span class="lr">52-64</span><div><p>הגבלות עסקיות עם ברירות מחדל: <code>free_daily_limit=3</code> ו-<code>pro_daily_limit=10</code> (כמה הפרדות ביום), <code>signed_url_listen_ttl=600</code> (קישור האזנה בתוקף 10 דקות), <code>signed_url_download_ttl=300</code> (קישור הורדה 5 דקות). ה-TTL הוא <em>Time To Live</em>: כמה שניות הקישור חי.</p><p>והגדרות <a class="tl" data-tech="smtp">SMTP</a> (שרת מייל) ו-<a class="tl" data-tech="google-oauth">Google</a> (מזהה לקוח). ערך ריק פירושו "הפיצ'ר כבוי".</p></div></div>
     <div class="lx"><span class="lr">67-94</span><div><p><code>load_settings()</code> היא <strong>פונקציית ייצור</strong> (factory): היא קוראת כל משתנה בעזרת <code>os.getenv("NAME", "default")</code>. הארגומנט השני הוא הערך אם המשתנה חסר.</p><p><strong>למה <code>int(...)</code> ו-<code>float(...)</code>?</strong> כל משתני הסביבה הם <em>טקסט</em>, גם אם כתוב בהם <code>8000</code>. אם לא נמיר, נקבל <code>"8000"</code> במקום המספר 8000, והשוואות ופעולות מתמטיות ייכשלו או יתנהגו מוזר.</p><p>שורה 73: <code>os.getenv("S3_PUBLIC_ENDPOINT_URL", os.getenv("S3_ENDPOINT_URL", ""))</code> היא ברירת מחדל מקוננת: "אם אין כתובת ציבורית, השתמש בכתובת הפנימית".</p></div></div>
     <div class="lx"><span class="lr">97-111</span><div><p><code>require_database_url</code> מממשת עיקרון של <strong>כישלון מוקדם וברור</strong> (fail fast). הטעינה של ההגדרות לא נכשלת אם <code>DATABASE_URL</code> חסר, כך ש-<code>/health</code> ובדיקות עובדים בלי מסד. אבל מי שבאמת צריך מסד קורא לפונקציה הזו, והיא זורקת שגיאה ברורה.</p><p><code>(settings or load_settings())</code>: אם הועבר אובייקט, השתמש בו, אחרת טען חדש. <code>.strip()</code> מסלק רווחים, כך שגם ערך של רווחים בלבד נחשב "ריק".</p></div></div>
   </div>
@@ -3232,7 +3247,6 @@ def google_login(
             "https://oauth2.googleapis.com/tokeninfo",
             params={"id_token": payload.credential},
             timeout=10,
-            verify=False,
         )
     except httpx.HTTPError:
         raise _error(502, "google_verification_failed", "Could not verify Google token.")
@@ -3466,7 +3480,7 @@ def reset_password(
   </table></div>
   <div class="callout warn"><b class="t">נקודות לשיפור (תרגיל לסטודנט)</b>
     <ol>
-      <li>להסיר <code>verify=False</code> בבקשת Google, ולעבור ל-<code>google-auth</code>.</li>
+      <li><s>להסיר <code>verify=False</code> בבקשת Google</s> - בוצע! כעת האימות פעיל. עדיין אפשר לעבור ל-<code>google-auth</code> לאימות מקומי.</li>
       <li>לקחת את כתובת קישור האיפוס מהגדרה (<code>FRONTEND_URL</code>) ולא לכתוב <code>localhost</code> בקוד.</li>
       <li>אחרי איפוס סיסמה מוצלח, <strong>למחוק את כל הסשנים הקיימים של המשתמש</strong>, כדי שמי ששמר סשן ישן (אולי תוקף) יפלט.</li>
       <li>להגביל קצב ניסיונות התחברות (rate limiting) נגד ניחוש סיסמאות.</li>
@@ -7046,7 +7060,7 @@ if (hash.startsWith('#/song/')) {
   eyeOff: ...,
   shield: ...,
 }</code></pre></div>
-  <p>זהו אובייקט עם שמות כמו <code dir="ltr">home</code>, <code dir="ltr">upload</code>, <code dir="ltr">library</code>, <code dir="ltr">explore</code>, <code dir="ltr">settings</code>, <code dir="ltr">logout</code>, <code dir="ltr">music</code>, <code dir="ltr">fileMusic</code>, <code dir="ltr">play</code>, <code dir="ltr">download</code>, <code dir="ltr">headphones</code>, <code dir="ltr">trash</code>, <code dir="ltr">globe</code>, <code dir="ltr">eye</code>, <code dir="ltr">eyeOff</code>, <code dir="ltr">arrowRight</code> ו-<code dir="ltr">shield</code>. הערך של כל מפתח הוא <b>אלמנט JSX</b> של SVG. כדי להציג אייקון כותבים פשוט <code dir="ltr">{Icons.trash}</code> בתוך JSX.</p>
+  <p>זהו אובייקט עם שמות כמו <code dir="ltr">home</code>, <code dir="ltr">upload</code>, <code dir="ltr">library</code>, <code dir="ltr">explore</code>, <code dir="ltr">settings</code>, <code dir="ltr">logout</code>, <code dir="ltr">music</code>, <code dir="ltr">download</code>, <code dir="ltr">headphones</code>, <code dir="ltr">trash</code>, <code dir="ltr">globe</code>, <code dir="ltr">eye</code>, <code dir="ltr">eyeOff</code> ו-<code dir="ltr">shield</code>. הערך של כל מפתח הוא <b>אלמנט JSX</b> של SVG. כדי להציג אייקון כותבים פשוט <code dir="ltr">{Icons.trash}</code> בתוך JSX.</p>
 
   <div class="concept-box">
     <h4>מושג: SVG מוטמע לעומת פונט אייקונים</h4>
@@ -7319,24 +7333,24 @@ export function getLibrary(params = {}) {
 
   <h3>פונקציות אחרות בקובץ</h3>
   <ul>
-    <li><b>סטטוס ופרטים:</b> <code dir="ltr">getSong</code>, <code dir="ltr">getSongStatus</code>.</li>
+    <li><b>סטטוס ופרטים:</b> <code dir="ltr">getSong</code>.</li>
     <li><b>נגינה והורדה:</b> <code dir="ltr">getListenUrl</code>, <code dir="ltr">getDownloadUrl</code> - מבקשות מהשרת כתובת מיוחדת לקובץ שמע של ערוץ מסוים (<code dir="ltr">purpose</code> הוא original, vocals או background).</li>
     <li><b>ספרייה אישית:</b> <code dir="ltr">getLibrary</code>, <code dir="ltr">deleteSong</code>, <code dir="ltr">renameSong</code>.</li>
-    <li><b>ספרייה ציבורית:</b> <code dir="ltr">publishSong</code> (שולח <code dir="ltr">rights_confirmed: true</code>, כלומר אישור שיש למשתמש זכויות על השיר), <code dir="ltr">unpublishSong</code>, <code dir="ltr">getPublicLibrary</code>, <code dir="ltr">getPublicListenUrl</code>, <code dir="ltr">rateSong</code>, <code dir="ltr">reportSong</code>.</li>
-    <li><b>קופונים ומנויים:</b> <code dir="ltr">redeemCoupon</code>, <code dir="ltr">getPlans</code>, <code dir="ltr">subscribe</code> (שולח את התכנית ואופציונלית קוד קופון).</li>
+    <li><b>ספרייה ציבורית:</b> <code dir="ltr">publishSong</code> (שולח <code dir="ltr">rights_confirmed: true</code>, כלומר אישור שיש למשתמש זכויות על השיר), <code dir="ltr">unpublishSong</code>, <code dir="ltr">getPublicLibrary</code>, <code dir="ltr">getPublicListenUrl</code>, <code dir="ltr">rateSong</code>.</li>
+    <li><b>מנויים:</b> <code dir="ltr">subscribe</code> (שולח את התכנית ואופציונלית קוד קופון).</li>
     <li><b>הגדרות וחשבון:</b> <code dir="ltr">getSettings</code>, <code dir="ltr">updateSettings</code>, <code dir="ltr">toggleTier</code>, <code dir="ltr">deleteAccount</code>, <code dir="ltr">changePassword</code>, <code dir="ltr">getQuota</code>.</li>
     <li><b>ניהול:</b> <code dir="ltr">getAdminStats</code>, <code dir="ltr">getAdminUsers</code>, <code dir="ltr">getAdminSongs</code>, <code dir="ltr">blockUser</code>, <code dir="ltr">unblockUser</code>.</li>
   </ul>
 
   <div class="tip-box">
-    <h4>הערת מציאות: פונקציות שאינן בשימוש (עדיין)</h4>
-    <p>חלק מהפונקציות כתובות אבל עדיין לא מחוברות לממשק. למשל <code dir="ltr">reportSong</code>, <code dir="ltr">redeemCoupon</code> ו-<code dir="ltr">getPlans</code> אינן נקראות משום רכיב כרגע. זה נפוץ בפרויקטים חיים: ה-API מקדים את הממשק, או שפיצ'ר נבנה בשרת ועדיין ממתין לכפתור בפרונטאנד.</p>
+    <h4>הערת ניקיון קוד</h4>
+    <p>פונקציות שהיו כתובות ולא מחוברות לממשק (כמו <code dir="ltr">getSongStatus</code>, <code dir="ltr">reportSong</code>, <code dir="ltr">redeemCoupon</code> ו-<code dir="ltr">getPlans</code>) נמחקו בניקוי קוד מת. זה דפוס נפוץ בפרויקטים חיים: קוד שנכתב "לעתיד" ולא נקרא לעולם הופך לנטל תחזוקה ומבלבל קוראים חדשים.</p>
   </div>
 </div>
 
 <div class="section-card" id="demo-api" dir="rtl">
-  <h2>לקוח ה-API של הדמו</h2>
-  <p>הקובץ <code dir="ltr">frontend/src/api/demo.js</code> (כ-78 שורות) הוא לקוח לנקודת קצה פשוטה יותר, <code dir="ltr">/demo/separate</code>, שנועדה להפרדה מקומית בלי חשבון משתמש ובלי ספרייה. הוא נכתב בשלב מוקדם של הפרויקט (בהערות הוא נקרא "FAST-DEMO"), ובפועל <b>אף אחד מהרכיבים הנוכחיים לא מייבא אותו</b>. כדאי להכיר אותו בכל זאת כי הוא מדגים שני רעיונות חשובים: ולידציה בצד הלקוח, וגוף בקשה גולמי.</p>
+  <h2>לקוח ה-API של הדמו (נמחק)</h2>
+  <p>הקובץ <code dir="ltr">frontend/src/api/demo.js</code> היה לקוח לנקודת קצה <code dir="ltr">/demo/separate</code>, שנועדה להפרדה מקומית בלי חשבון משתמש. הוא נכתב בשלב מוקדם של הפרויקט (בהערות הוא נקרא "FAST-DEMO"), ובפועל <b>אף רכיב לא ייבא אותו</b>, ולכן נמחק כקוד מת. הקוד שלהלן משמש כדוגמה לשני רעיונות חשובים: ולידציה בצד הלקוח, וגוף בקשה גולמי.</p>
 
   <h3>מיפוי שגיאות</h3>
   <div class="code-block" dir="ltr"><pre><code>const MESSAGES = {
@@ -7691,7 +7705,7 @@ export function validateFile(file) {
 
   <div class="tip-box">
     <h4>הערת מציאות</h4>
-    <p>במימוש הנוכחי הכפתורים מציגים <b>מספרים</b>, לא אייקוני כוכב, והרכיב אינו מסמן איזה ציון בחרתם. כדי להפוך לכוכבים אמיתיים היו מחליפים את <code dir="ltr">{n}</code> באייקון כוכב ומוסיפים state של "הציון שנבחר" כדי לצבוע כוכבים עד הציון הזה. כמו כן, בקוד של הכרטיס אין כפתור "דווח" למודרציה: הפונקציה <code dir="ltr">reportSong</code> קיימת ב-songs.js ומחכה לחיבור לממשק.</p>
+    <p>במימוש הנוכחי הכפתורים מציגים <b>מספרים</b>, לא אייקוני כוכב, והרכיב אינו מסמן איזה ציון בחרתם. כדי להפוך לכוכבים אמיתיים היו מחליפים את <code dir="ltr">{n}</code> באייקון כוכב ומוסיפים state של "הציון שנבחר" כדי לצבוע כוכבים עד הציון הזה. כמו כן, בקוד של הכרטיס אין כפתור "דווח" למודרציה.</p>
   </div>
 </div>
 
@@ -7913,10 +7927,8 @@ const [active, setActive] = useState('original')
 const [loaded, setLoaded] = useState({ original: true })
 const [editingTitle, setEditingTitle] = useState(false)
 const [titleDraft, setTitleDraft] = useState('')
-const [saved, setSaved] = useState(false)
 const [msg, setMsg] = useState('')
 const [elapsed, setElapsed] = useState(0)
-const titleRef = useRef(null)
 const players = useRef({})
 
 const isProcessing = song &amp;&amp; (song.status === 'processing'
@@ -7925,7 +7937,7 @@ const isProcessing = song &amp;&amp; (song.status === 'processing'
     <li><b>song / loading / error</b> - שלושת מצבי הטעינה הקלאסיים: עדיין טוען, נכשל, או הצליח.</li>
     <li><b>listenUrls / active / loaded</b> - הנגן: כתובות הערוצים, איזה ערוץ פעיל, ואילו כבר נטענו.</li>
     <li><b>editingTitle / titleDraft</b> - עריכת שם במקום.</li>
-    <li><b>saved / msg</b> - הודעות הצלחה.</li>
+    <li><b>msg</b> - הודעות הצלחה.</li>
     <li><b>elapsed</b> - שניות שעברו מתחילת העיבוד.</li>
     <li><b>players</b> - useRef שמחזיק את שלושת אלמנטי ה-<code dir="ltr">&lt;audio&gt;</code> האמיתיים. הוא "אובייקט ריק" שנמלא בהמשך.</li>
     <li><b>isProcessing</b> - ערך נגזר: האם עדיין מעבדים.</li>
@@ -8077,18 +8089,17 @@ async function onDelete() {
   } catch (f) { setError(f.message) }
 }
 
-function onSave() {
-  setSaved(true)
-  setMsg(t('savedToLibrary'))
-  setTimeout(() =&gt; { window.location.hash = '#/library' }, 1200)
 }</code></pre></div>
 
   <ul>
     <li><b>עריכת שם במקום (Inline Editing):</b> לחיצה על הכותרת מדליקה <code dir="ltr">editingTitle</code>, והכותרת הופכת לשדה טקסט עם כפתורי "שמור" ו"ביטול". Enter שומר, Escape מבטל. הטיוטה נשמרת ב-<code dir="ltr">titleDraft</code>, והשם האמיתי משתנה רק אחרי שהשרת אישר. <code dir="ltr">.trim()</code> מסיר רווחים בקצוות, ושם ריק נדחה.</li>
     <li><b>הודעה זמנית:</b> <code dir="ltr">setMsg(...)</code> ואז <code dir="ltr">setTimeout(() =&gt; setMsg(''), 2000)</code> מציג הודעה ל-2 שניות ומעלים אותה. דפוס "toast" פשוט.</li>
-    <li><b>שמירה לספרייה:</b> שימו לב, <code dir="ltr">onSave</code> <b>לא קורא לשרת</b>. השיר כבר נשמר בחשבון מרגע ההעלאה והוא כבר "בספרייה". הפעולה רק מציגה הודעה ומעבירה את המשתמש לדף הספרייה אחרי 1.2 שניות. מבחינת החוויה זו "נקודת סיום" ברורה להעלאה.</li>
     <li><b>מחיקה:</b> שיר מוכן או שנכשל ניתן למחיקה, ואחרי מחיקה מנווטים לדף ההעלאה. אין כאן חלון אישור, וזה נקודה לשיפור אפשרי (בהגדרות, לעומת זאת, יש אישור לפני מחיקת חשבון).</li>
   </ul>
+  <div class="tip-box">
+    <h4>הערת ניקיון קוד</h4>
+    <p>בגרסה קודמת היה כאן כפתור "שמירה לספרייה" (<code dir="ltr">onSave</code>) שלא עשה דבר ממשי - השיר כבר נשמר בחשבון מרגע ההעלאה. הכפתור הוסר כי היה מבלבל.</p>
+  </div>
 
   <h3>מצבים שונים באותו דף</h3>
   <ul>
@@ -8380,7 +8391,7 @@ async function onUpdate(field, value) {
 
   <div class="tip-box">
     <h4>הערת מציאות</h4>
-    <p>בתיאור הראשוני של הדף היה כתוב שיש בטבלת השירים "מודרציה". בקוד הנוכחי לשונית השירים היא <b>תצוגה בלבד</b>: אין בה כפתורי מחיקה או הסרה. הפעולה היחידה של מנהל בדף היא חסימה ושחרור של משתמשים. מודרציה של תוכן (דיווחים על שירים) קיימת בצד השרת כנקודת קצה (<code dir="ltr">reportSong</code>), אך עדיין לא בממשק.</p>
+    <p>בתיאור הראשוני של הדף היה כתוב שיש בטבלת השירים "מודרציה". בקוד הנוכחי לשונית השירים היא <b>תצוגה בלבד</b>: אין בה כפתורי מחיקה או הסרה. הפעולה היחידה של מנהל בדף היא חסימה ושחרור של משתמשים. מודרציה של תוכן (דיווחים על שירים) קיימת בצד השרת כנקודת קצה, אך עדיין לא בממשק.</p>
   </div>
 
   <div class="concept-box">
@@ -9417,11 +9428,7 @@ def run_local_separation(
 DEMUCS_MODEL = "htdemucs_ft"
 
 def run_demucs_separation(input_path: str, output_dir: str) -&gt; dict[Stem, str]:
-    import ssl
-    import urllib.request
-
     import librosa
-    import numpy as np
     import soundfile as sf
     import torch
     from demucs.apply import apply_model
@@ -9432,45 +9439,22 @@ def run_demucs_separation(input_path: str, output_dir: str) -&gt; dict[Stem, str
     שמריצה את המודל על הקול, ו-<code>get_model</code> טוענת (ואם צריך, מורידה) את המודל המאומן.
   </p>
 
-  <h4>שלב 2: עקיפת אימות SSL זמנית</h4>
+  <h4>שלב 2: טעינת המודל</h4>
   <div class="code-block" dir="ltr"><pre>
-# Bypass SSL verification for corporate proxy (self-signed cert in chain).
-orig_create_ctx = ssl.create_default_context
-orig_https_ctx = ssl._create_default_https_context
-
-def _no_verify_context(*a, **kw):
-    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
-    return ctx
-
-ssl.create_default_context = _no_verify_context
-ssl._create_default_https_context = _no_verify_context
-os.environ["HF_HUB_DISABLE_SSL_VERIFY"] = "1"
-...
-try:
     model = get_model(DEMUCS_MODEL)
-finally:
-    ssl.create_default_context = orig_create_ctx
-    ssl._create_default_https_context = orig_https_ctx
-    os.environ.pop("HF_HUB_DISABLE_SSL_VERIFY", None)
-    ...
-model.eval()
+    model.eval()
 </pre></div>
   <div class="tip-box">
-    <h4>אזהרת אבטחה: קטע שכדאי להכיר ולא להעתיק</h4>
+    <h4>הערת היסטוריה: עקיפת SSL שהוסרה</h4>
     <p>
-      בסביבת פיתוח בארגון (למשל מחשב עם "פרוקסי ארגוני" שמחליף תעודות אבטחה), הורדת המודל נכשלה בגלל אימות תעודת SSL.
-      ה-SSL הוא מה שמבטיח שאתם מדברים עם השרת האמיתי ולא עם מתחזה. הקוד כאן <strong>מכבה את האימות</strong>
-      (<code>CERT_NONE</code>) באופן זמני, מוריד את המודל, ומיד מחזיר את ההגדרות המקוריות בבלוק
-      <code>finally</code> (שרץ תמיד, גם אם קרתה שגיאה).
+      בגרסה קודמת של הקוד, הייתה כאן עקיפה זמנית של אימות תעודות SSL כדי להוריד את המודל מאחורי פרוקסי ארגוני.
+      הקוד כיבה את <code>ssl.CERT_NONE</code>, הוריד, והחזיר את ההגדרות בבלוק <code>finally</code>.
+      העקיפה הוסרה כי היא מיותרת בזמן ריצה: המודל מורד פעם אחת ונשמר בווליום של Docker,
+      ובהרצות הבאות <code>get_model</code> טוען אותו מהמטמון בלי גישה לרשת.
     </p>
     <p>
-      זה פתרון עוקף, לא פתרון נכון. בשרת ייצור אסור לכבות אימות תעודות, כי זה פותח פתח להתקפת "אדם באמצע" (MITM).
-      בנוסף, שינוי של <code>ssl</code> ו-<code>requests</code> הוא שינוי של מצב <em>גלובלי</em> בתהליך, ולכן
-      אם שני תהליכונים רצים במקביל, הם ישפיעו זה על זה. הפתרון הנכון הוא להוסיף את תעודת הארגון לרשימת
-      התעודות המהימנות (למשל דרך משתנה הסביבה <code>SSL_CERT_FILE</code>). כדאי להכיר את הדפוס
-      <code>try / finally</code> שמבטיח שמשהו יתנקה גם בכישלון: זה השימוש היפה כאן.
+      אם אתם צריכים להוריד מודל מאחורי פרוקסי, הפתרון הנכון הוא להוסיף את תעודת הארגון
+      לרשימת התעודות המהימנות דרך משתנה הסביבה <code>SSL_CERT_FILE</code>, ולא לכבות אימות.
     </p>
   </div>
 
@@ -11578,7 +11562,7 @@ hmac.compare_digest(h, h2)                             # True (בזמן קבוע
 <li><div>השרת מאמת מול Google, בודק <code>aud</code> ו-<code>email_verified</code>.</div></li>
 <li><div>השרת מוצא או יוצר משתמש לפי המייל ופותח סשן (עוגייה) רגיל.</div></li>
 </ol>
-<div class="callout danger"><b class="t">אזהרה על הקוד בפרויקט</b><p>בשורה <code>httpx.get(..., verify=False)</code> האימות של תעודת ה-TLS כבוי. בייצור חובה להסיר אותו, והמלצת Google היא לאמת את הטוקן מקומית עם ספריית <code>google-auth</code> ולא דרך <code>tokeninfo</code>.</p></div>
+<div class="callout tip"><b class="t">תוקן</b><p>בגרסה קודמת הייתה כאן <code>verify=False</code> שכיבתה את אימות TLS. הבעיה תוקנה והאימות פעיל כעת. המלצת Google היא לאמת את הטוקן מקומית עם ספריית <code>google-auth</code> ולא דרך <code>tokeninfo</code>.</p></div>
 <div class="where"><b>איפה בפרויקט:</b> <code>POST /auth/google</code> ב-<code>backend/app/auth/routes.py</code>, והמשתנים <code>GOOGLE_CLIENT_ID</code> (backend) ו-<code>VITE_GOOGLE_CLIENT_ID</code> (frontend).</div>
 </template>
 
@@ -11632,7 +11616,7 @@ vocals_idx = model.sources.index("vocals")
 vocals = sources[vocals_idx]
 background = sum(sources[i] for i, n in enumerate(model.sources) if n != "vocals")
 </script>
-<div class="callout warn"><b class="t">שימו לב בקוד המקורי</b><p>כדי להוריד את המודל מאחורי פרוקסי ארגוני, הקוד מכבה זמנית את אימות תעודות ה-SSL בזמן ההורדה (ומחזיר אחר כך). זה פתרון של פיתוח בלבד. בייצור מתקינים את ה-CA הנכון, כי כיבוי אימות פותח את ההורדה להתחזות.</p></div>
+<div class="callout tip"><b class="t">עודכן</b><p>בגרסה קודמת היה כאן קוד שכיבה זמנית את אימות SSL כדי להוריד את המודל מאחורי פרוקסי. הקוד הוסר כי המודל מורד פעם אחת ונשמר במטמון, ובהרצות הבאות הוא נטען מקומית.</p></div>
 <div class="where"><b>איפה בפרויקט:</b> <code>backend/ai/demucs_inference.py</code>. הרמה <code>professional</code> ב-<code>ModelTier</code>. רץ ב-worker, כרגע על CPU, ולכן לוקח זמן.</div>
 </template>
 
@@ -11783,6 +11767,9 @@ window.navigateTo = function(id){
 
   // Process code blocks in the page if needed
   if(target) processPageCode(target);
+
+  // Syntax-highlight code blocks
+  highlightAllCodeBlocks();
 };
 
 /* ── Process code blocks (Part 1 script-based) ── */
@@ -11819,6 +11806,49 @@ function processPageCode(page){
 
 function escapeHtml(s){
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function highlightCode(html){
+  // Python/JS syntax highlighting via regex on already-escaped HTML
+  var h = html;
+  // Comments (# ...) - must come first
+  h = h.replace(/(#[^\n]*)/g,'<span class="hl-cm">$1</span>');
+  // Triple-quoted strings
+  h = h.replace(/((&quot;){3}[\s\S]*?(&quot;){3})/g,'<span class="hl-str">$1</span>');
+  // Strings (double and single quoted)
+  h = h.replace(/(&quot;(?:[^&]|&(?!quot;))*?&quot;)/g,'<span class="hl-str">$1</span>');
+  h = h.replace(/(&#39;(?:[^&]|&(?!#39;))*?&#39;)/g,'<span class="hl-str">$1</span>');
+  h = h.replace(/(&amp;quot;[^&]*?&amp;quot;)/g,'<span class="hl-str">$1</span>');
+  // f-strings
+  h = h.replace(/\bf(&quot;)/g,'<span class="hl-str">f$1</span>');
+  // Decorators
+  h = h.replace(/(@\w+)/g,'<span class="hl-dc">$1</span>');
+  // Python keywords
+  h = h.replace(/\b(from|import|as|def|class|return|if|elif|else|for|in|while|try|except|finally|with|raise|yield|async|await|pass|break|continue|lambda|not|and|or|is|del|global|nonlocal|assert)\b/g,'<span class="hl-kw">$1</span>');
+  // JS keywords
+  h = h.replace(/\b(const|let|var|function|export|default|new|this|typeof|instanceof|void|delete|throw|switch|case)\b/g,'<span class="hl-kw">$1</span>');
+  // Built-in functions
+  h = h.replace(/\b(print|len|range|str|int|float|list|dict|set|tuple|bool|type|isinstance|hasattr|getattr|setattr|super|property|staticmethod|classmethod|enumerate|zip|map|filter|sorted|reversed|any|all|min|max|sum|abs|round|open|None)\b/g,'<span class="hl-bi">$1</span>');
+  // Booleans
+  h = h.replace(/\b(True|False|true|false|null|undefined|NaN)\b/g,'<span class="hl-bool">$1</span>');
+  // self/cls
+  h = h.replace(/\b(self|cls)\b/g,'<span class="hl-self">$1</span>');
+  // Numbers
+  h = h.replace(/\b(\d+\.?\d*)\b/g,'<span class="hl-num">$1</span>');
+  // Operators
+  h = h.replace(/(=&gt;|===|!==|==|!=|&lt;=|&gt;=|&amp;&amp;|\|\||\+=|-=|\*=|\/=)/g,'<span class="hl-op">$1</span>');
+  return h;
+}
+
+function highlightAllCodeBlocks(){
+  // Highlight <pre class="code-block"> and .code-block pre and .code-wrap pre
+  var blocks = document.querySelectorAll('pre.code-block, .code-block pre, .code-wrap pre');
+  for(var i=0;i<blocks.length;i++){
+    if(blocks[i].dataset.highlighted) continue;
+    blocks[i].dataset.highlighted = '1';
+    var codeEl = blocks[i].querySelector('code') || blocks[i];
+    codeEl.innerHTML = highlightCode(codeEl.innerHTML);
+  }
 }
 
 window.copyCode = function(btn){
