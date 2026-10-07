@@ -4,8 +4,6 @@ import { getListenUrl, getDownloadUrl } from '../api/songs.js'
 
 export default function LibrarySongCard({ song, onPublish, onUnpublish, onDelete, t }) {
   const [listenUrls, setListenUrls] = useState({})
-  const [error, setError] = useState('')
-
   async function loadListen(purpose) {
     try {
       const r = await getListenUrl(song.id, purpose)
@@ -31,8 +29,8 @@ export default function LibrarySongCard({ song, onPublish, onUnpublish, onDelete
     <article className="song-card">
       <h3><a href={`#/song/${song.id}`}>{song.title || t('noTitle')}</a></h3>
       <div style={{ display: 'flex', gap: '0.35rem', margin: '0.5rem 0', flexWrap: 'wrap' }}>
-        <span className={statusBadgeClass(song.status)}>{t(song.status) || song.status}</span>
-        <span className="badge neutral">{t(song.visibility) || song.visibility}</span>
+        <span className={statusBadgeClass(song.status)}>{t(song.status)}</span>
+        <span className="badge neutral">{t(song.visibility)}</span>
         {song.model_tier && <span className={`badge ${song.model_tier === 'professional' ? 'inst' : 'primary'} model-badge`}>
           {t(song.model_tier)}
         </span>}
@@ -54,8 +52,6 @@ export default function LibrarySongCard({ song, onPublish, onUnpublish, onDelete
           ))}
         </div>
       )}
-
-      {error && <p className="error" style={{ fontSize: '0.8rem' }}>{error}</p>}
 
       <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
         {song.status === 'ready' && song.visibility === 'private' && (

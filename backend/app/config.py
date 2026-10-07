@@ -50,7 +50,6 @@ class Settings:
     celery_broker_url: str = field(repr=False)
     celery_result_backend: str = field(repr=False)
     max_upload_bytes: int = 100 * 1024 * 1024
-    max_duration_seconds: float = 330.0
     free_daily_limit: int = 3
     pro_daily_limit: int = 10
     signed_url_listen_ttl: int = 600
@@ -79,7 +78,6 @@ def load_settings() -> Settings:
         celery_broker_url=os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0"),
         celery_result_backend=os.getenv("CELERY_RESULT_BACKEND", "redis://redis:6379/1"),
         max_upload_bytes=int(os.getenv("MAX_UPLOAD_BYTES", str(100 * 1024 * 1024))),
-        max_duration_seconds=float(os.getenv("MAX_DURATION_SECONDS", "330")),
         free_daily_limit=int(os.getenv("FREE_DAILY_LIMIT", "3")),
         pro_daily_limit=int(os.getenv("PRO_DAILY_LIMIT", "10")),
         signed_url_listen_ttl=int(os.getenv("SIGNED_URL_LISTEN_TTL", "600")),

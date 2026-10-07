@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { statusBadgeClass, Icons } from '../helpers.jsx'
 import { getSong, getListenUrl, getDownloadUrl, renameSong, deleteSong } from '../api/songs.js'
 
-export default function SongPage({ songId, user, t }) {
+export default function SongPage({ songId, t }) {
   const [song, setSong] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -11,23 +11,22 @@ export default function SongPage({ songId, user, t }) {
   const [loaded, setLoaded] = useState({ original: true })
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState('')
-  const [saved, setSaved] = useState(false)
   const [msg, setMsg] = useState('')
   const [elapsed, setElapsed] = useState(0)
-  const titleRef = useRef(null)
   const players = useRef({})
 
   const isProcessing = song && (song.status === 'processing' || song.status === 'uploaded' || song.status === 'queued')
 
   useEffect(() => {
     let live = true
+    let timer = null
     loadSong()
     async function loadSong() {
       try {
         const s = await getSong(songId)
         if (live) { setSong(s); setLoading(false); setTitleDraft(s.title || '') }
         if (s.status === 'processing' || s.status === 'uploaded' || s.status === 'queued') {
-          setTimeout(loadSong, 3000)
+          timer = setTimeout(loadSong, 3000)
         }
         if (s.status === 'ready' && live) {
           const urls = {}
@@ -44,7 +43,7 @@ export default function SongPage({ songId, user, t }) {
         }
       } catch (f) { if (live) { setError(f.message); setLoading(false) } }
     }
-    return () => { live = false }
+    return () => { live = false; if (timer) clearTimeout(timer) }
   }, [songId])
 
   useEffect(() => {
@@ -97,19 +96,13 @@ export default function SongPage({ songId, user, t }) {
     } catch (f) { setError(f.message) }
   }
 
-  function onSave() {
-    setSaved(true)
-    setMsg(t('savedToLibrary'))
-    setTimeout(() => { window.location.hash = '#/library' }, 1200)
-  }
-
   if (loading) return <section className="page-section"><div className="wrap"><span className="spinner" /></div></section>
   if (error && !song) return <section className="page-section"><div className="wrap"><p className="error">{error}</p></div></section>
   if (!song) return null
 
   const STEM_ORDER = ['original', 'vocals', 'background']
   const STEM_CSS = { original: '', vocals: 'vocal', background: 'inst' }
-  const STEM_NAMES = { original: t('original') || 'מקור', vocals: t('vocals'), background: t('background') }
+  const STEM_NAMES = { original: t('original'), vocals: t('vocals'), background: t('background') }
   const mm = String(Math.floor(elapsed / 60)).padStart(2, '0')
   const ss = String(elapsed % 60).padStart(2, '0')
 
@@ -121,7 +114,7 @@ export default function SongPage({ songId, user, t }) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               {editingTitle ? (
                 <div style={{ display: 'flex', gap: '0.5rem', flex: 1 }}>
-                  <input ref={titleRef} className="field-input" value={titleDraft} onChange={e => setTitleDraft(e.target.value)}
+                  <input className="field-input" value={titleDraft} onChange={e => setTitleDraft(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') onRename(); if (e.key === 'Escape') setEditingTitle(false) }}
                     style={{ flex: 1, fontSize: '1.1rem' }} autoFocus />
                   <button className="btn" onClick={onRename} style={{ padding: '0.4rem 1rem' }}>{t('save')}</button>
@@ -133,8 +126,8 @@ export default function SongPage({ songId, user, t }) {
                 </h2>
               )}
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <span className={statusBadgeClass(song.status)}>{t(song.status) || song.status}</span>
-                <span className="badge neutral">{t(song.visibility) || song.visibility}</span>
+                <span className={statusBadgeClass(song.status)}>{t(song.status)}</span>
+                <span className="badge neutral">{t(song.visibility)}</span>
               </div>
             </div>
           )}
@@ -144,10 +137,8 @@ export default function SongPage({ songId, user, t }) {
 
           {isProcessing && (
             <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-              <div className="processing-anim">
-                <span className="spinner" style={{ width: 48, height: 48 }} />
-              </div>
-              <h3 style={{ margin: '1.5rem 0 0.5rem', color: 'var(--text-primary)' }}>{t('separating')}</h3>
+              <span className="spinner" style={{ width: 48, height: 48 }} />
+              <h3 style={{ margin: '1.5rem 0 0.5rem', color: 'var(--text)' }}>{t('separating')}</h3>
               <p className="hint">{t('waitNote')}</p>
               <p style={{ fontFamily: 'monospace', fontSize: '1.5rem', color: 'var(--primary)', margin: '1rem 0 0' }}>{mm}:{ss}</p>
             </div>
@@ -188,14 +179,11 @@ export default function SongPage({ songId, user, t }) {
           )}
         </div>
 
-        {song.status === 'ready' && !saved && (
+        {song.status === 'ready' && (
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <button className="btn" onClick={onSave}>{t('saveToLibrary')}</button>
+            <a href="#/library" className="btn secondary">{t('toLibrary')}</a>
             <button className="btn danger" onClick={onDelete}>{t('delete')}</button>
           </div>
-        )}
-        {song.status === 'ready' && saved && (
-          <a href="#/library" className="btn secondary">{t('toLibrary')}</a>
         )}
         {song.status === 'failed' && (
           <div style={{ display: 'flex', gap: '0.75rem' }}>

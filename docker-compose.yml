@@ -91,7 +91,7 @@ services:
     volumes:
       - ${LOCAL_MODEL_HOST_ROOT:-./models}:/models:ro
       - model_cache:/cache
-    command: ["celery", "-A", "app.celery_app", "worker", "--loglevel=info", "-Q", "separation,celery", "--concurrency=2"]
+    command: ["celery", "-A", "app.celery_app", "worker", "--loglevel=info", "-Q", "separation,celery", "--concurrency=1"]
 
   adminer:
     image: adminer:latest

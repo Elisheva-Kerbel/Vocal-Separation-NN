@@ -19,7 +19,7 @@ from app.constants import (
     GrantType,
     Visibility,
 )
-from app.db.models import AudioFile, SeparationJob, SignedUrlGrant, Song, User
+from app.db.models import SeparationJob, SignedUrlGrant, Song, User
 from app.helpers import api_error, get_audio_file_or_404, validate_purpose
 
 router = APIRouter(prefix="/songs", tags=["songs"])

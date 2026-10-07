@@ -167,56 +167,6 @@
   font-size: 0.7rem;
 }
 
-/* ===== PROCESSING STEPS ===== */
-.process-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin: 1.5rem 0;
-}
-
-.process-step {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 0.9375rem;
-  color: var(--text-muted);
-  transition: all 0.3s;
-}
-
-.process-step.active { color: var(--primary); font-weight: 600; }
-.process-step.done { color: var(--ok); }
-
-.process-step-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--line);
-  flex-shrink: 0;
-  transition: all 0.3s;
-}
-
-.process-step.active .process-step-dot {
-  background: var(--primary);
-  box-shadow: 0 0 0 4px var(--primary-soft), 0 0 12px var(--primary-glow);
-}
-
-.process-step.done .process-step-dot {
-  background: var(--ok);
-  box-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
-}
-
-/* ===== STEM PLAYER CARDS ===== */
-.stem-card {
-  border: 1px solid var(--glass-border);
-  transition: border-color 0.2s;
-}
-.stem-card:hover { border-color: rgba(255,255,255,0.18); }
-.stem-card audio {
-  border-radius: 8px;
-  height: 40px;
-}
-
 /* ===== DANGER ZONE ===== */
 .danger-zone {
   border-color: rgba(248, 113, 113, 0.2);
@@ -226,18 +176,6 @@
 .danger-zone h3 {
   color: var(--danger);
   margin-top: 0;
-}
-
-/* ===== STEM COLORS ===== */
-.stem-vocal { color: var(--vocal); }
-.stem-inst { color: var(--instrumental); }
-
-/* ===== WHO ===== */
-.who {
-  max-width: 12rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* ===== RATING ===== */
@@ -263,42 +201,6 @@
   color: var(--warn);
   border-color: var(--warn);
   transform: scale(1.1);
-}
-
-/* ===== CHECKOUT MODAL ===== */
-.checkout {
-  width: 100%;
-  max-width: 28rem;
-  background: var(--card-solid);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-xl);
-  padding: 2.5rem;
-  box-shadow: var(--shadow-modal);
-  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.checkout::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(124, 58, 237, 0.4), transparent);
-}
-
-.checkout h2 {
-  margin: 0 0 0.35rem;
-  font-size: 1.35rem;
-}
-
-.checkout-subtitle {
-  color: var(--text-muted);
-  font-size: 0.9375rem;
-  margin: 0 0 1.5rem;
 }
 
 .plan-selector {
@@ -371,29 +273,6 @@
   padding: 0.2rem 0.65rem;
   border-radius: 999px;
   white-space: nowrap;
-}
-
-.checkout-features {
-  text-align: start;
-  margin-bottom: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.checkout-feature {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.9375rem;
-  color: var(--text-secondary);
-}
-
-.check-icon {
-  color: var(--instrumental);
-  font-weight: 700;
-  font-size: 1rem;
-  flex-shrink: 0;
 }
 
 /* --- Sidebar quota --- */

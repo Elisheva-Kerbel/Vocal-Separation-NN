@@ -3,17 +3,15 @@
 from __future__ import annotations
 
 import datetime
-import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, ConfigDict, Field
+from fastapi import APIRouter, Depends, HTTPException, Response
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
 from app.auth import clear_auth_cookie, current_user, get_db, hash_password, verify_password, MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH
 from app.constants import GOOGLE_OAUTH_SENTINEL, UserRole, UserStatus, UserTier, Visibility
-from app.db.models import AudioFile, Song, User, UserSession
-from fastapi import Response
+from app.db.models import Song, User, UserSession
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 

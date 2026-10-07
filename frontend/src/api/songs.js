@@ -52,10 +52,6 @@ export function getSong(songId) {
   return request(`/songs/${songId}`)
 }
 
-export function getSongStatus(songId) {
-  return request(`/songs/${songId}/status`)
-}
-
 export function getListenUrl(songId, purpose) {
   return request(`/songs/${songId}/listen-url/${purpose}`)
 }
@@ -113,26 +109,6 @@ export function rateSong(songId, score) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ score }),
   })
-}
-
-export function reportSong(songId, reason) {
-  return request(`/public/songs/${songId}/report`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ reason }),
-  })
-}
-
-export function redeemCoupon(code) {
-  return request('/coupons/redeem', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code }),
-  })
-}
-
-export function getPlans() {
-  return request('/subscriptions/plans')
 }
 
 export function subscribe(plan, couponCode) {

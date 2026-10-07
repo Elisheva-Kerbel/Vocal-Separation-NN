@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import datetime
-import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field

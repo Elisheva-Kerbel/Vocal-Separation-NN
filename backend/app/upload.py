@@ -74,7 +74,7 @@ async def upload_song(
     if len(data) > settings.max_upload_bytes:
         raise api_error(413, "file_too_large", f"Max {settings.max_upload_bytes // (1024*1024)} MB.")
 
-    model_tier = ModelTier.PROFESSIONAL if model_choice == ModelTier.PROFESSIONAL else ModelTier.BASIC
+    model_tier = model_choice
     check_quota(db, user, model_tier)
 
     ext = ACCEPTED_TYPES[content_type]

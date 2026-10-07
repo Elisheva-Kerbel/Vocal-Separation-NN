@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session as DbSession
 
 from app.config import load_settings
 from app.constants import GOOGLE_OAUTH_SENTINEL, UserStatus
-from app.db.models import User
+from app.db.models import PasswordResetToken, User
 
 from .password import (
     _DUMMY_PASSWORD_HASH,
@@ -21,8 +21,10 @@ from .password import (
 from .schemas import (
     AuthMessage,
     AuthUserRead,
+    ForgotPasswordRequest,
     GoogleLoginRequest,
     LoginRequest,
+    ResetPasswordRequest,
     SignupRequest,
 )
 from .session import (
@@ -53,10 +55,6 @@ def _error(status_code: int, code: str, message: str):
     return HTTPException(
         status_code=status_code, detail={"error": code, "message": message}
     )
-
-
-def _not_authenticated():
-    return _error(401, "not_authenticated", "Sign in to continue.")
 
 
 def _invalid_credentials():
@@ -202,7 +200,6 @@ def google_login(
             "https://oauth2.googleapis.com/tokeninfo",
             params={"id_token": payload.credential},
             timeout=10,
-            verify=False,
         )
     except httpx.HTTPError:
         raise _error(502, "google_verification_failed", "Could not verify Google token.")
@@ -244,3 +241,130 @@ def google_login(
 def me(user: User = Depends(current_user)) -> AuthUserRead:
     """Return the signed-in account, or ``401`` / ``403`` from the guard."""
     return _safe_user(user)
+
+
+# ---- Password reset -----------------------------------------------------------
+
+RESET_TOKEN_TTL_MINUTES = 30
+
+
+@router.post("/forgot-password", response_model=AuthMessage)
+def forgot_password(
+    payload: ForgotPasswordRequest, db: DbSession = Depends(get_db)
+) -> AuthMessage:
+    """Send a password-reset email if the account exists.
+
+    Always returns the same message regardless of whether the email is registered,
+    so no account enumeration is possible.
+    """
+    import hashlib
+    import secrets
+    import datetime
+
+    from app.email_service import send_email
+
+    safe_msg = AuthMessage(message="If this email is registered, a reset link has been sent.")
+    email = _normalise_email(payload.email)
+    if "@" not in email:
+        return safe_msg
+
+    user = _find_user(db, email)
+    if user is None or user.status != ACTIVE_STATUS:
+        return safe_msg
+    if user.password_hash == GOOGLE_OAUTH_SENTINEL:
+        return safe_msg
+
+    token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    expires_at = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=RESET_TOKEN_TTL_MINUTES)
+
+    from sqlalchemy import select, update
+
+    db.execute(
+        update(PasswordResetToken)
+        .where(PasswordResetToken.user_id == user.id, PasswordResetToken.used.is_(False))
+        .values(used=True)
+    )
+
+    reset_row = PasswordResetToken(
+        user_id=user.id,
+        token_hash=token_hash,
+        expires_at=expires_at,
+    )
+    db.add(reset_row)
+    db.commit()
+
+    reset_link = f"http://localhost:5173/#/reset-password?token={token}"
+    html = f"""
+    <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
+        <h2 style="color: #7c3aed;">איפוס סיסמה - VocalSplit</h2>
+        <p>שלום,</p>
+        <p>קיבלנו בקשה לאיפוס הסיסמה שלך.</p>
+        <p>לחצ/י על הכפתור כדי לבחור סיסמה חדשה:</p>
+        <div style="text-align: center; margin: 2rem 0;">
+            <a href="{reset_link}"
+               style="background: #7c3aed; color: white; padding: 12px 32px;
+                      border-radius: 8px; text-decoration: none; font-weight: 600;
+                      display: inline-block;">
+                איפוס סיסמה
+            </a>
+        </div>
+        <p style="font-size: 0.875rem; color: #6b7280;">
+            הקישור תקף ל-{RESET_TOKEN_TTL_MINUTES} דקות. אם לא ביקשת איפוס, התעלמ/י מהמייל הזה.
+        </p>
+        <hr style="border: none; border-top: 1px solid #e5e7eb;">
+        <p style="font-size: 12px; color: #6b7280;">VocalSplit · פלטפורמת הפרדת שירים</p>
+    </div>
+    """
+    send_email(user.email, "איפוס סיסמה - VocalSplit", html)
+    return safe_msg
+
+
+@router.post("/reset-password", response_model=AuthMessage)
+def reset_password(
+    payload: ResetPasswordRequest, db: DbSession = Depends(get_db)
+) -> AuthMessage:
+    """Reset a password using a valid token."""
+    import hashlib
+    import datetime
+
+    from sqlalchemy import select
+
+    if not payload.token or not payload.password:
+        raise _error(400, "missing_fields", "Token and password are required.")
+
+    if not MIN_PASSWORD_LENGTH <= len(payload.password) <= MAX_PASSWORD_LENGTH:
+        raise _error(
+            400, "invalid_password",
+            f"Choose {MIN_PASSWORD_LENGTH}-{MAX_PASSWORD_LENGTH} characters.",
+        )
+
+    token_hash = hashlib.sha256(payload.token.encode()).hexdigest()
+    reset_row = db.scalars(
+        select(PasswordResetToken).where(
+            PasswordResetToken.token_hash == token_hash,
+            PasswordResetToken.used.is_(False),
+        )
+    ).first()
+
+    if reset_row is None:
+        raise _error(400, "invalid_token", "This reset link is invalid or has already been used.")
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    if reset_row.expires_at.tzinfo is None:
+        expires = reset_row.expires_at.replace(tzinfo=datetime.timezone.utc)
+    else:
+        expires = reset_row.expires_at
+
+    if now > expires:
+        raise _error(400, "token_expired", "This reset link has expired. Request a new one.")
+
+    user = db.get(User, reset_row.user_id)
+    if user is None or user.status != ACTIVE_STATUS:
+        raise _error(400, "invalid_token", "This reset link is invalid.")
+
+    user.password_hash = hash_password(payload.password)
+    reset_row.used = True
+    db.commit()
+
+    return AuthMessage(message="Password has been reset successfully.")

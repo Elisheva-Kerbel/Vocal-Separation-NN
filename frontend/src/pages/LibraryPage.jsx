@@ -3,7 +3,7 @@ import { Icons } from '../helpers.jsx'
 import { getLibrary, deleteSong, publishSong, unpublishSong } from '../api/songs.js'
 import LibrarySongCard from '../components/LibrarySongCard.jsx'
 
-export default function LibraryPage({ user, t }) {
+export default function LibraryPage({ t }) {
   const [songs, setSongs] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)

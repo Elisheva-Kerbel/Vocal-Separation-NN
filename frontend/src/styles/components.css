@@ -359,9 +359,6 @@
   cursor: not-allowed;
 }
 
-.player { width: 100%; margin-top: 1rem; border-radius: var(--radius-sm); }
-.player.hidden { display: none; }
-
 /* ===== HINTS / ERRORS / SUCCESS ===== */
 .hint {
   margin: 0.5rem 0 0;
@@ -398,20 +395,6 @@
 
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
-
-/* ===== WORKING / PROCESSING ===== */
-.working {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1.25rem 0;
-}
-
-.working-title {
-  margin: 0;
-  font-weight: 600;
-  color: var(--text);
-}
 
 /* ===== FOOTER ===== */
 footer {
@@ -521,23 +504,6 @@ footer {
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-
-.picked {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 1rem 0 0;
-  font-size: 0.9375rem;
-  color: var(--text-secondary);
-}
-
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--ok);
-  box-shadow: 0 0 8px var(--ok);
 }
 
 /* ===== PASSWORD FIELD ===== */

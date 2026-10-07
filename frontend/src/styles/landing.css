@@ -279,18 +279,3 @@
   background: radial-gradient(ellipse at center bottom, rgba(124, 58, 237, 0.1), transparent 60%);
   pointer-events: none;
 }
-
-/* --- Legacy pill (keep for other uses) --- */
-.pill {
-  display: inline-block;
-  margin: 0 0 1.25rem;
-  padding: 0.35rem 1rem;
-  border: 1px solid var(--glass-border);
-  border-radius: 999px;
-  background: var(--glass);
-  color: var(--accent);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  backdrop-filter: blur(8px);
-  letter-spacing: 0.02em;
-}

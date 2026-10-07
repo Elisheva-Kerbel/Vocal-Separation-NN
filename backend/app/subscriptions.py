@@ -47,8 +47,6 @@ def subscribe(
     if user.tier == UserTier.PRO:
         raise HTTPException(status_code=400, detail={"error": "already_pro", "message": "כבר יש לך מנוי Pro."})
 
-    price = PRO_MONTHLY_PRICE if payload.plan == "monthly" else PRO_ANNUAL_PRICE
-
     if not payload.coupon_code:
         raise HTTPException(status_code=400, detail={"error": "coupon_required", "message": "נדרש קוד קופון לשדרוג."})
 

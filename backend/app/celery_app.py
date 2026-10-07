@@ -1,6 +1,8 @@
 """Celery application (Phase 5)."""
 
+import numpy as np
 from celery import Celery
+from celery.signals import worker_process_init
 
 from app.config import load_settings
 
@@ -24,3 +26,10 @@ celery.conf.update(
 )
 
 celery.autodiscover_tasks(["app"])
+
+
+@worker_process_init.connect
+def _warm_up(**_kwargs):
+    """Pre-warm librosa/numba JIT and audio IO on worker start."""
+    from ai import audio_io
+    audio_io.stft(np.zeros(22050, dtype="float32"))

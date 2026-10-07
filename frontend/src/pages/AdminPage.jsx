@@ -67,7 +67,7 @@ export default function AdminPage({ user }) {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
               <thead>
-                <tr style={{ borderBottom: '2px solid var(--border)' }}>
+                <tr style={{ borderBottom: '2px solid var(--line)' }}>
                   <th style={{ textAlign: 'right', padding: '0.5rem' }}>מייל</th>
                   <th style={{ textAlign: 'right', padding: '0.5rem' }}>סטטוס</th>
                   <th style={{ textAlign: 'right', padding: '0.5rem' }}>תפקיד</th>
@@ -78,7 +78,7 @@ export default function AdminPage({ user }) {
               </thead>
               <tbody>
                 {users.map(u => (
-                  <tr key={u.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <tr key={u.id} style={{ borderBottom: '1px solid var(--line)' }}>
                     <td style={{ padding: '0.5rem' }}>{u.email}</td>
                     <td style={{ padding: '0.5rem' }}>
                       <span className={`badge ${u.status === 'active' ? 'primary' : 'danger'}`}>{u.status === 'active' ? 'פעיל' : 'חסום'}</span>
@@ -105,7 +105,7 @@ export default function AdminPage({ user }) {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
               <thead>
-                <tr style={{ borderBottom: '2px solid var(--border)' }}>
+                <tr style={{ borderBottom: '2px solid var(--line)' }}>
                   <th style={{ textAlign: 'right', padding: '0.5rem' }}>שם</th>
                   <th style={{ textAlign: 'right', padding: '0.5rem' }}>בעלים</th>
                   <th style={{ textAlign: 'right', padding: '0.5rem' }}>סטטוס</th>
@@ -116,7 +116,7 @@ export default function AdminPage({ user }) {
               </thead>
               <tbody>
                 {songs.map(s => (
-                  <tr key={s.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <tr key={s.id} style={{ borderBottom: '1px solid var(--line)' }}>
                     <td style={{ padding: '0.5rem' }}><a href={`#/song/${s.id}`}>{s.title || 'ללא שם'}</a></td>
                     <td style={{ padding: '0.5rem' }}>{s.owner_email ? s.owner_email.split('@')[0] : '-'}</td>
                     <td style={{ padding: '0.5rem' }}>

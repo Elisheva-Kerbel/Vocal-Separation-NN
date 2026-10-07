@@ -14,11 +14,10 @@ from sqlalchemy.orm import Session as DbSession
 from app.auth import current_user, get_db
 from app.constants import (
     STEM_OUTPUT_CONTENT_TYPE,
-    ReportStatus,
     SongStatus,
     Visibility,
 )
-from app.db.models import AudioFile, ContentReport, Rating, Song, User
+from app.db.models import ContentReport, Rating, Song, User
 from app.helpers import api_error, get_audio_file_or_404, get_public_song_or_404, validate_purpose
 
 router = APIRouter(prefix="/public", tags=["public"])

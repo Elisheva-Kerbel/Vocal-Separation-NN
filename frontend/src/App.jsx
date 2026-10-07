@@ -17,6 +17,8 @@ import ExplorePage from './pages/ExplorePage.jsx'
 import UpgradePage from './pages/UpgradePage.jsx'
 import AdminPage from './pages/AdminPage.jsx'
 import SettingsPage from './pages/SettingsPage.jsx'
+import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx'
+import ResetPasswordPage from './pages/ResetPasswordPage.jsx'
 
 export default function App() {
   const [user, setUser] = useState(null)
@@ -93,13 +95,15 @@ export default function App() {
     : hash === '#/upload' ? 'upload'
     : hash === '#/upgrade' ? 'upgrade'
     : hash === '#/admin' ? 'admin'
+    : hash === '#/forgot-password' ? 'forgot-password'
+    : hash.startsWith('#/reset-password') ? 'reset-password'
     : 'home'
 
   let page
   if (hash.startsWith('#/song/')) {
-    page = <SongPage songId={hash.replace('#/song/', '')} user={user} t={t} />
+    page = <SongPage songId={hash.replace('#/song/', '')} t={t} />
   } else if (hash === '#/library') {
-    page = user ? <LibraryPage user={user} t={t} /> : <NeedAuth openAuth={openAuth} t={t} />
+    page = user ? <LibraryPage t={t} /> : <NeedAuth openAuth={openAuth} t={t} />
   } else if (hash === '#/explore') {
     page = <ExplorePage user={user} t={t} />
   } else if (hash === '#/settings') {
@@ -109,7 +113,11 @@ export default function App() {
   } else if (hash === '#/upgrade') {
     page = user ? <UpgradePage user={user} setUser={setUser} t={t} /> : <NeedAuth openAuth={openAuth} t={t} />
   } else if (hash === '#/admin') {
-    page = user && user.role === 'super_admin' ? <AdminPage user={user} t={t} /> : <NeedAuth openAuth={openAuth} t={t} />
+    page = user && user.role === 'super_admin' ? <AdminPage user={user} /> : <NeedAuth openAuth={openAuth} t={t} />
+  } else if (hash === '#/forgot-password') {
+    page = <ForgotPasswordPage t={t} />
+  } else if (hash.startsWith('#/reset-password')) {
+    page = <ResetPasswordPage t={t} />
   } else {
     page = <HomePage user={user} openAuth={openAuth} t={t} />
   }
@@ -158,16 +166,18 @@ export default function App() {
         </aside>
       )}
 
-      <header className="topbar">
-        <div className="topbar-inner">
-          <a href="#/" className="brand">VocalSplit</a>
-          <nav className="nav">
-            <a href="#/">{t('home')}</a>
-            <a href="#/explore">{t('explore')}</a>
-            <button className="topbar-signin" type="button" onClick={() => openAuth(false)}>{t('signIn')}</button>
-          </nav>
-        </div>
-      </header>
+      {!user && (
+        <header className="topbar">
+          <div className="topbar-inner">
+            <a href="#/" className="brand">VocalSplit</a>
+            <nav className="nav">
+              <a href="#/">{t('home')}</a>
+              <a href="#/explore">{t('explore')}</a>
+              <button className="topbar-signin" type="button" onClick={() => openAuth(false)}>{t('signIn')}</button>
+            </nav>
+          </div>
+        </header>
+      )}
 
       {user && (
         <nav className="mobile-nav">
